@@ -1,0 +1,38 @@
+image: "becheran/rust"
+
+variables:
+    RUST_BACKTRACE: "FULL"
+
+cache:
+    key: "$CI_JOB_NAME"
+    untracked: true
+    paths:
+      - $HOME/.cargo/
+      - target/
+
+stages:
+  - test
+  - build
+
+test_job:
+    stage: test
+    script:
+      - rustc --version && cargo --version
+      - cargo build
+      - cargo test --all --verbose
+
+build_linux_job:
+  stage: build
+  artifacts:
+    paths:
+      - target/release/link-checker
+  script:
+    - cargo build --verbose --release
+
+build_windows_job:
+  stage: build
+  artifacts:
+    paths:
+      - target/x86_64-pc-windows-gnu/release/link-checker.exe
+  script:
+    - cargo build --verbose --release --target x86_64-pc-windows-gnu
