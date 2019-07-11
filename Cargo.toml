@@ -5,4 +5,4 @@ authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-clap = "~2.33.0"
+clap = {version = "2.33", features = ["yaml"]}

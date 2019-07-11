@@ -1,4 +1,4 @@
-use std::{io, process};
+use std::{process};
 use linkchecker::Config;
 
 

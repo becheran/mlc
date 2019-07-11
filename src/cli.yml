@@ -1,0 +1,13 @@
+name: linkchecker
+version: "0.1.0"
+author: Armin Becher <becherarmin@gmail.com>
+about: Detects broken links
+args:
+    - INPUT:
+        help: Sets the input file to use
+        required: true
+        index: 1
+    - verbose:
+        short: v
+        multiple: true
+        help: Sets the level of verbosity
