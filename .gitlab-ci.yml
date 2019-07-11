@@ -25,7 +25,7 @@ build_linux_job:
   stage: build
   artifacts:
     paths:
-      - target/release/link-checker
+      - target/release/linkchecker
   script:
     - cargo build --verbose --release
 
@@ -33,6 +33,6 @@ build_windows_job:
   stage: build
   artifacts:
     paths:
-      - target/x86_64-pc-windows-gnu/release/link-checker.exe
+      - target/x86_64-pc-windows-gnu/release/linkchecker.exe
   script:
     - cargo build --verbose --release --target x86_64-pc-windows-gnu

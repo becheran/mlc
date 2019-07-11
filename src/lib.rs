@@ -40,7 +40,7 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     println!("++++++++++++++++++++++++++++++++++");
-    println!("++++++++++ link-checker ++++++++++");
+    println!("++++++++++ linkchecker ++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
 
     Ok(())

@@ -1,5 +1,5 @@
 use std::{io, process};
-use link-checker::{Config};
+use linkchecker::{Config};
 
 
 fn main() {
