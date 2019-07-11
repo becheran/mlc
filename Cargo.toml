@@ -1,5 +1,5 @@
 [package]
-name = "link-checker"
+name = "linkchecker"
 version = "0.1.0"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"

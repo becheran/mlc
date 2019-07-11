@@ -1,10 +1,10 @@
 use std::{io, process};
-use linkchecker::{Config};
+use linkchecker::Config;
 
 
 fn main() {
     let config = Config::new();
-    if let Err(e) = link-checker::run(config) {
+    if let Err(e) = linkchecker::run(config) {
         eprintln!("Application error: {}", e);
         process::exit(1);
     }
