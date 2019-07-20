@@ -2,7 +2,7 @@ extern crate walkdir;
 
 use walkdir::WalkDir;
 
-pub fn run(root: &str, file_extensions: &[&str], result: &mut Vec<String>) {
+pub fn find(root: &str, file_extensions: &[&str], result: &mut Vec<String>) {
     info!("Search for files with extension {:?} in directory '{}'", file_extensions, root);
     for entry in WalkDir::new(root)
         .follow_links(false)
