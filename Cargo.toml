@@ -8,3 +8,6 @@ edition = "2018"
 clap = {version = "2.33", features = ["yaml"]}
 log = "0.4.7"
 simplelog = "0.6.0"
+walkdir = "2"
+
+

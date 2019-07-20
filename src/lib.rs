@@ -11,9 +11,10 @@ use std::error::Error;
 
 pub mod logger;
 pub mod cli;
+pub mod file_traversal;
 
 pub struct Config {
-    pub log_level: logger::LogLevel , // TODO
+    pub log_level: logger::LogLevel,
 }
 
 pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
