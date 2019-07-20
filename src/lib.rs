@@ -1,43 +1,27 @@
-use std::error::Error;
+#[macro_use]
+extern crate log;
 #[macro_use]
 extern crate clap;
-use clap::App;
 
-arg_enum! {
-    #[derive(Debug)]
-    pub enum Difficulty {
-        Easy,
-        Normal,
-        Hard
-    }
-}
+use std::error::Error;
+
+// #[macro_use]
+//extern crate log;
+//extern crate simplelog;
+
+pub mod logger;
+pub mod cli;
 
 pub struct Config {
-    pub difficulty: Difficulty, // TODO
+    pub log_level: logger::LogLevel , // TODO
 }
 
-impl Config {
-    pub fn new() -> Config {
-        let yaml = load_yaml!("cli.yml");
-        let matches = App::from_yaml(yaml).get_matches();
-        let difficulty = value_t!(matches.value_of("difficulty"),Difficulty).unwrap_or(Difficulty::Normal);
-        println!("The difficulty level is: {}", difficulty);
-        Config { difficulty }
-    }
-}
-
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
     println!("++++++++++++++++++++++++++++++++++");
     println!("++++++++++ linkchecker ++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
 
-    Ok(())
-}
+    logger::init(&config.log_level);
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn dummy_test() {
-        assert_eq!(1, 1);
-    }
+    Ok(())
 }

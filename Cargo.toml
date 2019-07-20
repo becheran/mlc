@@ -6,3 +6,5 @@ edition = "2018"
 
 [dependencies]
 clap = {version = "2.33", features = ["yaml"]}
+log = "0.4.7"
+simplelog = "0.6.0"
