@@ -30,7 +30,7 @@ pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
 
     let mut links: Vec<String> = Vec::new();
     for file in files {
-        let links = link_extractor::find_links(&file);
+        links.append(&mut link_extractor::find_links(&file));
     }
 
 

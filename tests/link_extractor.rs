@@ -1,7 +1,7 @@
 #[cfg(test)]
 use linkchecker::link_extractor;
 use std::env;
-use std::path::{PathBuf, Path};
+use std::path::PathBuf;
 
 fn root_dir() -> String {
     let default_path = PathBuf::from(r"/");
@@ -22,5 +22,5 @@ fn some_links() {
     let mut path = root_dir();
     path.push_str("/tests/traversal_test/many_links/many_links.md");
     let result = link_extractor::find_links(&path);
-    assert_eq!(result.len(), 5);
+    assert_eq!(result.len(), 10);
 }
