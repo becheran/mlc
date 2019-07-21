@@ -9,5 +9,8 @@ clap = {version = "2.33", features = ["yaml"]}
 log = "0.4.7"
 simplelog = "0.6.0"
 walkdir = "2"
+regex = "1.1.9"
+lazy_static = "1.3.0"
+
 
 

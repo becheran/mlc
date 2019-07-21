@@ -13,5 +13,5 @@ pub fn parse_args() -> Config {
     debug!("The log level is: {}", log_level);
     debug!("The root folder is: {:?}", file_extensions);
     debug!("The file extension are: {:?}", file_extensions);
-    Config { log_level, folder: folder.parse().unwrap(), file_extensions: file_extensions }
+    Config { log_level, folder: folder.parse().unwrap(), file_extensions }
 }
