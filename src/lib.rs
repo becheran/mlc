@@ -6,11 +6,13 @@ extern crate clap;
 extern crate lazy_static;
 
 use std::error::Error;
+use crate::link::Link;
 
 pub mod logger;
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractor;
+pub mod link;
 
 
 pub struct Config {
@@ -28,7 +30,7 @@ pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
     let mut files: Vec<String> = Vec::new();
     file_traversal::find(&config.folder, &config.file_extensions, &mut files);
 
-    let mut links: Vec<String> = Vec::new();
+    let mut links: Vec<Link> = Vec::new();
     for file in files {
         links.append(&mut link_extractor::find_links(&file));
     }
