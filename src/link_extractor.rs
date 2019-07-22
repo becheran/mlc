@@ -15,10 +15,11 @@ pub fn find_links<'a>(file: &str) -> Vec<String> {
 
     for line in buffered.lines() {
         let line_str = line.unwrap();
-        let links = MARKDOWN_LINK_REGEX.find_iter(&line_str).map(|mat| mat.as_str()).collect::<Vec<&str>>();
-        for link in links {
+        let md_links = MARKDOWN_LINK_REGEX.find_iter(&line_str).map(|mat| mat.as_str()).collect::<Vec<&str>>();
+        for md_link in md_links {
+            let link = md_link[md_link.rfind("(").unwrap() + 1..(md_link.len() - 1)].to_string();
             debug!("Found link '{}'", link);
-            retval.push(link.to_string());
+            retval.push(link);
         }
     }
     retval
