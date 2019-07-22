@@ -5,13 +5,13 @@ extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 
-use std::error::Error;
 use crate::link::Link;
 
 pub mod logger;
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractor;
+pub mod link_validator;
 pub mod link;
 
 
@@ -21,7 +21,7 @@ pub struct Config {
     pub file_extensions: Vec<String>,
 }
 
-pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: &Config) -> Result<(), &str> {
     println!("++++++++++++++++++++++++++++++++++");
     println!("++++++++++ linkchecker ++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
@@ -35,6 +35,18 @@ pub fn run(config: &Config) -> Result<(), Box<dyn Error>> {
         links.append(&mut link_extractor::find_links(&file));
     }
 
+    let mut result: Vec<Result<String, String>> = Vec::new();
+    for link in links {
+        result.push(link_validator::check(&link));
+    }
 
-    Ok(())
+    let mut invalid_links = false;
+    for res in result {
+        match res {
+            Result::Ok(val) => debug!("{:?}", val),
+            Result::Err(err) => invalid_links = true,
+        }
+    }
+
+    if invalid_links { Err("Some links could not be resolved.") } else { Ok(()) }
 }
