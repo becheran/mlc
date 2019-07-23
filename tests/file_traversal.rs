@@ -13,7 +13,7 @@ fn root_dir() -> String {
 fn find_markdown_files() {
     let mut path = root_dir();
     let file_extension = [".md".to_string()];
-    path.push_str("/tests/traversal_test/three_empty_md_files");
+    path.push_str("/tests/benchmark/three_empty_md_files");
     let mut result: Vec<String> = Vec::new();
     file_traversal::find(&path, &file_extension, &mut result);
     assert_eq!(result.len(), 3);
@@ -27,7 +27,7 @@ fn find_markdown_files() {
 fn empty_folder() {
     let mut path = root_dir();
     let file_extension = [".md".to_string()];
-    path.push_str("/tests/traversal_test/empty");
+    path.push_str("/tests/benchmark/empty");
     let mut result: Vec<String> = Vec::new();
     file_traversal::find(&path, &file_extension, &mut result);
     assert!(result.is_empty());
