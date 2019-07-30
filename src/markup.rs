@@ -1,4 +1,10 @@
 #[derive(Debug)]
+pub struct MarkupFile{
+    pub markup_type: MarkupType,
+    pub path: String,
+}
+
+#[derive(Debug, Clone)]
 pub enum MarkupType {
     Markdown,
     HTML,

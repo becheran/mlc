@@ -3,7 +3,7 @@ use linkchecker::file_traversal;
 use std::env;
 use std::path::{PathBuf, Path};
 use linkchecker::Config;
-use linkchecker::markup::MarkupType;
+use linkchecker::markup::{MarkupType, MarkupFile};
 
 fn root_dir() -> String {
     let default_path = PathBuf::from(r"/");
@@ -20,13 +20,15 @@ fn find_markdown_files() {
         markup_types: vec![MarkupType::Markdown],
         ..Default::default()
     };
-    let mut result: Vec<String> = Vec::new();
+    let mut result: Vec<MarkupFile> = Vec::new();
 
     file_traversal::find(&config, &mut result);
     assert_eq!(result.len(), 3);
     let possible_results = ["f1.md", "f2.MD", "F3_with_umlaut.md"];
     for r in result {
-        assert!(possible_results.contains(&Path::new(&r).file_name().unwrap().to_str().unwrap()));
+        let path = r.path;
+        let file_names = &Path::new(&path).file_name().unwrap().to_str().unwrap();
+        assert!(possible_results.contains(file_names));
     }
 }
 
@@ -39,8 +41,8 @@ fn empty_folder() {
         markup_types: vec![MarkupType::Markdown],
         ..Default::default()
     };
+    let mut result: Vec<MarkupFile> = Vec::new();
 
-    let mut result: Vec<String> = Vec::new();
     file_traversal::find(&config, &mut result);
     assert!(result.is_empty());
 }

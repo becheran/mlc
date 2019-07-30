@@ -6,6 +6,7 @@ extern crate clap;
 extern crate lazy_static;
 
 use crate::link::Link;
+use crate::markup::MarkupFile;
 
 pub mod logger;
 pub mod cli;
@@ -28,7 +29,7 @@ pub fn run(config: &Config) -> Result<(), &str> {
     println!("++++++++++++++++++++++++++++++++++");
 
     logger::init(&config.log_level);
-    let mut files: Vec<String> = Vec::new();
+    let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut files);
 
     let mut links: Vec<Link> = Vec::new();

@@ -2,6 +2,8 @@
 use linkchecker::link_extractor;
 use std::env;
 use std::path::PathBuf;
+use linkchecker::markup::{MarkupFile, MarkupType};
+use linkchecker::markup::MarkupType::Markdown;
 
 fn root_dir() -> String {
     let default_path = PathBuf::from(r"/");
@@ -13,7 +15,11 @@ fn root_dir() -> String {
 fn no_links() {
     let mut path = root_dir();
     path.push_str("/tests/benchmark/no_links/no_links.md");
-    let result = link_extractor::find_links(&path);
+    let file = MarkupFile {
+        path,
+        markup_type: MarkupType::Markdown,
+    };
+    let result = link_extractor::find_links(&file);
     assert!(result.is_empty());
 }
 
@@ -21,6 +27,10 @@ fn no_links() {
 fn some_links() {
     let mut path = root_dir();
     path.push_str("/tests/benchmark/many_links/many_links.md");
-    let result = link_extractor::find_links(&path);
+    let file = MarkupFile {
+        path,
+        markup_type: MarkupType::Markdown,
+    };
+    let result = link_extractor::find_links(&file);
     assert_eq!(result.len(), 10);
 }
