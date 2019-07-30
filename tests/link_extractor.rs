@@ -3,7 +3,6 @@ use linkchecker::link_extractor;
 use std::env;
 use std::path::PathBuf;
 use linkchecker::markup::{MarkupFile, MarkupType};
-use linkchecker::markup::MarkupType::Markdown;
 
 fn root_dir() -> String {
     let default_path = PathBuf::from(r"/");
