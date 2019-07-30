@@ -11,6 +11,11 @@ arg_enum! {
     }
 }
 
+
+impl Default for LogLevel {
+    fn default() -> Self { LogLevel::Warn }
+}
+
 pub fn init(log_level: &LogLevel) {
     let level_filter =
         match log_level {
