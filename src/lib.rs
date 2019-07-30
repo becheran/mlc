@@ -13,12 +13,13 @@ pub mod file_traversal;
 pub mod link_extractor;
 pub mod link_validator;
 pub mod link;
+pub mod markup;
 
-
+#[derive(Default)]
 pub struct Config {
     pub log_level: logger::LogLevel,
     pub folder: String,
-    pub file_extensions: Vec<String>,
+    pub markup_types: Vec<markup::MarkupType>,
 }
 
 pub fn run(config: &Config) -> Result<(), &str> {
@@ -28,7 +29,7 @@ pub fn run(config: &Config) -> Result<(), &str> {
 
     logger::init(&config.log_level);
     let mut files: Vec<String> = Vec::new();
-    file_traversal::find(&config.folder, &config.file_extensions, &mut files);
+    file_traversal::find(&config, &mut files);
 
     let mut links: Vec<Link> = Vec::new();
     for file in files {

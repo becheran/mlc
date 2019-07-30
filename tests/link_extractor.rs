@@ -12,7 +12,7 @@ fn root_dir() -> String {
 #[test]
 fn no_links() {
     let mut path = root_dir();
-    path.push_str("/tests/traversal_test/no_links/no_links.md");
+    path.push_str("/tests/benchmark/no_links/no_links.md");
     let result = link_extractor::find_links(&path);
     assert!(result.is_empty());
 }
@@ -20,7 +20,7 @@ fn no_links() {
 #[test]
 fn some_links() {
     let mut path = root_dir();
-    path.push_str("/tests/traversal_test/many_links/many_links.md");
+    path.push_str("/tests/benchmark/many_links/many_links.md");
     let result = link_extractor::find_links(&path);
     assert_eq!(result.len(), 10);
 }
