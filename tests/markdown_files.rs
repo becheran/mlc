@@ -10,6 +10,7 @@ fn root_dir() -> String {
     path
 }
 
+/*
 #[test]
 fn no_links() {
     let mut path = root_dir();
@@ -21,6 +22,7 @@ fn no_links() {
     let result = link_extractor::find_links(&file);
     assert!(result.is_empty());
 }
+*/
 
 #[test]
 fn some_links() {

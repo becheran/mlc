@@ -16,9 +16,8 @@ pub fn find_links(file: &MarkupFile) -> Vec<Link> {
         let line_nr = line_ctr + 1;
         let inline_links = &link_extractor.inline_links(&line_str);
         for inline_link in inline_links {
-            let target = inline_link[inline_link.rfind('(').unwrap() + 1..(inline_link.len() - 1)].to_string();
-            debug!("Found link '{}' in line {}", &target, line_nr);
-            let link = Link { line_nr, target, source: path.clone() };
+            debug!("Found inline link '{}' in line {}", inline_link, line_nr);
+            let link = Link { line_nr, target: inline_link.to_string(), source: path.clone() };
             retval.push(link);
         }
     }
@@ -35,12 +34,21 @@ trait LinkExtractor {
 
 impl LinkExtractor for MarkdownLinkExtractor {
     fn inline_links<'a>(&self, text: &'a str) -> Vec<&'a str> {
+        let mut result: Vec<&'a str> = Vec::new();
         lazy_static! {
             static ref MARKDOWN_LINK_REGEX : Regex = Regex::new(
                     r"\[.*\]\(.*\)"
                 ).unwrap();
         }
-        MARKDOWN_LINK_REGEX.find_iter(&text).map(|mat| mat.as_str()).collect::<Vec<&str>>()
+        let markdown_links: Vec<&str> = MARKDOWN_LINK_REGEX.find_iter(&text)
+            .map(|mat| mat.as_str()).collect::<Vec<&str>>();
+        for md_links in markdown_links {
+            let start_idx = md_links.rfind('(').unwrap() + 1;
+            let end_idx = md_links.len() - 1;
+            let link = &md_links[start_idx..end_idx];
+            result.push(link);
+        }
+        result
     }
 
     fn reference_links_source<'a>(&self, text: &'a str) -> Vec<&'a str> {
@@ -56,5 +64,21 @@ fn link_extractor_factory(markup_type: &MarkupType) -> impl LinkExtractor {
     match markup_type {
         MarkupType::Markdown => { MarkdownLinkExtractor() }
         MarkupType::HTML => { unimplemented!() }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn md_inline_link_no_title() {
+        let le = MarkdownLinkExtractor();
+        let link = "http://example.net/";
+        let input = format!("[This link]({}) has no title attribute.", link);
+
+        let result = le.inline_links(&input);
+        assert_eq!(vec![link], result);
     }
 }
