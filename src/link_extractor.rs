@@ -45,7 +45,9 @@ impl LinkExtractor for MarkdownLinkExtractor {
         for md_links in markdown_links {
             let start_idx = md_links.rfind('(').unwrap() + 1;
             let end_idx = md_links.len() - 1;
-            let link = &md_links[start_idx..end_idx];
+            let link_with_title = &md_links[start_idx..end_idx];
+            let mut spl = link_with_title.split_whitespace();
+            let link = spl.next().unwrap();
             result.push(link);
         }
         result
@@ -73,11 +75,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn md_inline_no_link() {
+        let le = MarkdownLinkExtractor();
+        let input = "]This is not a () link](! has no title attribute.";
+        let result = le.inline_links(&input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
     fn md_inline_link_no_title() {
         let le = MarkdownLinkExtractor();
         let link = "http://example.net/";
         let input = format!("[This link]({}) has no title attribute.", link);
+        let result = le.inline_links(&input);
+        assert_eq!(vec![link], result);
+    }
 
+    #[test]
+    fn md_inline_link_with_title() {
+        let le = MarkdownLinkExtractor();
+        let link = "http://example.net/";
+        let input = format!("[This is a link]({} \"with title\") oh yea.", link);
         let result = le.inline_links(&input);
         assert_eq!(vec![link], result);
     }
