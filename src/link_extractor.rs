@@ -36,11 +36,26 @@ impl LinkExtractor for MarkdownLinkExtractor {
     fn inline_links<'a>(&self, text: &'a str) -> Vec<&'a str> {
         let mut result: Vec<&'a str> = Vec::new();
         lazy_static! {
-            static ref MARKDOWN_LINK_REGEX : Regex = Regex::new(
-                    r"\[.*\]\(.*\)"
+            static ref INLINE_REGEX : Regex = Regex::new(
+                    r"\[.*.*\]\(.*\)"
                 ).unwrap();
         }
-        let markdown_links: Vec<&str> = MARKDOWN_LINK_REGEX.find_iter(&text)
+        lazy_static! {
+            static ref SHORT_REGEX : Regex = Regex::new(
+                    r"<..+:\S*>"
+                ).unwrap();
+        }
+
+        let short_links: Vec<&str> = SHORT_REGEX.find_iter(&text)
+            .map(|mat| mat.as_str()).collect::<Vec<&str>>();
+        for sl in short_links {
+            if sl.len() > 2 {
+                let s = &sl[1..sl.len() - 1];
+                result.push(s);
+            }
+        }
+
+        let markdown_links: Vec<&str> = INLINE_REGEX.find_iter(&text)
             .map(|mat| mat.as_str()).collect::<Vec<&str>>();
         for md_links in markdown_links {
             let start_idx = md_links.rfind('(').unwrap() + 1;
@@ -96,6 +111,15 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link = "http://example.net/";
         let input = format!("[This is a link]({} \"with title\") oh yea.", link);
+        let result = le.inline_links(&input);
+        assert_eq!(vec![link], result);
+    }
+
+    #[test]
+    fn md_inline_link() {
+        let le = MarkdownLinkExtractor();
+        let link = "http://example.net/";
+        let input = format!("This is a short link <{}>.", link);
         let result = le.inline_links(&input);
         assert_eq!(vec![link], result);
     }
