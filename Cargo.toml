@@ -6,12 +6,12 @@ edition = "2018"
 
 [dependencies]
 clap = {version = "2.33", features = ["yaml"]}
-log = "0.4.7"
+log = "0.4"
 simplelog = "0.6.0"
 walkdir = "2"
 regex = "1.1.9"
 lazy_static = "1.3.0"
 url = "1.7.2"
 
-
-
+[dev-dependencies]
+ntest = "0.1"

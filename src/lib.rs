@@ -7,7 +7,6 @@ extern crate lazy_static;
 
 use crate::link::Link;
 use crate::markup::MarkupFile;
-
 pub mod logger;
 pub mod cli;
 pub mod file_traversal;
@@ -46,7 +45,7 @@ pub fn run(config: &Config) -> Result<(), &str> {
     for res in result {
         match res {
             Result::Ok(val) => debug!("{:?}", val),
-            Result::Err(err) => invalid_links = true,
+            Result::Err(_) => invalid_links = true,
         }
     }
 
