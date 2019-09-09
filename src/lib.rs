@@ -44,8 +44,11 @@ pub fn run(config: &Config) -> Result<(), &str> {
     let mut invalid_links = false;
     for res in result {
         match res {
-            Result::Ok(val) => debug!("{:?}", val),
-            Result::Err(_) => invalid_links = true,
+            Result::Ok(val) => info!("{:?}", val),
+            Result::Err(err) => {
+                eprintln!("Error: {}", err);
+                invalid_links = true;
+            },
         }
     }
 

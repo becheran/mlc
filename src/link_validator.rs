@@ -1,5 +1,7 @@
 use self::url::Url;
+use std::path::Path;
 use crate::link::Link;
+use crate::link::LinkTrait;
 use regex::Regex;
 
 extern crate url;
@@ -21,11 +23,16 @@ pub fn check(link: &Link) -> Result<String, String> {
         )),
         Some(link_type) => match link_type {
             LinkType::HTTP | LinkType::FTP | LinkType::Mail => Err(format!(
-                "Link type '{:?}' is not supported yet..",
+                "Link type '{:?}' is not supported yet...",
                 &link_type
             )),
             LinkType::FileSystem => {
-                Ok(format!("Link {:?} of type {:?} is valid", link, &link_type))
+                let target = link.absolute_target_path();
+                if target.exists() {
+                    Ok(format!("Link {:?} is OK.", link))
+                } else {
+                    Err(format!("Link target {:?} not found.",target))
+                }
             }
         },
     }
