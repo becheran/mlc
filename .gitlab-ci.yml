@@ -1,14 +1,7 @@
-image: "becheran/rust"
+image: "rust:latest"
 
 variables:
     RUST_BACKTRACE: "FULL"
-
-cache:
-    key: "$CI_JOB_NAME"
-    untracked: true
-    paths:
-      - $HOME/.cargo/
-      - target/
 
 stages:
   - test
@@ -28,11 +21,3 @@ build_linux_job:
       - target/release/linkchecker
   script:
     - cargo build --verbose --release
-
-build_windows_job:
-  stage: build
-  artifacts:
-    paths:
-      - target/x86_64-pc-windows-gnu/release/linkchecker.exe
-  script:
-    - cross build --verbose --release --target x86_64-pc-windows-gnu
