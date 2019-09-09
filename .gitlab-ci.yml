@@ -35,4 +35,4 @@ build_windows_job:
     paths:
       - target/x86_64-pc-windows-gnu/release/linkchecker.exe
   script:
-    - cargo build --verbose --release --target x86_64-pc-windows-gnu
+    - cross build --verbose --release --target x86_64-pc-windows-gnu
