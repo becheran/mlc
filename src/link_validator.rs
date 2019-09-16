@@ -81,14 +81,15 @@ mod tests {
         test_link(link, &LinkType::HTTP);
     }
 
-    #[test]
-    fn test_ftp_link_types() {
-        test_link("ftp://mueller:12345@ftp.downloading.ch", &LinkType::FTP);
+    #[test_case("ftp://mueller:12345@ftp.downloading.ch")]
+    fn test_ftp_link_types(ftp: &str) {
+        test_link(ftp, &LinkType::FTP);
     }
 
-    #[test]
-    fn mail_link_types() {
-        test_link("mailto://name.latname@company.com", &LinkType::Mail);
+    #[test_case("mailto://name.latname@company.com")]
+    #[test_case("mailto://tst@xyz.us")]
+    fn mail_link_types(mail: &str) {
+        test_link(mail, &LinkType::Mail);
     }
 
     #[test_case("F:/fake/windows/paths")]
