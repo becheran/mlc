@@ -6,6 +6,7 @@ variables:
 stages:
   - test
   - build
+  - release
 
 test_job:
     stage: test
@@ -21,3 +22,14 @@ build_linux_job:
       - target/release/linkchecker
   script:
     - cargo build --verbose --release
+
+release_debian_job:
+  stage: release
+  artifacts:
+    paths:
+      - target/debian
+  script:
+    - cargo install cargo-deb
+    - cargo deb
+  only:
+    - tags
