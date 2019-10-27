@@ -3,6 +3,7 @@ use std::path::Path;
 use crate::link::Link;
 use crate::link::LinkTrait;
 use regex::Regex;
+use crate::LinkCheckResult;
 
 extern crate url;
 
@@ -14,24 +15,24 @@ pub enum LinkType {
     FileSystem,
 }
 
-pub fn check(link: &Link) -> Result<String, String> {
+pub fn check(link: &Link) -> LinkCheckResult {
     let link_type_opt = get_link_type(&link.target);
     match link_type_opt {
-        None => Err(format!(
+        None => LinkCheckResult::Failed(format!(
             "Could not determine link type of {}.",
             &link.target
         )),
         Some(link_type) => match link_type {
-            LinkType::HTTP | LinkType::FTP | LinkType::Mail => Err(format!(
+            LinkType::HTTP | LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(format!(
                 "Link type '{:?}' is not supported yet...",
                 &link_type
             )),
             LinkType::FileSystem => {
                 let target = link.absolute_target_path();
                 if target.exists() {
-                    Ok(format!("Link {:?} is OK.", link))
+                    LinkCheckResult::Ok(format!("{:?}", link))
                 } else {
-                    Err(format!("Link target {:?} not found.",target))
+                    LinkCheckResult::Failed(format!("Link target {:?} not found.",target))
                 }
             }
         },

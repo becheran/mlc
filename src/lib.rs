@@ -7,13 +7,14 @@ extern crate lazy_static;
 
 use crate::link::Link;
 use crate::markup::MarkupFile;
-pub mod logger;
 pub mod cli;
 pub mod file_traversal;
+pub mod link;
 pub mod link_extractor;
 pub mod link_validator;
-pub mod link;
+pub mod logger;
 pub mod markup;
+pub use colored::*;
 
 #[derive(Default)]
 pub struct Config {
@@ -22,7 +23,14 @@ pub struct Config {
     pub markup_types: Vec<markup::MarkupType>,
 }
 
-pub fn run(config: &Config) -> Result<(), &str> {
+#[derive(PartialEq)]
+pub enum LinkCheckResult {
+    Ok(String),
+    Failed(String),
+    NotImplemented(String),
+}
+
+pub fn run(config: &Config) -> Result<(), ()> {
     println!("++++++++++++++++++++++++++++++++++");
     println!("++++++++++ linkchecker ++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
@@ -36,21 +44,46 @@ pub fn run(config: &Config) -> Result<(), &str> {
         links.append(&mut link_extractor::find_links(&file));
     }
 
-    let mut result: Vec<Result<String, String>> = Vec::new();
+    let mut result: Vec<LinkCheckResult> = Vec::new();
     for link in links {
         result.push(link_validator::check(&link));
     }
 
-    let mut invalid_links = false;
-    for res in result {
+    let mut invalid_links = vec!();
+    let mut warnings = 0;
+    for res in &result {
         match res {
-            Result::Ok(val) => info!("{:?}", val),
-            Result::Err(err) => {
-                eprintln!("Error: {}", err);
-                invalid_links = true;
-            },
+            LinkCheckResult::Ok(val) => {
+                println!("{} {}","OK".green(), val);
+            }
+            LinkCheckResult::NotImplemented(err) => {
+                println!("{} {}","Warning".yellow(), err);
+                warnings+=1;
+            }
+            LinkCheckResult::Failed(err) => {
+                eprintln!("{} {}","Error".red(), err);
+                invalid_links.push(err);
+            }
         }
     }
 
-    if invalid_links { Err("Some links could not be resolved.") } else { Ok(()) }
+
+    println!("");
+    println!("Result");
+    println!("");
+     println!("Links: {}", &result.len());
+    println!("Warnings: {}", warnings);
+    println!("Errors: {}", &invalid_links.len());
+
+    if !invalid_links.is_empty() {
+        eprintln!("");
+        eprintln!("The following links could not be resolved:");
+        for il in invalid_links {
+            eprintln!("   {} {}","Error".red(), il);
+            
+        }
+        Err(())
+    } else {
+        Ok(())
+    }
 }
