@@ -1,5 +1,4 @@
 use self::url::Url;
-use std::path::Path;
 use crate::link::Link;
 use crate::link::LinkTrait;
 use regex::Regex;

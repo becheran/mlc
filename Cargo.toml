@@ -3,6 +3,10 @@ name = "linkchecker"
 version = "0.1.0"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"
+description = "Find broken links in markup files."
+keywords = [ "link", "checker", "markup", "markdown"]
+readme = "README.md"
+license = "MIT"
 
 [dependencies]
 clap = {version = "2.33", features = ["yaml"]}
@@ -16,3 +20,6 @@ colored = "1.8.0"
 
 [dev-dependencies]
 ntest = "0.3.1"
+
+[package.metadata.deb]
+maintainer = "Armin Becher <becherarmin@gmail.com>"
