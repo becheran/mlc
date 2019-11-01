@@ -13,7 +13,8 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     for entry in WalkDir::new(root)
         .follow_links(false)
         .into_iter()
-        .filter_map(|e| e.ok()) {
+        .filter_map(Result::ok)
+        .filter(|e| !e.file_type().is_dir()) {
         let f_name = entry.file_name().to_string_lossy();
 
         if let Some(markup_type) = markup_type(&f_name, &markup_types) {
