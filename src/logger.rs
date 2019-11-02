@@ -24,12 +24,14 @@ pub fn init(log_level: &LogLevel) {
             LogLevel::Debug => LevelFilter::Debug,
         };
 
-    CombinedLogger::init(
-        vec![
-            TermLogger::new(level_filter,
+    let mut logger_array = vec![];
+    match TermLogger::new(level_filter,
                             Config::default(),
-                            TerminalMode::Mixed).unwrap(),
-        ]
-    ).unwrap();
+                            TerminalMode::Mixed) {
+        Some(logger) => logger_array.push(logger as Box<dyn SharedLogger>),
+        None => logger_array.push(SimpleLogger::new(level_filter, Config::default())),
+    }
+
+    CombinedLogger::init(logger_array).expect("No logger should be already set");
     debug!("Initialized logging")
 }
