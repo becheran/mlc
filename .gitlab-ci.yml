@@ -21,7 +21,7 @@ test_nightly:
       - rustc --version && cargo --version
       - cargo build
       - cargo test --all --verbose
-  allow_failure: true
+    allow_failure: true
 
 build_linux_job:
   stage: build
