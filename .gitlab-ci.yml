@@ -16,7 +16,7 @@ test_latest:
 
 test_nightly:
     stage: test
-    image: "rust:nightly"
+    image: rustlang/rust:nightly
     script:
       - rustc --version && cargo --version
       - cargo build
