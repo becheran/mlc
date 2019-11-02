@@ -1,5 +1,3 @@
-image: "rust:latest"
-
 variables:
     RUST_BACKTRACE: "FULL"
 
@@ -8,15 +6,26 @@ stages:
   - build
   - release
 
-test_job:
+test_latest:
     stage: test
+    image: "rust:latest"
     script:
       - rustc --version && cargo --version
       - cargo build
       - cargo test --all --verbose
 
+test_nightly:
+    stage: test
+    image: "rust:nightly"
+    script:
+      - rustc --version && cargo --version
+      - cargo build
+      - cargo test --all --verbose
+  allow_failure: true
+
 build_linux_job:
   stage: build
+  image: "rust:latest"
   artifacts:
     paths:
       - target/release/linkchecker
@@ -25,6 +34,7 @@ build_linux_job:
 
 release_debian_job:
   stage: release
+  image: "rust:latest"
   artifacts:
     paths:
       - target/debian
