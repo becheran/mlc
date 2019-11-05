@@ -14,5 +14,5 @@ You can download the latest linux ci build [here](https://gitlab.com/becheran/li
 
 To release a new version use the [cargo release](https://github.com/sunng87/cargo-release) repository. For example run:
 ```
-/home/armin/dev/linkchecker/README.md
+cargo release patch --skip-publish
 ```
