@@ -41,15 +41,6 @@ release_debian_job:
   script:
     - cargo install cargo-deb
     - cargo deb
-    - >
-      curl
-        --request POST
-        --header 'Content-Type: application/json'
-        --header "Private-Token: $CI_JOB_TOKEN"
-        --data '{
-          "name": "Release $CI_COMMIT_TAG",
-          "tag_name": "$CI_COMMIT_TAG",
-          "description": "Release with binary as [debian package](https://gitlab.com/becheran/link-checker/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=release_debian_job)."}' 
-        "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/releases"
+    - curl --request POST --header 'Content-Type: application/json' --header "Private-Token: $CI_JOB_TOKEN" --data '{"name": "Release $CI_COMMIT_TAG", "tag_name": "$CI_COMMIT_TAG", "description": "Release with binary as [debian package](https://gitlab.com/becheran/link-checker/-/jobs/artifacts/$CI_COMMIT_TAG/download?job=release_debian_job)."}' "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/releases"
   only:
     - tags
