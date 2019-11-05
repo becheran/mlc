@@ -14,6 +14,16 @@ You can also get the package for a specific version via the following web reques
 curl -L "https://gitlab.com/becheran/link-checker/-/jobs/artifacts/v0.1.1/download?job=release_debian_job" --output linkchecker.zip
 ```
 
+Extract the content:
+```
+unzip linkchecker.zip -d linkchecker
+```
+
+Install linkchecker via apt:
+```
+apt install ./linkchecker/target/debian/linkchecker_0.1.1_amd64.deb
+```
+
 ## Builds
 
 You can download the latest linux ci build [here](https://gitlab.com/becheran/link-checker/-/jobs/artifacts/master/raw/target/release/linkchecker?job=build_linux_job).
