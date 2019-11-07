@@ -46,7 +46,7 @@ build_debian_job:
 
 release_job:
   stage: release
-  image: python3
+  image: python:3.7-slim
   script:
     - pip3 install gitlab-release
     - gitlab-release target/debian/*.deb
