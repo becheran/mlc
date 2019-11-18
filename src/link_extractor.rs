@@ -86,11 +86,11 @@ impl LinkExtractor for MarkdownLinkExtractor {
         result
     }
 
-    fn reference_links_source<'a>(&self, text: &'a str) -> Vec<&'a str> {
+    fn reference_links_source<'a>(&self, _text: &'a str) -> Vec<&'a str> {
         unimplemented!("Referenced links in markdown are not implemented yet.")
     }
 
-    fn reference_links_sink<'a>(&self, text: &'a str) -> Vec<&'a str> {
+    fn reference_links_sink<'a>(&self, _text: &'a str) -> Vec<&'a str> {
         unimplemented!("Referenced links in markdown are not implemented yet.")
     }
 }

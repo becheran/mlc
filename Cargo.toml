@@ -12,14 +12,15 @@ license = "MIT"
 maintainer = "Armin Becher <becherarmin@gmail.com>"
 
 [dependencies]
-clap = {version = "2.33", features = ["yaml"]}
-log = "0.4"
+clap = {version = "2.33.0", features = ["yaml"]}
+log = "0.4.8"
 simplelog = "0.7.4"
-walkdir = "2"
+walkdir = "2.2.9"
 regex = "1.3.1"
 lazy_static = "1.4.0"
 url = "2.1.0"
-colored = "1.8.0"
+colored = "1.9.0"
+reqwest = {version="0.9.22", features = ["default-tls-vendored"] }
 
 [dev-dependencies]
 ntest = "0.3.3"
