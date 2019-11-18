@@ -2,10 +2,10 @@ use self::url::Url;
 use crate::link::Link;
 use crate::link::LinkTrait;
 use crate::LinkCheckResult;
-use reqwest::Client;
-use reqwest::Request;
-use reqwest::Method;
 use regex::Regex;
+use reqwest::Client;
+use reqwest::Method;
+use reqwest::Request;
 
 extern crate url;
 
@@ -25,31 +25,41 @@ pub fn check(link: &Link) -> LinkCheckResult {
             &link.target
         )),
         Some(link_type) => match link_type {
-            LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(
-                format!("Link type '{:?}' is not supported yet...", &link_type),
-            ),
-            LinkType::HTTP => {
-                let client = Client::new();
-                let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
-                let request = Request::new(Method::HEAD, url);
-                let response = client.execute(request).expect("Could not execute http(s) request");
-                let status = response.status();
-                if status.is_success() {
-                    LinkCheckResult::Ok(format!("{:?}", link))
-                } else {
-                    LinkCheckResult::Failed(format!("Link target {:?} could not be reached. 
-                        Status code {:?}", &link.target, status.canonical_reason()))
-                }
-            },
-            LinkType::FileSystem => {
-                let target = link.absolute_target_path();
-                if target.exists() {
-                    LinkCheckResult::Ok(format!("{:?}", link))
-                } else {
-                    LinkCheckResult::Failed(format!("Link target {:?} not found.", target))
-                }
-            }
+            LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(format!(
+                "Link type '{:?}' is not supported yet...",
+                &link_type
+            )),
+            LinkType::HTTP => check_http(&link),
+            LinkType::FileSystem => check_filesystem(&link),
         },
+    }
+}
+
+fn check_http(link: &Link) -> LinkCheckResult {
+    let client = Client::new();
+    let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
+    let request = Request::new(Method::HEAD, url);
+    let response = client
+        .execute(request)
+        .expect("Could not execute http(s) request");
+    let status = response.status();
+    if status.is_success() {
+        LinkCheckResult::Ok(format!("{:?}", link))
+    } else {
+        LinkCheckResult::Failed(format!(
+            "{:?}: Target could not be reached. Status code {:?}",
+            &link,
+            status.canonical_reason()
+        ))
+    }
+}
+
+fn check_filesystem(link: &Link) -> LinkCheckResult {
+    let target = link.absolute_target_path();
+    if target.exists() {
+        LinkCheckResult::Ok(format!("{:?}", link))
+    } else {
+        LinkCheckResult::Failed(format!("{:?}: Target path not found.", &link))
     }
 }
 
