@@ -23,11 +23,21 @@ pub struct Config {
     pub markup_types: Vec<markup::MarkupType>,
 }
 
+#[derive(Debug)]
 #[derive(PartialEq)]
 pub enum LinkCheckResult {
     Ok(String),
     Failed(String),
     NotImplemented(String),
+}
+
+impl LinkCheckResult {
+    pub fn success(&self) -> bool {
+        match self {
+            LinkCheckResult::Ok(..) => true,
+            _ => false,
+        }
+    }
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {

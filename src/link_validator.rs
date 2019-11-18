@@ -1,8 +1,11 @@
 use self::url::Url;
 use crate::link::Link;
 use crate::link::LinkTrait;
-use regex::Regex;
 use crate::LinkCheckResult;
+use reqwest::Client;
+use reqwest::Request;
+use reqwest::Method;
+use regex::Regex;
 
 extern crate url;
 
@@ -22,16 +25,28 @@ pub fn check(link: &Link) -> LinkCheckResult {
             &link.target
         )),
         Some(link_type) => match link_type {
-            LinkType::HTTP | LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(format!(
-                "Link type '{:?}' is not supported yet...",
-                &link_type
-            )),
+            LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(
+                format!("Link type '{:?}' is not supported yet...", &link_type),
+            ),
+            LinkType::HTTP => {
+                let client = Client::new();
+                let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
+                let request = Request::new(Method::HEAD, url);
+                let response = client.execute(request).expect("Could not execute http(s) request");
+                let status = response.status();
+                if status.is_success() {
+                    LinkCheckResult::Ok(format!("{:?}", link))
+                } else {
+                    LinkCheckResult::Failed(format!("Link target {:?} could not be reached. 
+                        Status code {:?}", &link.target, status.canonical_reason()))
+                }
+            },
             LinkType::FileSystem => {
                 let target = link.absolute_target_path();
                 if target.exists() {
                     LinkCheckResult::Ok(format!("{:?}", link))
                 } else {
-                    LinkCheckResult::Failed(format!("Link target {:?} not found.",target))
+                    LinkCheckResult::Failed(format!("Link target {:?} not found.", target))
                 }
             }
         },
@@ -106,5 +121,39 @@ mod tests {
     #[test_case("D:\\Program Files(x86)\\folder\\file.log")]
     fn test_file_system_link_types(link: &str) {
         test_link(link, &LinkType::FileSystem);
+    }
+
+    #[test]
+    fn check_http_request() {
+        let link = Link {
+            line_nr: 0,
+            target: "http://gitlab.com/becheran/linkchecker".to_string(),
+            source: "NotImportant".to_string(),
+        };
+        let result = check(&link);
+        assert!(result.success());
+    }
+
+    #[test]
+    fn check_https_request() {
+        let link = Link {
+            line_nr: 0,
+            target: "https://gitlab.com/becheran/linkchecker".to_string(),
+            source: "NotImportant".to_string(),
+        };
+        let result = check(&link);
+        assert!(result.success());
+    }
+
+    #[test]
+    #[should_panic]
+    fn check_wront_http_request() {
+        let link = Link {
+            line_nr: 0,
+            target: "https://doesNotExist.me/even/less/likelly".to_string(),
+            source: "NotImportant".to_string(),
+        };
+        let result = check(&link);
+        assert!(result.success());
     }
 }
