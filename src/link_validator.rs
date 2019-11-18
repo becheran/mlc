@@ -7,6 +7,7 @@ use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
 
+
 extern crate url;
 
 #[derive(Debug, PartialEq)]
@@ -17,7 +18,7 @@ pub enum LinkType {
     FileSystem,
 }
 
-pub fn check(link: &Link) -> LinkCheckResult {
+pub async fn check(link: &Link) -> LinkCheckResult {
     let link_type_opt = get_link_type(&link.target);
     match link_type_opt {
         None => LinkCheckResult::Failed(format!(

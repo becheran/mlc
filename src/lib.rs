@@ -16,6 +16,9 @@ pub mod logger;
 pub mod markup;
 pub use colored::*;
 
+use futures::executor::ThreadPool;
+
+
 #[derive(Default)]
 pub struct Config {
     pub log_level: logger::LogLevel,
@@ -42,8 +45,9 @@ impl LinkCheckResult {
 
 pub fn run(config: &Config) -> Result<(), ()> {
     println!("++++++++++++++++++++++++++++++++++");
-    println!("++++++++++ linkchecker ++++++++++");
+    println!("++++++++++ linkchecker +++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
+    let pool = ThreadPool::new().expect("Could not spawn thread pool");
 
     logger::init(&config.log_level);
     let mut files: Vec<MarkupFile> = Vec::new();
@@ -54,10 +58,11 @@ pub fn run(config: &Config) -> Result<(), ()> {
         links.append(&mut link_extractor::find_links(&file));
     }
 
-    let mut result: Vec<LinkCheckResult> = Vec::new();
-    for link in links {
-        result.push(link_validator::check(&link));
+    let mut result_futures= Vec::new();
+    for link in &links {
+        result_futures.push(link_validator::check(link));
     }
+    let result = pool.spawn_ok(futures::future::join_all(result_futures));
 
     let mut invalid_links = vec!();
     let mut warnings = 0;
