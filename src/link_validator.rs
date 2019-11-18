@@ -18,7 +18,7 @@ pub enum LinkType {
     FileSystem,
 }
 
-pub async fn check(link: &Link) -> LinkCheckResult {
+pub fn check(link: &Link) -> LinkCheckResult {
     info!("Check link {:?}.", &link);
     let link_type_opt = get_link_type(&link.target);
     match link_type_opt {

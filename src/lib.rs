@@ -15,8 +15,6 @@ pub mod link_validator;
 pub mod logger;
 pub mod markup;
 pub use colored::*;
-use futures::executor::block_on;
-
 
 #[derive(Default)]
 pub struct Config {
@@ -56,11 +54,10 @@ pub fn run(config: &Config) -> Result<(), ()> {
         links.append(&mut link_extractor::find_links(&file));
     }
 
-    let mut result_futures= Vec::new();
+    let mut result = Vec::new();
     for link in &links {
-        result_futures.push(link_validator::check(link));
+        result.push(link_validator::check(link));
     }
-    let result = block_on(futures::future::join_all(result_futures));
 
     let mut invalid_links = vec!();
     let mut warnings = 0;
