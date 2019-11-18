@@ -15,8 +15,7 @@ pub mod link_validator;
 pub mod logger;
 pub mod markup;
 pub use colored::*;
-
-use futures::executor::ThreadPool;
+use futures::executor::block_on;
 
 
 #[derive(Default)]
@@ -47,7 +46,6 @@ pub fn run(config: &Config) -> Result<(), ()> {
     println!("++++++++++++++++++++++++++++++++++");
     println!("++++++++++ linkchecker +++++++++++");
     println!("++++++++++++++++++++++++++++++++++");
-    let pool = ThreadPool::new().expect("Could not spawn thread pool");
 
     logger::init(&config.log_level);
     let mut files: Vec<MarkupFile> = Vec::new();
@@ -62,7 +60,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
     for link in &links {
         result_futures.push(link_validator::check(link));
     }
-    let result = pool.spawn_ok(futures::future::join_all(result_futures));
+    let result = block_on(futures::future::join_all(result_futures));
 
     let mut invalid_links = vec!();
     let mut warnings = 0;
