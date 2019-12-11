@@ -8,7 +8,7 @@ Not ready yet. Still in development.
 
 ## Getting Started
 
-To install a version of the linkchecker go to the [gitlab releases page](./-/releases) and download the debian package.
+To install a version of the linkchecker go to the [gitlab releases page](https://gitlab.com/becheran/linkchecker/-/releases) and download the debian package.
 You can also get the package for a specific version via the following web request. For example this will download the linkchecker package *version 0.1.1*:
 ```
 curl -L "https://gitlab.com/becheran/link-checker/-/jobs/artifacts/v0.1.1/download?job=release_debian_job" --output linkchecker.zip
