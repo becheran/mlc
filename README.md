@@ -10,18 +10,22 @@ Not ready yet. Still in development.
 
 To install a version of the linkchecker go to the [gitlab releases page](https://gitlab.com/becheran/linkchecker/-/releases) and download the debian package.
 You can also get the package for a specific version via the following web request. For example this will download the linkchecker package *version 0.1.1*:
-```
+
+``` bash
 curl -L "https://gitlab.com/becheran/link-checker/-/jobs/artifacts/v0.1.1/download?job=build_debian_job" --output linkchecker.zip
 ```
 
 Extract the content:
-```
+
+``` bash
 unzip linkchecker.zip -d linkchecker
 ```
 
 Install linkchecker via apt:
-```
+
+``` bash
 apt install ./linkchecker/target/debian/linkchecker_0.1.1_amd64.deb
+
 ```
 
 ## Builds
@@ -31,6 +35,7 @@ You can download the latest linux ci build [here](https://gitlab.com/becheran/li
 ## Release
 
 To release a new version use the [cargo release](https://github.com/sunng87/cargo-release) repository. For example run:
-```
+
+``` bash
 cargo release patch --skip-publish
 ```
