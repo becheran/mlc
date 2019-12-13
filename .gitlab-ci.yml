@@ -39,7 +39,7 @@ build_debian_job:
     paths:
       - target/debian
   script:
-    - cargo install cargo-deb
+    - cargo install cargo-deb --version 1.23.*
     - cargo deb
   only:
     - tags
@@ -48,7 +48,7 @@ release_job:
   stage: release
   image: python:3.7-slim
   script:
-    - pip3 install gitlab-release
+    - pip3 install gitlab-release==3.5
     - gitlab-release target/debian/*.deb
   only:
     - tags
