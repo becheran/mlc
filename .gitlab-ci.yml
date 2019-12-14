@@ -32,23 +32,11 @@ build_linux_job:
   script:
     - cargo build --verbose --release
 
-build_debian_job:
-  stage: build
-  image: "rust:latest"
-  artifacts:
-    paths:
-      - target/debian
-  script:
-    - cargo install cargo-deb --version 1.23.*
-    - cargo deb
-  only:
-    - tags
-
 release_job:
   stage: release
   image: python:3.7-slim
   script:
     - pip3 install gitlab-release==3.5
-    - gitlab-release target/debian/*.deb
+    - gitlab-release target/release/*
   only:
     - tags
