@@ -7,7 +7,6 @@ use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
 
-
 extern crate url;
 
 #[derive(Debug, PartialEq)]
@@ -41,18 +40,25 @@ fn check_http(link: &Link) -> LinkCheckResult {
     let client = Client::new();
     let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
     let request = Request::new(Method::HEAD, url);
-    let response = client
-        .execute(request)
-        .expect("Could not execute http(s) request");
-    let status = response.status();
-    if status.is_success() {
-        LinkCheckResult::Ok(format!("{:?}", link))
-    } else {
-        LinkCheckResult::Failed(format!(
-            "{:?}: Target could not be reached. Status code {:?}",
-            &link,
-            status.canonical_reason()
-        ))
+    match client.execute(request) {
+        Ok(response) => {
+            let status = response.status();
+            if status.is_success() {
+                LinkCheckResult::Ok(format!("{:?}", link))
+            } else {
+                LinkCheckResult::Failed(format!(
+                    "{:?}: Target could not be reached. Status code {:?}",
+                    &link,
+                    status.canonical_reason()
+                ))
+            }
+        }
+        Err(error_msg) => {
+            LinkCheckResult::Failed(format!(
+                "{:?}: Could not execute http(s) request. {:?}",
+                &link,
+                error_msg
+            ))}
     }
 }
 
@@ -94,6 +100,7 @@ fn get_link_type(link: &str) -> Option<LinkType> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ntest::assert_false;
     use ntest::test_case;
 
     fn test_link(link: &str, expected_type: &LinkType) {
@@ -158,14 +165,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn check_wront_http_request() {
+    fn check_wrong_http_request() {
         let link = Link {
             line_nr: 0,
             target: "https://doesNotExist.me/even/less/likelly".to_string(),
             source: "NotImportant".to_string(),
         };
         let result = check(&link);
-        assert!(result.success());
+        assert_false!(result.success());
     }
 }
