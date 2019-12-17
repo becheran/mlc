@@ -1,7 +1,7 @@
 #[cfg(test)]
-use linkchecker::Config;
-use linkchecker::markup::MarkupType;
-use linkchecker::logger;
+use mlc::Config;
+use mlc::markup::MarkupType;
+use mlc::logger;
 
 #[test]
 fn end_to_end() {
@@ -10,5 +10,5 @@ fn end_to_end() {
         log_level: logger::LogLevel::Debug,
         markup_types: vec![MarkupType::Markdown],
     };
-    let _ = linkchecker::run(&config);
+    let _ = mlc::run(&config);
 }

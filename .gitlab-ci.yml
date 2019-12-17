@@ -28,7 +28,7 @@ build_linux_job:
   image: "rust:latest"
   artifacts:
     paths:
-      - target/release/linkchecker
+      - target/release/mlc
   script:
     - cargo build --verbose --release
 

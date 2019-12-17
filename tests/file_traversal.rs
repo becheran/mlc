@@ -1,9 +1,9 @@
 #[cfg(test)]
-use linkchecker::file_traversal;
+use mlc::file_traversal;
 use std::env;
 use std::path::{PathBuf, Path};
-use linkchecker::Config;
-use linkchecker::markup::{MarkupType, MarkupFile};
+use mlc::Config;
+use mlc::markup::{MarkupType, MarkupFile};
 
 fn root_dir() -> String {
     let default_path = PathBuf::from(r"/");

@@ -146,7 +146,7 @@ mod tests {
     fn check_http_request() {
         let link = Link {
             line_nr: 0,
-            target: "http://gitlab.com/becheran/linkchecker".to_string(),
+            target: "http://gitlab.com/becheran/mlc".to_string(),
             source: "NotImportant".to_string(),
         };
         let result = check(&link);
@@ -157,7 +157,7 @@ mod tests {
     fn check_https_request() {
         let link = Link {
             line_nr: 0,
-            target: "https://gitlab.com/becheran/linkchecker".to_string(),
+            target: "https://gitlab.com/becheran/mlc".to_string(),
             source: "NotImportant".to_string(),
         };
         let result = check(&link);

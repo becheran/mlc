@@ -1,6 +1,4 @@
-name: linkchecker
-author: Armin Becher <becherarmin@gmail.com>
-about: Detects broken links
+name: mlc
 args:
   - folder:
       help: Check all links in given folder and subfolders
