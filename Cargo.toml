@@ -24,3 +24,8 @@ reqwest = {version="0.9.24", features = ["default-tls-vendored"] }
 
 [dev-dependencies]
 ntest = "0.3.3"
+criterion = "0.3.0"
+
+[[bench]]
+name = "benchmarks"
+harness = false
