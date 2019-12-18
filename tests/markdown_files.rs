@@ -1,19 +1,11 @@
 #[cfg(test)]
 use mlc::link_extractor;
-use std::env;
-use std::path::PathBuf;
 use mlc::markup::{MarkupFile, MarkupType};
 
-fn root_dir() -> String {
-    let default_path = PathBuf::from(r"/");
-    let path = env::current_dir().unwrap_or(default_path).to_string_lossy().to_string();
-    path
-}
 
 #[test]
 fn no_links() {
-    let mut path = root_dir();
-    path.push_str("/tests/benchmark/no_links/no_links.md");
+    let path = "./benches/benchmark/no_links/no_links.md".to_string();
     let file = MarkupFile {
         path,
         markup_type: MarkupType::Markdown,
@@ -24,8 +16,7 @@ fn no_links() {
 
 #[test]
 fn some_links() {
-    let mut path = root_dir();
-    path.push_str("/tests/benchmark/many_links/many_links.md");
+    let path = "./benches/benchmark/many_links/many_links.md".to_string();
     let file = MarkupFile {
         path,
         markup_type: MarkupType::Markdown,

@@ -1,20 +1,12 @@
 #[cfg(test)]
 use mlc::file_traversal;
-use std::env;
-use std::path::{PathBuf, Path};
+use mlc::markup::{MarkupFile, MarkupType};
 use mlc::Config;
-use mlc::markup::{MarkupType, MarkupFile};
-
-fn root_dir() -> String {
-    let default_path = PathBuf::from(r"/");
-    let path = env::current_dir().unwrap_or(default_path).to_string_lossy().to_string();
-    path
-}
+use std::path::{Path, PathBuf};
 
 #[test]
 fn find_markdown_files() {
-    let mut path = root_dir();
-    path.push_str("/tests/benchmark/three_empty_md_files");
+    let path = "./benches/benchmark/three_empty_md_files".to_string();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],
@@ -34,8 +26,7 @@ fn find_markdown_files() {
 
 #[test]
 fn empty_folder() {
-    let mut path = root_dir();
-    path.push_str("/tests/benchmark/empty");
+    let path = "./benches/benchmark/empty".to_string();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],
