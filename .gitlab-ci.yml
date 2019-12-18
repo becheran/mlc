@@ -2,39 +2,9 @@ variables:
     RUST_BACKTRACE: "FULL"
 
 stages:
-  - test
   - build
+  - test
   - release
-
-test_latest:
-    stage: test
-    image: "rust:latest"
-    script:
-      - rustc --version && cargo --version
-      - cargo test --all --verbose
-
-bench_latest:
-  stage: test
-  image: "rust:latest"
-  script:
-    - rustc --version && cargo --version
-    - cargo bench --all --verbose
-
-test_nightly:
-    stage: test
-    image: rustlang/rust:nightly
-    script:
-      - rustc --version && cargo --version
-      - cargo test --all --verbose
-    allow_failure: true
-
-bench_nightly:
-  stage: test
-  image: rustlang/rust:nightly
-  script:
-    - rustc --version && cargo --version
-    - cargo bench --all --verbose
-  allow_failure: true
 
 build_linux_job:
   stage: build
@@ -42,8 +12,38 @@ build_linux_job:
   artifacts:
     paths:
       - target/release/mlc
+      - target/debug/mlc
   script:
+    - cargo build --verbose
     - cargo build --verbose --release
+    - cargo test --no-run
+    - cargo bench --no-run
+
+test_latest:
+    stage: test
+    image: "rust:latest"
+    script:
+      - cargo test --all --verbose
+
+bench_latest:
+  stage: test
+  image: "rust:latest"
+  script:
+    - cargo bench --all --verbose
+
+test_nightly:
+    stage: test
+    image: rustlang/rust:nightly
+    script:
+      - cargo test --all --verbose
+    allow_failure: true
+
+bench_nightly:
+  stage: test
+  image: rustlang/rust:nightly
+  script:
+    - cargo bench --all --verbose
+  allow_failure: true
 
 release_job:
   stage: release
