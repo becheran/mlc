@@ -2,19 +2,26 @@
 extern crate criterion;
 
 use criterion::Criterion;
-use criterion::black_box;
+use mlc::logger;
+use mlc::markup::MarkupType;
+use mlc::Config;
 
-fn fibonacci(n: u64) -> u64 {
-    match n {
-        0 => 1,
-        1 => 1,
-        n => fibonacci(n-1) + fibonacci(n-2),
-    }
+fn end_to_end_benchmark() {
+    let config = Config {
+        folder: String::from("./benches/benchmark"),
+        log_level: logger::LogLevel::Debug,
+        markup_types: vec![MarkupType::Markdown],
+    };
+    let _ = mlc::run(&config);
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("fib 20", |b| b.iter(|| fibonacci(black_box(20))));
+    c.bench_function("End to end benchmark", |b| b.iter(|| end_to_end_benchmark()));
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group! {
+    name = benches;
+    config = Criterion::default().sample_size(10);
+    targets = criterion_benchmark
+}
 criterion_main!(benches);
