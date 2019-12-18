@@ -2,34 +2,14 @@ variables:
     RUST_BACKTRACE: "FULL"
 
 stages:
-  - build
   - test
   - release
-
-build_linux_job:
-  stage: build
-  image: "rust:latest"
-  artifacts:
-    paths:
-      - target/release/mlc
-      - target/debug/mlc
-  script:
-    - cargo build --verbose
-    - cargo build --verbose --release
-    - cargo test --no-run
-    - cargo bench --no-run
 
 test_latest:
     stage: test
     image: "rust:latest"
     script:
       - cargo test --all --verbose
-
-bench_latest:
-  stage: test
-  image: "rust:latest"
-  script:
-    - cargo bench --all --verbose
 
 test_nightly:
     stage: test
@@ -38,18 +18,12 @@ test_nightly:
       - cargo test --all --verbose
     allow_failure: true
 
-bench_nightly:
-  stage: test
-  image: rustlang/rust:nightly
-  script:
-    - cargo bench --all --verbose
-  allow_failure: true
-
 release_job:
   stage: release
   image: python:3.7-slim
   script:
     - pip3 install gitlab-release==3.5
+    - cargo build --release --verbose
     - gitlab-release target/release/*
   only:
     - tags
