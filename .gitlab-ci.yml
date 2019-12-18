@@ -3,40 +3,27 @@ variables:
 
 stages:
   - test
-  - build
   - release
 
 test_latest:
     stage: test
     image: "rust:latest"
     script:
-      - rustc --version && cargo --version
-      - cargo build
       - cargo test --all --verbose
 
 test_nightly:
     stage: test
     image: rustlang/rust:nightly
     script:
-      - rustc --version && cargo --version
-      - cargo build
       - cargo test --all --verbose
     allow_failure: true
-
-build_linux_job:
-  stage: build
-  image: "rust:latest"
-  artifacts:
-    paths:
-      - target/release/mlc
-  script:
-    - cargo build --verbose --release
 
 release_job:
   stage: release
   image: python:3.7-slim
   script:
     - pip3 install gitlab-release==3.5
+    - cargo build --release --verbose
     - gitlab-release target/release/*
   only:
     - tags
