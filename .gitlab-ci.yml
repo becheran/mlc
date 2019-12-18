@@ -11,17 +11,30 @@ test_latest:
     image: "rust:latest"
     script:
       - rustc --version && cargo --version
-      - cargo build
       - cargo test --all --verbose
+
+bench_latest:
+  stage: test
+  image: "rust:latest"
+  script:
+    - rustc --version && cargo --version
+    - cargo bench --all --verbose
 
 test_nightly:
     stage: test
     image: rustlang/rust:nightly
     script:
       - rustc --version && cargo --version
-      - cargo build
       - cargo test --all --verbose
     allow_failure: true
+
+bench_nightly:
+  stage: test
+  image: rustlang/rust:nightly
+  script:
+    - rustc --version && cargo --version
+    - cargo bench --all --verbose
+  allow_failure: true
 
 build_linux_job:
   stage: build
