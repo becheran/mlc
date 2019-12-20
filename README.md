@@ -12,11 +12,13 @@ Planned features till a stable release (v1.*):
 - Check mail addresses
 - Update docs
 - Add a changelog
+- Timeout for requests as cl argument
 
 Planned for the future:
 
 - Improve speed
-- Support other markup files such as tex or html.
+- Support other markup files such as tex or html
+- Add docker image with latest installed version
 
 ## Getting Started
 
