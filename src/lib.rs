@@ -16,28 +16,13 @@ pub mod logger;
 pub mod markup;
 pub use colored::*;
 
+use link_validator::LinkCheckResult;
+
 #[derive(Default)]
 pub struct Config {
     pub log_level: logger::LogLevel,
     pub folder: String,
     pub markup_types: Vec<markup::MarkupType>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum LinkCheckResult {
-    Ok(String),
-    Failed(String),
-    Warning(String),
-    NotImplemented(String),
-}
-
-impl LinkCheckResult {
-    pub fn success(&self) -> bool {
-        match self {
-            LinkCheckResult::Ok(..) => true,
-            _ => false,
-        }
-    }
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {
@@ -49,29 +34,25 @@ pub fn run(config: &Config) -> Result<(), ()> {
         links.append(&mut link_extractor::find_links(&file));
     }
 
-    let mut result = Vec::new();
-    for link in &links {
-        result.push(link_validator::check(link));
-    }
-
-    let mut invalid_links = vec![];
     let mut warnings = 0;
-    for res in &result {
-        match res {
-            LinkCheckResult::Ok(val) => {
-                println!("{} {}", "OK".green(), val);
+    let mut invalid_links = vec![];
+    for link in &links {
+        let result = link_validator::check(link);
+        match result {
+            LinkCheckResult::Ok => {
+                println!("{} {:?}", "OK".green(), link);
             }
-            LinkCheckResult::NotImplemented(val) => {
-                println!("{} {}", "Warning".yellow(), val);
+            LinkCheckResult::NotImplemented(msg) => {
+                println!("{} {:?} {}", "Warning".yellow(), link, msg);
                 warnings += 1;
             }
-            LinkCheckResult::Warning(val) => {
-                println!("{} {}", "Warning".yellow(), val);
+            LinkCheckResult::Warning(msg) => {
+                println!("{} {:?} {}", "Warning".yellow(), link, msg);
                 warnings += 1;
             }
-            LinkCheckResult::Failed(val) => {
-                eprintln!("{} {}", "Error".red(), val);
-                invalid_links.push(val);
+            LinkCheckResult::Failed(msg) => {
+                eprintln!("{} {:?} {}", "Error".red(), link, msg);
+                invalid_links.push(link);
             }
         }
     }
@@ -79,7 +60,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
     println!();
     println!("Result:");
     println!();
-    println!("Links: {}", &result.len());
+    println!("Links: {}", &links.len());
     println!("Warnings: {}", warnings);
     println!("Errors: {}", &invalid_links.len());
     println!();
@@ -89,7 +70,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
         eprintln!("The following links could not be resolved:");
         println!();
         for il in invalid_links {
-            eprintln!("{} {}", "Error".red(), il);
+            eprintln!("{} {:?}", "Error".red(), il);
         }
         Err(())
     } else {

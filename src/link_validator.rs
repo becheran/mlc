@@ -1,7 +1,6 @@
 use self::url::Url;
 use crate::link::Link;
 use crate::link::LinkTrait;
-use crate::LinkCheckResult;
 use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
@@ -16,6 +15,14 @@ pub enum LinkType {
     FTP,
     Mail,
     FileSystem,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum LinkCheckResult {
+    Ok,
+    Failed(String),
+    Warning(String),
+    NotImplemented(String),
 }
 
 pub fn check(link: &Link) -> LinkCheckResult {
@@ -54,26 +61,23 @@ fn check_http(link: &Link) -> LinkCheckResult {
         Ok(response) => {
             let status = response.status();
             if status.is_success() {
-                LinkCheckResult::Ok(format!("{:?}", link))
+                LinkCheckResult::Ok
             } else if status.is_redirection() {
-                LinkCheckResult::Warning(format!("{:?}: {}", &link, status_to_string(&status)))
+                LinkCheckResult::Warning(status_to_string(&status))
             } else {
-                LinkCheckResult::Failed(format!("{:?}: {}", &link, status_to_string(&status)))
+                LinkCheckResult::Failed(status_to_string(&status))
             }
         }
-        Err(error_msg) => LinkCheckResult::Failed(format!(
-            "{:?}: Http(s) request failed. {:?}",
-            &link, error_msg
-        )),
+        Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {}", error_msg)),
     }
 }
 
 fn check_filesystem(link: &Link) -> LinkCheckResult {
     let target = link.absolute_target_path();
     if target.exists() {
-        LinkCheckResult::Ok(format!("{:?}", link))
+        LinkCheckResult::Ok
     } else {
-        LinkCheckResult::Failed(format!("{:?} Target path not found.", &link))
+        LinkCheckResult::Failed("Target path not found.".to_string())
     }
 }
 
@@ -89,7 +93,7 @@ fn get_link_type(link: &str) -> Option<LinkType> {
 
     if let Ok(url) = Url::parse(&link) {
         let scheme = url.scheme();
-        debug!("Given link {} is a URL type with scheme {}", link, scheme);
+        debug!("Link {} is a URL type with scheme {}", link, scheme);
         match scheme {
             "http" => return Some(LinkType::HTTP),
             "https" => return Some(LinkType::HTTP),
@@ -156,7 +160,7 @@ mod tests {
             source: "NotImportant".to_string(),
         };
         let result = check(&link);
-        assert!(result.success());
+        assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
@@ -167,7 +171,7 @@ mod tests {
             source: "NotImportant".to_string(),
         };
         let result = check(&link);
-        assert!(result.success());
+        assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
@@ -178,6 +182,6 @@ mod tests {
             source: "NotImportant".to_string(),
         };
         let result = check(&link);
-        assert_false!(result.success());
+        assert!(result != LinkCheckResult::Ok);
     }
 }
