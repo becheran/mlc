@@ -110,7 +110,6 @@ fn get_link_type(link: &str) -> Option<LinkType> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ntest::assert_false;
     use ntest::test_case;
 
     fn test_link(link: &str, expected_type: &LinkType) {
