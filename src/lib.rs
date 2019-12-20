@@ -27,6 +27,7 @@ pub struct Config {
 pub enum LinkCheckResult {
     Ok(String),
     Failed(String),
+    Warning(String),
     NotImplemented(String),
 }
 
@@ -60,29 +61,35 @@ pub fn run(config: &Config) -> Result<(), ()> {
             LinkCheckResult::Ok(val) => {
                 println!("{} {}", "OK".green(), val);
             }
-            LinkCheckResult::NotImplemented(err) => {
-                println!("{} {}", "Warning".yellow(), err);
+            LinkCheckResult::NotImplemented(val) => {
+                println!("{} {}", "Warning".yellow(), val);
                 warnings += 1;
             }
-            LinkCheckResult::Failed(err) => {
-                eprintln!("{} {}", "Error".red(), err);
-                invalid_links.push(err);
+            LinkCheckResult::Warning(val) => {
+                println!("{} {}", "Warning".yellow(), val);
+                warnings += 1;
+            }
+            LinkCheckResult::Failed(val) => {
+                eprintln!("{} {}", "Error".red(), val);
+                invalid_links.push(val);
             }
         }
     }
 
-    println!("");
-    println!("Result");
-    println!("");
+    println!();
+    println!("Result:");
+    println!();
     println!("Links: {}", &result.len());
     println!("Warnings: {}", warnings);
     println!("Errors: {}", &invalid_links.len());
+    println!();
 
     if !invalid_links.is_empty() {
-        eprintln!("");
+        eprintln!();
         eprintln!("The following links could not be resolved:");
+        println!();
         for il in invalid_links {
-            eprintln!("   {} {}", "Error".red(), il);
+            eprintln!("{} {}", "Error".red(), il);
         }
         Err(())
     } else {

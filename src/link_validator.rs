@@ -6,6 +6,7 @@ use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
+use reqwest::StatusCode;
 
 extern crate url;
 
@@ -40,25 +41,30 @@ fn check_http(link: &Link) -> LinkCheckResult {
     let client = Client::new();
     let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
     let request = Request::new(Method::HEAD, url);
+
+    fn status_to_string(status: &StatusCode) -> String {
+        format!(
+            "{} - {}",
+            status.as_str(),
+            status.canonical_reason().unwrap_or("Unknown reason")
+        )
+    }
+
     match client.execute(request) {
         Ok(response) => {
             let status = response.status();
             if status.is_success() {
                 LinkCheckResult::Ok(format!("{:?}", link))
+            } else if status.is_redirection() {
+                LinkCheckResult::Warning(format!("{:?}: {}", &link, status_to_string(&status)))
             } else {
-                LinkCheckResult::Failed(format!(
-                    "{:?}: Target could not be reached. Status code {:?}",
-                    &link,
-                    status.canonical_reason()
-                ))
+                LinkCheckResult::Failed(format!("{:?}: {}", &link, status_to_string(&status)))
             }
         }
-        Err(error_msg) => {
-            LinkCheckResult::Failed(format!(
-                "{:?}: Could not execute http(s) request. {:?}",
-                &link,
-                error_msg
-            ))}
+        Err(error_msg) => LinkCheckResult::Failed(format!(
+            "{:?}: Http(s) request failed. {:?}",
+            &link, error_msg
+        )),
     }
 }
 
@@ -67,7 +73,7 @@ fn check_filesystem(link: &Link) -> LinkCheckResult {
     if target.exists() {
         LinkCheckResult::Ok(format!("{:?}", link))
     } else {
-        LinkCheckResult::Failed(format!("{:?}: Target path not found.", &link))
+        LinkCheckResult::Failed(format!("{:?} Target path not found.", &link))
     }
 }
 
