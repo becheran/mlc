@@ -2,7 +2,7 @@
 use mlc::file_traversal;
 use mlc::markup::{MarkupFile, MarkupType};
 use mlc::Config;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[test]
 fn find_markdown_files() {
