@@ -2,8 +2,18 @@ variables:
     RUST_BACKTRACE: "FULL"
 
 stages:
+  - build
   - test
   - release
+
+build_linux:
+  stage: build
+  image: "rust:latest"
+  artifacts:
+    paths:
+      - target/release/mlc
+  script:
+    - cargo build --verbose --release  
 
 test_latest:
     stage: test
@@ -23,7 +33,6 @@ release_job:
   image: python:3.7-slim
   script:
     - pip3 install gitlab-release==3.5
-    - cargo build --release --verbose
     - gitlab-release target/release/*
   only:
     - tags
