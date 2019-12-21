@@ -1,8 +1,8 @@
-use std::io::{BufReader, BufRead};
-use std::fs::File;
-use regex::Regex;
 use crate::link::Link;
 use crate::markup::{MarkupFile, MarkupType};
+use regex::Regex;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 pub fn find_links(file: &MarkupFile) -> Vec<Link> {
     let path = &file.path;
@@ -10,15 +10,27 @@ pub fn find_links(file: &MarkupFile) -> Vec<Link> {
     let mut retval: Vec<Link> = Vec::new();
 
     info!("Scan file at path '{}' for links.", path);
-    let buffered = BufReader::new(File::open(path).unwrap());
+    let file = File::open(path).expect("File could not be opened.");
+    let buffered = BufReader::new(file);
+
     for (line_ctr, line_str) in buffered.lines().enumerate() {
-        let line_str = line_str.unwrap();
-        let line_nr = line_ctr + 1;
-        let inline_links = &link_extractor.inline_links(&line_str);
-        for inline_link in inline_links {
-            debug!("Found inline link '{}' in line {}", inline_link, line_nr);
-            let link = Link { line_nr, target: inline_link.to_string(), source: path.clone() };
-            retval.push(link);
+        match line_str {
+            Ok(line_str) => {
+                let line_nr = line_ctr + 1;
+                let inline_links = &link_extractor.inline_links(&line_str);
+                for inline_link in inline_links {
+                    debug!("Found inline link '{}' in line {}", inline_link, line_nr);
+                    let link = Link {
+                        line_nr,
+                        target: inline_link.to_string(),
+                        source: path.clone(),
+                    };
+                    retval.push(link);
+                }
+            }
+            Err(err) => {
+                warn!("File at path {} could not be opened. {:?}", path, err);
+            }
         }
     }
     retval
@@ -36,27 +48,25 @@ impl LinkExtractor for MarkdownLinkExtractor {
     fn inline_links<'a>(&self, text: &'a str) -> Vec<&'a str> {
         let mut result: Vec<&'a str> = Vec::new();
         lazy_static! {
-            static ref INLINE_REGEX : Regex = Regex::new(
-                    r"\[.+\]\(.*\)"
-                ).unwrap();
+            static ref INLINE_REGEX: Regex = Regex::new(r"\[.+\]\(.*\)").unwrap();
         }
         lazy_static! {
-            static ref SHORT_REGEX : Regex = Regex::new(
-                    r"<.+>"
-                ).unwrap();
+            static ref SHORT_REGEX: Regex = Regex::new(r"<.+>").unwrap();
         }
         lazy_static! {
-            static ref HTML_REGEX : Regex = Regex::new(
-                    r"<a\s+href=.+>.*</a>"
-                ).unwrap();
+            static ref HTML_REGEX: Regex = Regex::new(r"<a\s+href=.+>.*</a>").unwrap();
         }
 
-        let xml_tag: Vec<&str> = SHORT_REGEX.find_iter(&text)
-            .map(|mat| mat.as_str()).collect::<Vec<&str>>();
+        let xml_tag: Vec<&str> = SHORT_REGEX
+            .find_iter(&text)
+            .map(|mat| mat.as_str())
+            .collect::<Vec<&str>>();
         for xml in xml_tag {
-            let html_links: Vec<&str> = HTML_REGEX.find_iter(&xml)
-                .map(|mat| mat.as_str()).collect::<Vec<&str>>();
-            if html_links.len() > 0{
+            let html_links: Vec<&str> = HTML_REGEX
+                .find_iter(&xml)
+                .map(|mat| mat.as_str())
+                .collect::<Vec<&str>>();
+            if html_links.len() > 0 {
                 for html in html_links {
                     let start_idx = html.find('<').unwrap();
                     let end_idx = html.find('>').unwrap();
@@ -66,15 +76,16 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     let s = &s[start_idx..end_idx];
                     result.push(s);
                 }
-            }
-            else if xml.len() > 2 {
+            } else if xml.len() > 2 {
                 let s = &xml[1..xml.len() - 1];
                 result.push(s);
             }
         }
 
-        let markdown_links: Vec<&str> = INLINE_REGEX.find_iter(&text)
-            .map(|mat| mat.as_str()).collect::<Vec<&str>>();
+        let markdown_links: Vec<&str> = INLINE_REGEX
+            .find_iter(&text)
+            .map(|mat| mat.as_str())
+            .collect::<Vec<&str>>();
         for md_links in markdown_links {
             let start_idx = md_links.rfind('(').unwrap() + 1;
             let end_idx = md_links.len() - 1;
@@ -97,11 +108,10 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
 fn link_extractor_factory(markup_type: &MarkupType) -> impl LinkExtractor {
     match markup_type {
-        MarkupType::Markdown => { MarkdownLinkExtractor() }
-        MarkupType::HTML => { unimplemented!() }
+        MarkupType::Markdown => MarkdownLinkExtractor(),
+        MarkupType::HTML => unimplemented!(),
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -143,9 +153,15 @@ mod tests {
         assert_eq!(vec![link], result);
     }
 
-    #[test_case("<a href=\"http://example.net/\"> target=\"_blank\">Visit W3Schools!</a>", test_name="md_html_link_with_target")]
-    #[test_case("<a href=\"http://example.net/\"> link text</a>", test_name="no_target")]
-    fn md_html_link(input : &str) {
+    #[test_case(
+        "<a href=\"http://example.net/\"> target=\"_blank\">Visit W3Schools!</a>",
+        test_name = "md_html_link_with_target"
+    )]
+    #[test_case(
+        "<a href=\"http://example.net/\"> link text</a>",
+        test_name = "no_target"
+    )]
+    fn md_html_link(input: &str) {
         let le = MarkdownLinkExtractor();
         let result = le.inline_links(&input);
         assert_eq!(vec!["http://example.net/"], result);
