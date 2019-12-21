@@ -17,6 +17,7 @@ Planned features till a stable release (v1.*):
 Planned for the future:
 
 - Improve speed
+- Add .ignore file support
 - Support other markup files such as tex or html
 - Add docker image with latest installed version
 
