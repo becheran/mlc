@@ -11,7 +11,7 @@ Planned features till a stable release (v1.*):
 - Bug fixes
 - Check mail addresses
 - Update docs
-- Add a changelog
+- Support markup reference links
 - Timeout for requests as cl argument
 
 Planned for the future:
@@ -30,6 +30,22 @@ Or use rust's package manager [cargo](https://doc.rust-lang.org/cargo/) to insta
 ``` bash
 cargo install mlc
 ```
+
+Once you have mlc installed it canned just be called from the commandline:
+
+``` bash
+mlc
+```
+
+Another example would be to call mlc on a certain dir/file:
+
+``` bash
+mlc ./docs
+```
+
+## Changelog
+
+Checkout the [changelog file](./CHANGELOG.md) to see the changes between different versions.
 
 ## Contribution
 
