@@ -5,12 +5,10 @@ extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 
-use crate::link::Link;
 use crate::markup::MarkupFile;
 pub mod cli;
 pub mod file_traversal;
-pub mod link;
-pub mod link_extractor;
+pub mod link_extractors;
 pub mod link_validator;
 pub mod logger;
 pub mod markup;
@@ -29,30 +27,30 @@ pub fn run(config: &Config) -> Result<(), ()> {
     let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut files);
 
-    let mut links: Vec<Link> = Vec::new();
-    for file in files {
-        links.append(&mut link_extractor::find_links(&file));
-    }
-
     let mut warnings = 0;
+    let mut link_ctr = 0;
     let mut invalid_links = vec![];
-    for link in &links {
-        let result = link_validator::check(link);
-        match result {
-            LinkCheckResult::Ok => {
-                println!("{} {:?}", "OK".green(), link);
-            }
-            LinkCheckResult::NotImplemented(msg) => {
-                println!("{} {:?} {}", "Warning".yellow(), link, msg);
-                warnings += 1;
-            }
-            LinkCheckResult::Warning(msg) => {
-                println!("{} {:?} {}", "Warning".yellow(), link, msg);
-                warnings += 1;
-            }
-            LinkCheckResult::Failed(msg) => {
-                eprintln!("{} {:?} {}", "Error".red(), link, msg);
-                invalid_links.push(link);
+    for file in files {
+        let links = link_extractors::link_extractor::find_links(&file);
+        for link in links {
+            link_ctr += 1;
+            let result = link_validator::check(&file.path, &link.target);
+            match result {
+                LinkCheckResult::Ok => {
+                    println!("{} {:?}", "OK".green(), link);
+                }
+                LinkCheckResult::NotImplemented(msg) => {
+                    println!("{} {:?} {}", "Warning".yellow(), link, msg);
+                    warnings += 1;
+                }
+                LinkCheckResult::Warning(msg) => {
+                    println!("{} {:?} {}", "Warning".yellow(), link, msg);
+                    warnings += 1;
+                }
+                LinkCheckResult::Failed(msg) => {
+                    eprintln!("{} {:?} {}", "Error".red(), link, msg);
+                    invalid_links.push(link);
+                }
             }
         }
     }
@@ -60,7 +58,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
     println!();
     println!("Result:");
     println!();
-    println!("Links: {}", &links.len());
+    println!("Links: {}", link_ctr);
     println!("Warnings: {}", warnings);
     println!("Errors: {}", &invalid_links.len());
     println!();

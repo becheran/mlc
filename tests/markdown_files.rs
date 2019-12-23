@@ -1,5 +1,5 @@
 #[cfg(test)]
-use mlc::link_extractor;
+use mlc::link_extractors::link_extractor::find_links;
 use mlc::markup::{MarkupFile, MarkupType};
 
 
@@ -10,7 +10,7 @@ fn no_links() {
         path,
         markup_type: MarkupType::Markdown,
     };
-    let result = link_extractor::find_links(&file);
+    let result = find_links(&file);
     assert!(result.is_empty());
 }
 
@@ -21,6 +21,6 @@ fn some_links() {
         path,
         markup_type: MarkupType::Markdown,
     };
-    let result = link_extractor::find_links(&file);
+    let result = find_links(&file);
     assert_eq!(result.len(), 10);
 }
