@@ -1,11 +1,11 @@
 use self::url::Url;
-use crate::link::Link;
-use crate::link::LinkTrait;
 use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
 use reqwest::StatusCode;
+use std::path::Path;
+use std::path::PathBuf;
 
 extern crate url;
 
@@ -25,28 +25,27 @@ pub enum LinkCheckResult {
     NotImplemented(String),
 }
 
-pub fn check(link: &Link) -> LinkCheckResult {
-    info!("Check link {:?}.", &link);
-    let link_type_opt = get_link_type(&link.target);
+pub fn check(link_source: &str, link_target: &str) -> LinkCheckResult {
+    info!("Check link {} => {}.", &link_source, &link_target);
+    let link_type_opt = get_link_type(link_target);
     match link_type_opt {
-        None => LinkCheckResult::Failed(format!(
-            "Could not determine link type of {}.",
-            &link.target
-        )),
+        None => {
+            LinkCheckResult::Failed(format!("Could not determine link type of {}.", link_target))
+        }
         Some(link_type) => match link_type {
             LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(format!(
                 "Link type '{:?}' is not supported yet...",
                 &link_type
             )),
-            LinkType::HTTP => check_http(&link),
-            LinkType::FileSystem => check_filesystem(&link),
+            LinkType::HTTP => check_http(link_target),
+            LinkType::FileSystem => check_filesystem(link_source, link_target),
         },
     }
 }
 
-fn check_http(link: &Link) -> LinkCheckResult {
+fn check_http(target: &str) -> LinkCheckResult {
     let client = Client::new();
-    let url = reqwest::Url::parse(&link.target).expect("URL of unknown type");
+    let url = reqwest::Url::parse(&target).expect("URL of unknown type");
     let request = Request::new(Method::HEAD, url);
 
     fn status_to_string(status: &StatusCode) -> String {
@@ -72,12 +71,21 @@ fn check_http(link: &Link) -> LinkCheckResult {
     }
 }
 
-fn check_filesystem(link: &Link) -> LinkCheckResult {
-    let target = link.absolute_target_path();
+fn check_filesystem(source: &str, target: &str) -> LinkCheckResult {
+    let target = absolute_target_path(source, target);
     if target.exists() {
         LinkCheckResult::Ok
     } else {
         LinkCheckResult::Failed("Target path not found.".to_string())
+    }
+}
+
+fn absolute_target_path(source: &str, target: &str) -> PathBuf {
+    if Path::new(target).is_relative() {
+        let parent = Path::new(source).parent().unwrap_or(Path::new("./"));
+        parent.join(target)
+    } else {
+        Path::new(target).to_path_buf()
     }
 }
 
@@ -153,34 +161,19 @@ mod tests {
 
     #[test]
     fn check_http_request() {
-        let link = Link {
-            line_nr: 0,
-            target: "http://gitlab.com/becheran/mlc".to_string(),
-            source: "NotImportant".to_string(),
-        };
-        let result = check(&link);
+        let result = check("NotImportant", "http://gitlab.com/becheran/mlc");
         assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
     fn check_https_request() {
-        let link = Link {
-            line_nr: 0,
-            target: "https://gitlab.com/becheran/mlc".to_string(),
-            source: "NotImportant".to_string(),
-        };
-        let result = check(&link);
+        let result = check("NotImportant", "https://gitlab.com/becheran/mlc");
         assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
     fn check_wrong_http_request() {
-        let link = Link {
-            line_nr: 0,
-            target: "https://doesNotExist.me/even/less/likelly".to_string(),
-            source: "NotImportant".to_string(),
-        };
-        let result = check(&link);
+        let result = check("NotImportant", "https://doesNotExist.me/even/less/likelly");
         assert!(result != LinkCheckResult::Ok);
     }
 }

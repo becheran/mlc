@@ -62,8 +62,7 @@ invenit putes locuta.
 
 [many_links](./many_links.md)
 
-Fecit interea **sub Melaneus**, veniente [si
-ipsum](http://pleno.net/locusvictoria) loco matre. Solacia Titani digitis
+Fecit interea **sub Melaneus**, veniente loco matre. Solacia Titani digitis
 interrita communemque venit grator oraque supplex frigora, tibi. Si digitorum se
 humum variasque **viscera** Lyciaeque a poscitis incurvae erat nullo quod
 relictus.
