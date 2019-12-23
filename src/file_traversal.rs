@@ -34,7 +34,8 @@ fn markup_type(file: &str, markup_types: &[MarkupType]) -> Option<MarkupType> {
     for markup_type in markup_types {
         let extensions = markup_type.file_extensions();
         for ext in extensions {
-            let ext_low = ext.to_lowercase();
+            let mut ext_low = String::from(".");
+            ext_low.push_str(&ext.to_lowercase());
             if file_low.ends_with(&ext_low) {
                 return Some(markup_type.clone());
             }
