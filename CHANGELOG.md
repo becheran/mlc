@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.4.1] - 2019-12-23
+
 ### Changed
 
 * Result output formatting
