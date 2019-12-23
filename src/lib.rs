@@ -37,19 +37,51 @@ pub fn run(config: &Config) -> Result<(), ()> {
             let result = link_validator::check(&file.path, &link.target);
             match result {
                 LinkCheckResult::Ok => {
-                    println!("{} {:?}", "OK".green(), link);
+                    println!(
+                        "[{:^4}] {} ({}, {}) => {}",
+                        "OK".green(),
+                        file.path,
+                        link.line,
+                        link.column,
+                        link.target
+                    );
                 }
                 LinkCheckResult::NotImplemented(msg) => {
-                    println!("{} {:?} {}", "Warning".yellow(), link, msg);
+                    println!(
+                        "[{:^4}] {} ({}, {}) => {}. {}",
+                        "Warn".yellow(),
+                        file.path,
+                        link.line,
+                        link.column,
+                        link.target,
+                        msg
+                    );
                     warnings += 1;
                 }
                 LinkCheckResult::Warning(msg) => {
-                    println!("{} {:?} {}", "Warning".yellow(), link, msg);
+                    println!(
+                        "[{:^4}] {} ({}, {}) => {}. {}",
+                        "Warn".yellow(),
+                        file.path,
+                        link.line,
+                        link.column,
+                        link.target,
+                        msg
+                    );
                     warnings += 1;
                 }
                 LinkCheckResult::Failed(msg) => {
-                    eprintln!("{} {:?} {}", "Error".red(), link, msg);
-                    invalid_links.push(link);
+                    let error_msg = format!(
+                        "[{:^4}] {} ({}, {}) => {}. {}",
+                        "Err".red(),
+                        file.path,
+                        link.line,
+                        link.column,
+                        link.target,
+                        msg
+                    );
+                    eprintln!("{}", &error_msg);
+                    invalid_links.push(error_msg);
                 }
             }
         }
@@ -58,9 +90,9 @@ pub fn run(config: &Config) -> Result<(), ()> {
     println!();
     println!("Result:");
     println!();
-    println!("Links: {}", link_ctr);
-    println!("Warnings: {}", warnings);
-    println!("Errors: {}", &invalid_links.len());
+    println!("Links    {}", link_ctr);
+    println!("Warnings {}", warnings);
+    println!("Errors   {}", &invalid_links.len());
     println!();
 
     if !invalid_links.is_empty() {
@@ -68,8 +100,9 @@ pub fn run(config: &Config) -> Result<(), ()> {
         eprintln!("The following links could not be resolved:");
         println!();
         for il in invalid_links {
-            eprintln!("{} {:?}", "Error".red(), il);
+            eprintln!("{}", il);
         }
+        println!();
         Err(())
     } else {
         Ok(())
