@@ -3,22 +3,37 @@ use crate::link_extractors::link_extractor::MarkupLink;
 
 pub struct MarkdownLinkExtractor();
 
+fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
+    while *pos < vector.len() && vector[*pos].is_whitespace() {
+        *pos += 1;
+    }
+}
+
+fn char_is(vector: &Vec<char>, pos: usize, check_char: char) -> bool {
+    pos < vector.len() && vector[pos] == check_char
+}
+
+fn forward_until(vector: &Vec<char>, pos: &mut usize, check_char: char) -> bool {
+    while *pos < vector.len() && vector[*pos] != check_char {
+        *pos += 1;
+    }
+    *pos < vector.len() && vector[*pos] == check_char
+}
+
 impl LinkExtractor for MarkdownLinkExtractor {
     fn find_links(&self, text: &str) -> Vec<MarkupLink> {
         let mut result: Vec<MarkupLink> = Vec::new();
+        let mut link_tags: Vec<String> = Vec::new();
+        let mut reference_link_tags: Vec<String> = Vec::new();
         let mut is_code_block = false;
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let len = line_chars.len();
-            let mut column = 0;
-            for c in &line_chars {
-                if !c.is_whitespace() {
-                    break;
-                }
-                column += 1;
-            }
+            let mut column: usize = 0;
 
-            if column < len && line_chars[column] == '#' {
+            skip_whitespace(&line_chars, &mut column);
+
+            if char_is(&line_chars, column, '#') {
                 continue;
             }
 
@@ -36,114 +51,149 @@ impl LinkExtractor for MarkdownLinkExtractor {
             }
 
             while column < len {
-                if line_chars[column] == '`' {
-                    column += 1;
-                    while column < len && line_chars[column] != '`' {
+                match line_chars[column] {
+                    '`' => {
                         column += 1;
+                        forward_until(&line_chars, &mut column, '`');
                     }
-                } else if line_chars[column] == '\\' {
-                    column += 1; // Escape next character
-                } else if line_chars[column] == '[' {
-                    let link_column = column;
-                    while column < len && line_chars[column] != ']' {
-                        column += 1;
+                    '\\' => {
+                        column += 1; // Escape next character
                     }
-                    if column + 1 < len
-                        && line_chars[column] == ']'
-                        && line_chars[column + 1] == '('
-                    {
-                        column += 1;
-                        let start_idx = column + 1;
-                        while column < len && line_chars[column] != ')' {
+                    '[' => {
+                        let square_bracket_start = column;
+                        if forward_until(&line_chars, &mut column, ']') {
+                            let square_bracket_close = column;
                             column += 1;
+                            if column + 1 < len {
+                                let start_idx = column + 1;
+                                if line_chars[column] == '(' {
+                                    column += 1;
+                                    if forward_until(&line_chars, &mut column, ')') {
+                                        let link = (&line_chars[start_idx..column])
+                                            .iter()
+                                            .collect::<String>();
+                                        // Take first split because of possible title tag
+                                        let mut spl = link.split_whitespace();
+                                        let link = spl.next().unwrap_or("");
+                                        result.push(MarkupLink {
+                                            column: square_bracket_start + 1,
+                                            line: line + 1,
+                                            target: link.to_string(),
+                                        });
+                                    }
+                                } else if line_chars[column] == '[' {
+                                    column += 1;
+                                    if forward_until(&line_chars, &mut column, ']') {
+                                        let reference_link = (&line_chars[start_idx..column])
+                                            .iter()
+                                            .collect::<String>();
+                                        link_tags.push(reference_link.to_lowercase());
+                                    }
+                                } else if line_chars[column] == ':' {
+                                    column += 1;
+                                    skip_whitespace(&line_chars, &mut column);
+                                    let start_idx = column;
+                                    while column < len && !line_chars[column].is_whitespace() {
+                                        column += 1;
+                                    }
+                                    let link =
+                                        (&line_chars[start_idx..column]).iter().collect::<String>();
+                                    result.push(MarkupLink {
+                                        column: square_bracket_start + 1,
+                                        line: line + 1,
+                                        target: link.to_string(),
+                                    });
+                                    let reference_link_tag = (&line_chars
+                                        [square_bracket_start + 1..square_bracket_close])
+                                        .iter()
+                                        .collect::<String>();
+                                    reference_link_tags.push(reference_link_tag.to_lowercase());
+                                }
+                            } else {
+                                // Only [] tags are a reference link
+                                let reference_link_tag = (&line_chars
+                                    [square_bracket_start + 1..square_bracket_close])
+                                    .iter()
+                                    .collect::<String>();
+                                reference_link_tags.push(reference_link_tag.to_lowercase());
+                            }
                         }
-                        if column < len && line_chars[column] == ')' {
-                            let link = (&line_chars[start_idx..column])
-                                .iter()
-                                .cloned()
-                                .collect::<String>();
-                            // Take first split because of possible title tag
-                            let mut spl = link.split_whitespace();
-                            let link = spl.next().unwrap_or("");
+                    }
+                    ':' => {
+                        if column + 2 < len
+                            && line_chars[column + 1] == '/'
+                            && line_chars[column + 2] == '/'
+                        {
+                            let mut start_idx = column;
+                            while start_idx > 0
+                                && !line_chars[start_idx].is_whitespace()
+                                && line_chars[start_idx] != '<'
+                            {
+                                start_idx -= 1;
+                            }
+                            start_idx += 1;
+                            while column < len
+                                && !line_chars[column].is_whitespace()
+                                && line_chars[column] != '>'
+                            {
+                                column += 1;
+                            }
+                            let link = (&line_chars[start_idx..column]).iter().collect::<String>();
                             result.push(MarkupLink {
-                                column: link_column + 1,
+                                column: start_idx + 1,
                                 line: line + 1,
                                 target: link.to_string(),
                             });
                         }
                     }
-                } else if line_chars[column] == ':' {
-                    if column + 2 < len
-                        && line_chars[column + 1] == '/'
-                        && line_chars[column + 2] == '/'
-                    {
-                        let mut start_idx = column;
-                        while start_idx > 0 && !line_chars[start_idx].is_whitespace() && line_chars[start_idx] != '<'  {
-                            start_idx -= 1;
-                        }
-                        start_idx += 1;
-                        while column < len && !line_chars[column].is_whitespace() && line_chars[column] != '>' {
-                            column += 1;
-                        }
-                        let link = (&line_chars[start_idx..column])
-                            .iter()
-                            .cloned()
-                            .collect::<String>();                        
-                        result.push(MarkupLink {
-                            column: start_idx + 1,
-                            line: line + 1,
-                            target: link.to_string(),
-                        });
-                    }
-                //TODO Reference links
-                } else if line_chars[column] == '<' {
-                    //TODO html <a href=\"http://example.net/\">
-                    let link_column = column;
-                    column += 1;
-                    if column < len && line_chars[column] == 'a' {
+                    '<' => {
+                        let link_column = column;
                         column += 1;
-                        while column < len && line_chars[column].is_whitespace() {
+                        if column < len && line_chars[column] == 'a' {
                             column += 1;
-                        }
-                        if column + 3 < len
-                            && line_chars[column] == 'h'
-                            && line_chars[column + 1] == 'r'
-                            && line_chars[column + 2] == 'e'
-                            && line_chars[column + 3] == 'f'
-                        {
-                            column += 4;
-                            while column < len && line_chars[column].is_whitespace() {
-                                column += 1;
-                            }
-                            if column < len && line_chars[column] == '=' {
-                                column += 1;
-                                while column < len
-                                    && (line_chars[column].is_whitespace()
-                                        || line_chars[column] == '"')
-                                {
+                            skip_whitespace(&line_chars, &mut column);
+                            if column + 3 < len
+                                && line_chars[column] == 'h'
+                                && line_chars[column + 1] == 'r'
+                                && line_chars[column + 2] == 'e'
+                                && line_chars[column + 3] == 'f'
+                            {
+                                column += 4;
+                                skip_whitespace(&line_chars, &mut column);
+                                if column < len && line_chars[column] == '=' {
                                     column += 1;
+                                    while column < len
+                                        && (line_chars[column].is_whitespace()
+                                            || line_chars[column] == '"')
+                                    {
+                                        column += 1;
+                                    }
+                                    let start_idx = column;
+                                    while column < len
+                                        && !line_chars[column].is_whitespace()
+                                        && line_chars[column] != '"'
+                                    {
+                                        column += 1;
+                                    }
+                                    let link =
+                                        (&line_chars[start_idx..column]).iter().collect::<String>();
+                                    result.push(MarkupLink {
+                                        column: link_column + 1,
+                                        line: line + 1,
+                                        target: link.to_string(),
+                                    });
                                 }
-                                let start_idx = column;
-                                while column < len
-                                    && !line_chars[column].is_whitespace()
-                                    && line_chars[column] != '"'
-                                {
-                                    column += 1;
-                                }
-                                let link = (&line_chars[start_idx..column])
-                                    .iter()
-                                    .cloned()
-                                    .collect::<String>();
-                                result.push(MarkupLink {
-                                    column: link_column + 1,
-                                    line: line + 1,
-                                    target: link.to_string(),
-                                });
                             }
                         }
                     }
+                    _ => {}
                 }
                 column += 1;
+            }
+        }
+        for link in link_tags {
+            if !reference_link_tags.contains(&link) {
+                warn!("No link for reference [{}] found.", link);
             }
         }
         result
@@ -292,6 +342,37 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
+            column: 1,
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn referenced_link() {
+        let le = MarkdownLinkExtractor();
+        let link_str = "http://example.net/";
+        let input = format!("[I'm a reference-style link][Arbitrary case-insensitive reference text].\n[arbitrary case-insensitive reference text]: {}", link_str);
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: link_str.to_string(),
+            line: 2,
+            column: 1,
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn referenced_link_tag_only() {
+        let le = MarkdownLinkExtractor();
+        let link_str = "http://example.net/";
+        let input = format!(
+            "[arbitrary case-insensitive reference text].\n[arbitrary case-insensitive reference text]: {}",
+            link_str
+        );
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: link_str.to_string(),
+            line: 2,
             column: 1,
         };
         assert_eq!(vec![expected], result);
