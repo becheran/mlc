@@ -1,29 +1,10 @@
 # Markup Link Checker
 
-Check for broken links in markdown files.
-
-## 🚧 Under Construction 🚧
-
-Not ready yet. Still in development.
-
-Planned features till a stable release (v1.*):
-
-- Bug fixes
-- Check mail addresses
-- Update docs
-- Support markup reference links
-- Timeout for requests as cl argument
-
-Planned for the future:
-
-- Improve speed
-- Add .ignore file support
-- Support other markup files such as tex or html
-- Add docker image with latest installed version
+Check for broken links in markdown files. Can easily be integrated in your CI/CD pipeline to prevent broken links in your docs.
 
 ## Getting Started
 
-To install a version of mlc go to the [gitlab releases page](https://gitlab.com/becheran/mlc/-/releases) and download the binaries.
+To install a version of mlc go to [gitlab releases](https://gitlab.com/becheran/mlc/-/releases) and download the binaries.
 
 Or use rust's package manager [cargo](https://doc.rust-lang.org/cargo/) to install mlc:
 
@@ -31,7 +12,7 @@ Or use rust's package manager [cargo](https://doc.rust-lang.org/cargo/) to insta
 cargo install mlc
 ```
 
-Once you have mlc installed it canned just be called from the commandline:
+Once you have mlc installed it canned just be called from the command line:
 
 ``` bash
 mlc
@@ -45,7 +26,7 @@ mlc ./docs
 
 ## Changelog
 
-Checkout the [changelog file](./CHANGELOG.md) to see the changes between different versions.
+Checkout the [changelog file](https://gitlab.com/becheran/mlc/blob/master/CHANGELOG.md) to see the changes between different versions.
 
 ## Contribution
 
@@ -53,4 +34,14 @@ All contributions and comments welcome! Open an issue or create a Pull Request w
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE file](./LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE file](https://gitlab.com/becheran/mlc/blob/master/LICENSE) for details.
+
+## Planned Features
+
+- Support markup reference links
+- Timeout for requests as cl argument
+- Check mail addresses
+- Improve speed
+- Add .ignore file support
+- Support other markup files such as tex or html
+- Add docker image with latest installed version for easy CI pipeline integration

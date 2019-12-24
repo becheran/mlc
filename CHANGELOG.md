@@ -14,6 +14,14 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Description in readme
+
+### Fixed
+
+* Typo
+
 ## [0.4.1] - 2019-12-23
 
 ### Changed
