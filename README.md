@@ -38,7 +38,6 @@ This project is licensed under the MIT License - see the [LICENSE file](https://
 
 ## Planned Features
 
-- Support markup reference links
 - Timeout for requests as cl argument
 - Check mail addresses
 - Improve speed
