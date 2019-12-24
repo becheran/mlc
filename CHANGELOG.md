@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.5.0] - 2019-12-25
+
 ### Added
 
 * Markup reference link support
