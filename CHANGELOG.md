@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.4.2] - 2019-12-24
+
 ### Changed
 
 * Description in readme

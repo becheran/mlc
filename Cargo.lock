@@ -744,7 +744,7 @@ dependencies = [
 
 [[package]]
 name = "mlc"
-version = "0.4.2-alpha.0"
+version = "0.4.2"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
