@@ -126,15 +126,14 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         {
                             let mut start_idx = column;
                             while start_idx > 0
-                                && !line_chars[start_idx].is_whitespace()
-                                && line_chars[start_idx] != '<'
+                                && !(line_chars[start_idx - 1].is_whitespace()
+                                    || line_chars[start_idx - 1] == '<')
                             {
                                 start_idx -= 1;
                             }
-                            start_idx += 1;
                             while column < len
-                                && !line_chars[column].is_whitespace()
-                                && line_chars[column] != '>'
+                                && !(line_chars[column].is_whitespace()
+                                    || line_chars[column] == '>')
                             {
                                 column += 1;
                             }
@@ -300,30 +299,17 @@ mod tests {
         assert_eq!(vec![expected], result);
     }
 
-    #[test]
-    fn inline_link() {
+    #[test_case("<http://example.net/>", 2)]
+    #[test_case("http://example.net/", 1)]
+    #[test_case("This is a short link http://example.net/", 22)]
+    #[test_case("This is a short link <http://example.net/>", 23)]
+    fn inline_link(input: &str, column: usize) {
         let le = MarkdownLinkExtractor();
-        let link_str = "http://example.net/";
-        let input = format!("This is a short link {} .", link_str);
         let result = le.find_links(&input);
         let expected = MarkupLink {
-            target: link_str.to_string(),
+            target: "http://example.net/".to_string(),
             line: 1,
-            column: 22,
-        };
-        assert_eq!(vec![expected], result);
-    }
-
-    #[test]
-    fn inline_link_with_brackets() {
-        let le = MarkdownLinkExtractor();
-        let link_str = "http://example.net/";
-        let input = format!("This is a short link <{}>.", link_str);
-        let result = le.find_links(&input);
-        let expected = MarkupLink {
-            target: link_str.to_string(),
-            line: 1,
-            column: 23,
+            column: column,
         };
         assert_eq!(vec![expected], result);
     }
