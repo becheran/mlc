@@ -33,13 +33,28 @@ pub fn check(link_source: &str, link_target: &str) -> LinkCheckResult {
             LinkCheckResult::Failed(format!("Could not determine link type of {}.", link_target))
         }
         Some(link_type) => match link_type {
-            LinkType::FTP | LinkType::Mail => LinkCheckResult::NotImplemented(format!(
+            LinkType::FTP => LinkCheckResult::NotImplemented(format!(
                 "Link type '{:?}' is not supported yet...",
                 &link_type
             )),
+            LinkType::Mail => check_mail(link_target),
             LinkType::HTTP => check_http(link_target),
             LinkType::FileSystem => check_filesystem(link_source, link_target),
         },
+    }
+}
+
+fn check_mail(target: &str) -> LinkCheckResult {
+    lazy_static! {
+        static ref EMAIL_REGEX: Regex = Regex::new(
+            r"^mailto://([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
+        )
+        .unwrap();
+    }
+    if EMAIL_REGEX.is_match(target) {
+        LinkCheckResult::Ok
+    } else {
+        LinkCheckResult::Failed(format!("Not a valid mail adress."))
     }
 }
 
@@ -126,14 +141,30 @@ mod tests {
         assert_eq!(link_type, *expected_type);
     }
 
+    #[test_case("mailto://+bar@bar.com")]
+    #[test_case("mailto://foo+@bar.com")]
+    #[test_case("mailto://foo.lastname@bar.com")]
+    fn mail_links(link: &str) {
+        let result = check("NotImportant", link);
+        assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[test_case("mailto://+bar@bar")]
+    #[test_case("mailto://foobar.com")]
+    #[test_case("mailto://foo.lastname.com")]
+    fn invalid_mail_links(link: &str) {
+        let result = check("NotImportant", link);
+        assert!(result != LinkCheckResult::Ok);
+    }
+
     #[test_case("https://doc.rust-lang.org.html")]
     #[test_case("http://www.website.php")]
-    fn test_http_link_types(link: &str) {
+    fn http_link_types(link: &str) {
         test_link(link, &LinkType::HTTP);
     }
 
     #[test_case("ftp://mueller:12345@ftp.downloading.ch")]
-    fn test_ftp_link_types(ftp: &str) {
+    fn ftp_link_types(ftp: &str) {
         test_link(ftp, &LinkType::FTP);
     }
 

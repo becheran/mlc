@@ -14,7 +14,15 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Mail check support
+
 ## [0.5.1] - 2019-12-25
+
+### Fixed
+
+* Inline html link at start of line
 
 ## [0.5.0] - 2019-12-25
 

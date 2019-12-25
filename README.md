@@ -39,7 +39,6 @@ This project is licensed under the MIT License - see the [LICENSE file](https://
 ## Planned Features
 
 - Timeout for requests as cl argument
-- Check mail addresses
 - Improve speed
 - Add .ignore file support
 - Support other markup files such as tex or html
