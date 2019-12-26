@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.6.0] - 2019-12-26
+
 ### Added
 
 * Mail check support
