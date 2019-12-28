@@ -59,7 +59,9 @@ fn check_mail(target: &str) -> LinkCheckResult {
 }
 
 fn check_http(target: &str) -> LinkCheckResult {
-    let client = Client::new();
+    lazy_static! {
+        static ref CLIENT: Client = Client::new();
+    }
     let url = reqwest::Url::parse(&target).expect("URL of unknown type");
     let request = Request::new(Method::HEAD, url);
 
@@ -71,7 +73,7 @@ fn check_http(target: &str) -> LinkCheckResult {
         )
     }
 
-    match client.execute(request) {
+    match CLIENT.execute(request) {
         Ok(response) => {
             let status = response.status();
             if status.is_success() {

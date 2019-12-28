@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Speedup for http links. Do create client only once
+
 ## [0.6.0] - 2019-12-26
 
 ### Added
