@@ -1,5 +1,8 @@
 # Markup Link Checker
 
+[![](http://meritbadge.herokuapp.com/mlc)](https://crates.io/crates/mlc)
+[![Build Status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
+
 Check for broken links in markdown files. Can easily be integrated in your CI/CD pipeline to prevent broken links in your docs.
 
 ## Getting Started
