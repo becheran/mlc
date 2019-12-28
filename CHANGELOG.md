@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.6.2] - 2019-12-28
+
 * Remove pipeline badge from crates io
 
 ## [0.6.1] - 2019-12-28
