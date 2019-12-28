@@ -29,7 +29,7 @@ mlc ./docs
 
 ## Changelog
 
-Checkout the [changelog file](https://gitlab.com/becheran/mlc/blob/master/CHANGELOG.md) to see the changes between different versions.
+Checkout the [changelog file](https://github.com/becheran/mlc/blob/master/CHANGELOG.md) to see the changes between different versions.
 
 ## Contribution
 
@@ -37,7 +37,7 @@ All contributions and comments welcome! Open an issue or create a Pull Request w
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE file](https://gitlab.com/becheran/mlc/blob/master/LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE file](https://github.com/becheran/mlc/blob/master/LICENSE) for details.
 
 ## Planned Features
 
