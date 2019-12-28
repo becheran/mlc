@@ -9,7 +9,6 @@ readme = "README.md"
 license = "MIT"
 
 [badges]
-appveyor = { repository = "becheran/mlc", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
