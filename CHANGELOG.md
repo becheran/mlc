@@ -17,6 +17,7 @@ Types for Changes:
 ### Changed
 
 * Speedup for http links. Do create client only once
+* Move from GitLab to GitHub
 
 ## [0.6.0] - 2019-12-26
 
