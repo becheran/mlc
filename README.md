@@ -7,9 +7,9 @@ Check for broken links in markdown files. Can easily be integrated in your CI/CD
 
 ## Getting Started
 
-To install a version of mlc go to [gitlab releases](https://gitlab.com/becheran/mlc/-/releases) and download the binaries.
+To install a version of mlc go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu`.
 
-Or use rust's package manager [cargo](https://doc.rust-lang.org/cargo/) to install mlc:
+Or use rust's package manager [cargo](https://doc.rust-lang.org/cargo/) to install mlc from [crates.io](https://crates.io/crates/mlc):
 
 ``` bash
 cargo install mlc
