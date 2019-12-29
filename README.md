@@ -23,12 +23,14 @@ To download a compiled binary version of mlc go to [github releases](https://git
 
 ### CI/CD Pipeline Integration
 
-To integrate mlc in your CI pipeline running in a linux x86_64 environment you can add the following commands to download mlc (replace <VERSION_TAG> with the version you want to install. For example v6.0.2):
+To integrate mlc in your CI pipeline running in a linux x86_64 environment you can add the following commands to download mlc:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/<VERSION_TAG>/mlc -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v6.0.2/mlc -o mlc
 chmod +x mlc
 ```
+
+For example take a look at the [ntest GitLab CI file](https://gitlab.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses mlc.
 
 ## Usage
 
