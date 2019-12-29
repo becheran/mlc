@@ -1,14 +1,14 @@
+image: "rust:latest"
+
 variables:
     RUST_BACKTRACE: "FULL"
 
 stages:
   - build
-  - test
   - release
 
 build_linux:
   stage: build
-  image: "rust:latest"
   artifacts:
     paths:
       - target/release/mlc
@@ -16,13 +16,12 @@ build_linux:
     - cargo build --verbose --release  
 
 test_latest:
-    stage: test
-    image: "rust:latest"
+    stage: build
     script:
       - cargo test --all --verbose
 
 test_nightly:
-    stage: test
+    stage: build
     image: rustlang/rust:nightly
     script:
       - cargo test --all --verbose
@@ -30,9 +29,9 @@ test_nightly:
 
 release_job:
   stage: release
-  image: python:3.7-slim
+  image: golang:latest
   script:
-    - pip3 install gitlab-release==3.5
-    - gitlab-release target/release/*
-  only:
-    - tags
+    - go get github.com/aktau/github-release
+    - github-release upload --user becheran --repo mlc --tag v0.6.2 --name "mlc" --file target/release/mlc
+  #only:
+  #  - tags

@@ -14,7 +14,13 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Release binaries on GitHub releases instead of GitLab
+
 ## [0.6.2] - 2019-12-28
+
+### Removed
 
 * Remove pipeline badge from crates io
 
