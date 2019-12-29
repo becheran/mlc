@@ -30,7 +30,7 @@ curl -L https://github.com/becheran/mlc/releases/download/v6.0.2/mlc -o mlc
 chmod +x mlc
 ```
 
-For example take a look at the [ntest GitLab CI file](https://gitlab.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses mlc.
+For example take a look at the [ntest repo](https://github.com/becheran/ntest) which uses mlc in the CI pipeline.
 
 ## Usage
 
