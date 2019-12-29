@@ -1,14 +1,14 @@
+image: "rust:latest"
+
 variables:
     RUST_BACKTRACE: "FULL"
 
 stages:
   - build
-  - test
   - release
 
 build_linux:
   stage: build
-  image: "rust:latest"
   artifacts:
     paths:
       - target/release/mlc
@@ -16,13 +16,12 @@ build_linux:
     - cargo build --verbose --release  
 
 test_latest:
-    stage: test
-    image: "rust:latest"
+    stage: build
     script:
       - cargo test --all --verbose
 
 test_nightly:
-    stage: test
+    stage: build
     image: rustlang/rust:nightly
     script:
       - cargo test --all --verbose
