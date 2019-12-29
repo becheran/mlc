@@ -30,9 +30,10 @@ test_nightly:
 
 release_job:
   stage: release
-  image: python:3.7-slim
+  image: golang:latest
   script:
-    - pip3 install gitlab-release==3.5
-    - gitlab-release target/release/*
-  only:
-    - tags
+    - go get github.com/aktau/github-release
+    - github-release info -u becheran -r mlc
+    #- github-release target/release/*
+  #only:
+  #  - tags
