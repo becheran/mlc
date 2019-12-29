@@ -32,11 +32,6 @@ release_job:
   image: golang:latest
   script:
     - go get github.com/aktau/github-release
-    - github-release upload \
-        --user becheran \
-        --repo mlc \
-        --tag v0.6.2 \
-        --name "mlc" \
-        --file target/release/mlc
+    - github-release upload --user becheran --repo mlc --tag v0.6.2 --name "mlc" --file target/release/mlc
   #only:
   #  - tags
