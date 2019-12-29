@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.6.3] - 2019-12-29
+
 ### Changed
 
 * Release binaries on GitHub releases instead of GitLab
