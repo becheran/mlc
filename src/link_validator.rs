@@ -29,6 +29,9 @@ pub enum LinkCheckResult {
 
 pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
+    if config.ignore_links.is_some() && config.ignore_links.as_ref().unwrap().is_match(link_target) {
+        return LinkCheckResult::Ignored("Ignore web link because of the ignore-links option.".to_string());
+    }
     let link_type_opt = get_link_type(link_target);
     match link_type_opt {
         None => {
@@ -42,7 +45,9 @@ pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheck
             LinkType::Mail => check_mail(link_target),
             LinkType::HTTP => {
                 if config.no_web_links {
-                    LinkCheckResult::Ignored("Ignore web link because of the no-web-link flag.".to_string())
+                    LinkCheckResult::Ignored(
+                        "Ignore web link because of the no-web-link flag.".to_string(),
+                    )
                 } else {
                     check_http(link_target)
                 }

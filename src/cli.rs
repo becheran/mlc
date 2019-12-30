@@ -2,6 +2,7 @@ use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
 use clap::{App, Arg};
+use regex::RegexSet;
 
 pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
@@ -24,6 +25,13 @@ pub fn parse_args() -> Config {
                 .help("Do not check web links")
                 .required(false),
         )
+        .arg(
+            Arg::with_name("ignore_links")
+                .long("ignore-links")
+                .help("List of links which will not be checked")
+                .min_values(1)
+                .required(false),
+        )
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
@@ -34,13 +42,28 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let folder = matches.value_of("folder").unwrap_or("./");
+    let folder = matches.value_of("folder").unwrap_or("./").parse().unwrap();
     let markup_types = vec![MarkupType::Markdown];
     let no_web_links = matches.is_present("no_web_links");
+    let ignore_link_strings: Vec<&str> = matches
+        .values_of("ignore_links")
+        .unwrap_or_default()
+        .collect();
+    let ignore_links;
+    if ignore_link_strings.is_empty() {
+        ignore_links = None;
+    } else {
+        ignore_links = RegexSet::new(&ignore_link_strings).ok();
+        if ignore_links.is_none() {
+            eprintln!("Invalid list of ignore links. Must be valid regular expressions.");
+        }
+    }
+
     Config {
         log_level,
-        folder: folder.parse().unwrap(),
+        folder: folder,
         markup_types,
         no_web_links,
+        ignore_links,
     }
 }
