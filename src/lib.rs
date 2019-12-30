@@ -23,13 +23,16 @@ pub struct Config {
     pub folder: String,
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
+    pub ignore_links: Vec<String>,
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {
     let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut files);
 
-    let mut warnings = 0;
+    let mut warnings_ctr = 0;
+    let mut skipped_ctr = 0;
+    let mut ok_ctr = 0;
     let mut link_ctr = 0;
     let mut invalid_links = vec![];
     for file in files {
@@ -47,6 +50,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
                         link.column,
                         link.target
                     );
+                    ok_ctr += 1;
                 }
                 LinkCheckResult::NotImplemented(msg) => {
                     println!(
@@ -58,7 +62,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
                         link.target,
                         msg
                     );
-                    warnings += 1;
+                    warnings_ctr += 1;
                 }
                 LinkCheckResult::Warning(msg) => {
                     println!(
@@ -70,7 +74,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
                         link.target,
                         msg
                     );
-                    warnings += 1;
+                    warnings_ctr += 1;
                 }
                 LinkCheckResult::Ignored(msg) => {
                     println!(
@@ -82,6 +86,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
                         link.target,
                         msg
                     );
+                    skipped_ctr += 1;
                 }
                 LinkCheckResult::Failed(msg) => {
                     let error_msg = format!(
@@ -101,10 +106,11 @@ pub fn run(config: &Config) -> Result<(), ()> {
     }
 
     println!();
-    println!("Result:");
+    println!("Result ({} links):", link_ctr);
     println!();
-    println!("Links    {}", link_ctr);
-    println!("Warnings {}", warnings);
+    println!("OK       {}", ok_ctr);
+    println!("Skipped  {}", skipped_ctr);
+    println!("Warnings {}", warnings_ctr);
     println!("Errors   {}", &invalid_links.len());
     println!();
 

@@ -24,6 +24,13 @@ pub fn parse_args() -> Config {
                 .help("Do not check web links")
                 .required(false),
         )
+        .arg(
+            Arg::with_name("ignore_links")
+                .long("ignore-links")
+                .help("List of links which will not be checked")
+                .min_values(1)
+                .required(false),
+        )
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
@@ -34,13 +41,20 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let folder = matches.value_of("folder").unwrap_or("./");
+    let folder = matches.value_of("folder").unwrap_or("./").parse().unwrap();
     let markup_types = vec![MarkupType::Markdown];
     let no_web_links = matches.is_present("no_web_links");
+    let ignore_links: Vec<String> = matches
+        .values_of("ignore_links")
+        .unwrap_or_default()
+        .map(|x| x.to_string())
+        .collect();
+
     Config {
         log_level,
-        folder: folder.parse().unwrap(),
+        folder: folder,
         markup_types,
         no_web_links,
+        ignore_links,
     }
 }
