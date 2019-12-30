@@ -30,7 +30,9 @@ pub enum LinkCheckResult {
 pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
     if config.ignore_links.iter().any(|i| i == link_target) {
-        return LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string());
+        return LinkCheckResult::Ignored(
+            "Ignore web link because of ignore-links option.".to_string(),
+        );
     }
     let link_type_opt = get_link_type(link_target);
     match link_type_opt {
@@ -175,7 +177,8 @@ mod tests {
     #[test_case("mailto://foo+@bar.com")]
     #[test_case("mailto://foo.lastname@bar.com")]
     fn mail_links(link: &str) {
-        let result = check("NotImportant", link);
+        let config = Config::default();
+        let result = check("NotImportant", link, &config);
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -183,7 +186,8 @@ mod tests {
     #[test_case("mailto://foobar.com")]
     #[test_case("mailto://foo.lastname.com")]
     fn invalid_mail_links(link: &str) {
-        let result = check("NotImportant", link);
+        let config = Config::default();
+        let result = check("NotImportant", link, &config);
         assert!(result != LinkCheckResult::Ok);
     }
 
@@ -222,19 +226,26 @@ mod tests {
 
     #[test]
     fn check_http_request() {
-        let result = check("NotImportant", "http://gitlab.com/becheran/mlc");
+        let config = Config::default();
+        let result = check("NotImportant", "http://gitlab.com/becheran/mlc", &config);
         assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
     fn check_https_request() {
-        let result = check("NotImportant", "https://gitlab.com/becheran/mlc");
+        let config = Config::default();
+        let result = check("NotImportant", "https://gitlab.com/becheran/mlc", &config);
         assert!(result == LinkCheckResult::Ok);
     }
 
     #[test]
     fn check_wrong_http_request() {
-        let result = check("NotImportant", "https://doesNotExist.me/even/less/likelly");
+        let config = Config::default();
+        let result = check(
+            "NotImportant",
+            "https://doesNotExist.me/even/less/likelly",
+            &config,
+        );
         assert!(result != LinkCheckResult::Ok);
     }
 }

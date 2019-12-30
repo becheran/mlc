@@ -9,6 +9,8 @@ fn end_to_end() {
         folder: String::from("../benches/benchmark"),
         log_level: logger::LogLevel::Debug,
         markup_types: vec![MarkupType::Markdown],
+        no_web_links: false,
+        ignore_links: vec![],
     };
     let _ = mlc::run(&config);
 }
