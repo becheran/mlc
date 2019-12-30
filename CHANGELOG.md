@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.6.4] - 2019-12-30
+
 ### Changed
 
 * Retry with Get for status code 405 Method Not Allowed instead of error
