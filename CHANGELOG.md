@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## Added
+
+* No web link option for faster checks without following weblinks
+
 ## [0.6.4] - 2019-12-30
 
 ### Changed
