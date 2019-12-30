@@ -16,6 +16,7 @@ Types for Changes:
 
 ## Added
 
+* Ignore links option
 * No web link option for faster checks without following weblinks
 
 ## [0.6.4] - 2019-12-30
