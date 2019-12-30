@@ -17,10 +17,12 @@ pub use colored::*;
 use link_validator::LinkCheckResult;
 
 #[derive(Default)]
+#[derive(Debug)]
 pub struct Config {
     pub log_level: logger::LogLevel,
     pub folder: String,
     pub markup_types: Vec<markup::MarkupType>,
+    pub no_web_links: bool,
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {
@@ -34,7 +36,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
         let links = link_extractors::link_extractor::find_links(&file);
         for link in links {
             link_ctr += 1;
-            let result = link_validator::check(&file.path, &link.target);
+            let result = link_validator::check(&file.path, &link.target, &config);
             match result {
                 LinkCheckResult::Ok => {
                     println!(
@@ -69,6 +71,17 @@ pub fn run(config: &Config) -> Result<(), ()> {
                         msg
                     );
                     warnings += 1;
+                }
+                LinkCheckResult::Ignored(msg) => {
+                    println!(
+                        "[{:^4}] {} ({}, {}) => {}. {}",
+                        "Skip".green(),
+                        file.path,
+                        link.line,
+                        link.column,
+                        link.target,
+                        msg
+                    );
                 }
                 LinkCheckResult::Failed(msg) => {
                     let error_msg = format!(

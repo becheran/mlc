@@ -18,6 +18,12 @@ pub fn parse_args() -> Config {
                 .help("Print debug information to console")
                 .required(false),
         )
+        .arg(
+            Arg::with_name("no_web_links")
+                .long("no-web-links")
+                .help("Do not check web links")
+                .required(false),
+        )
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
@@ -29,13 +35,12 @@ pub fn parse_args() -> Config {
         logger::LogLevel::Warn
     };
     let folder = matches.value_of("folder").unwrap_or("./");
-    let markup_types = vec![MarkupType::Markdown]; //TODO read from cli
-    debug!("The log level is: {}", log_level);
-    debug!("The root folder is: {:?}", folder);
-    debug!("The file extension are: {:?}", markup_types);
+    let markup_types = vec![MarkupType::Markdown];
+    let no_web_links = matches.is_present("no_web_links");
     Config {
         log_level,
         folder: folder.parse().unwrap(),
         markup_types,
+        no_web_links,
     }
 }

@@ -1,4 +1,5 @@
 use self::url::Url;
+use crate::Config;
 use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
@@ -22,10 +23,11 @@ pub enum LinkCheckResult {
     Ok,
     Failed(String),
     Warning(String),
+    Ignored(String),
     NotImplemented(String),
 }
 
-pub fn check(link_source: &str, link_target: &str) -> LinkCheckResult {
+pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
     let link_type_opt = get_link_type(link_target);
     match link_type_opt {
@@ -38,7 +40,13 @@ pub fn check(link_source: &str, link_target: &str) -> LinkCheckResult {
                 &link_type
             )),
             LinkType::Mail => check_mail(link_target),
-            LinkType::HTTP => check_http(link_target),
+            LinkType::HTTP => {
+                if config.no_web_links {
+                    LinkCheckResult::Ignored("Ignore web link because of the no-web-link flag.".to_string())
+                } else {
+                    check_http(link_target)
+                }
+            }
             LinkType::FileSystem => check_filesystem(link_source, link_target),
         },
     }

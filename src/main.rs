@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 use mlc::cli;
 use mlc::logger;
 use std::process;
@@ -27,6 +30,7 @@ fn main() {
     print_header();
     let config = cli::parse_args();
     logger::init(&config.log_level);
+    info!("Config: {:?}", &config);
     if let Err(_) = mlc::run(&config) {
         process::exit(1);
     } else {
