@@ -14,6 +14,14 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Column number now points to the link directly instead of the markdown link beginning
+
+### Fixed
+
+* Nested link support (Issue #1)
+
 ## [0.6.3] - 2019-12-29
 
 ### Changed
