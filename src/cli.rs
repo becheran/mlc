@@ -2,7 +2,6 @@ use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
 use clap::{App, Arg};
-use regex::RegexSet;
 
 pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
@@ -45,19 +44,11 @@ pub fn parse_args() -> Config {
     let folder = matches.value_of("folder").unwrap_or("./").parse().unwrap();
     let markup_types = vec![MarkupType::Markdown];
     let no_web_links = matches.is_present("no_web_links");
-    let ignore_link_strings: Vec<&str> = matches
+    let ignore_links: Vec<String> = matches
         .values_of("ignore_links")
         .unwrap_or_default()
+        .map(|x| x.to_string())
         .collect();
-    let ignore_links;
-    if ignore_link_strings.is_empty() {
-        ignore_links = None;
-    } else {
-        ignore_links = RegexSet::new(&ignore_link_strings).ok();
-        if ignore_links.is_none() {
-            eprintln!("Invalid list of ignore links. Must be valid regular expressions.");
-        }
-    }
 
     Config {
         log_level,

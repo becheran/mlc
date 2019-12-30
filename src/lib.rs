@@ -12,7 +12,6 @@ pub mod link_extractors;
 pub mod link_validator;
 pub mod logger;
 pub mod markup;
-use regex::RegexSet;
 pub use colored::*;
 
 use link_validator::LinkCheckResult;
@@ -24,7 +23,7 @@ pub struct Config {
     pub folder: String,
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
-    pub ignore_links: Option<RegexSet>,
+    pub ignore_links: Vec<String>,
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {

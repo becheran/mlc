@@ -29,8 +29,8 @@ pub enum LinkCheckResult {
 
 pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
-    if config.ignore_links.is_some() && config.ignore_links.as_ref().unwrap().is_match(link_target) {
-        return LinkCheckResult::Ignored("Ignore web link because of the ignore-links option.".to_string());
+    if config.ignore_links.iter().any(|i| i == link_target) {
+        return LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string());
     }
     let link_type_opt = get_link_type(link_target);
     match link_type_opt {
