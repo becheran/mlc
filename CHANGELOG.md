@@ -16,6 +16,7 @@ Types for Changes:
 
 ### Changed
 
+* Retry with Get for status code 405 Method Not Allowed instead of error
 * Column number now points to the link directly instead of the markdown link beginning
 
 ### Fixed

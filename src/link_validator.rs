@@ -58,12 +58,10 @@ fn check_mail(target: &str) -> LinkCheckResult {
     }
 }
 
-fn check_http(target: &str) -> LinkCheckResult {
+fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = Client::new();
     }
-    let url = reqwest::Url::parse(&target).expect("URL of unknown type");
-    let request = Request::new(Method::HEAD, url);
 
     fn status_to_string(status: &StatusCode) -> String {
         format!(
@@ -73,17 +71,34 @@ fn check_http(target: &str) -> LinkCheckResult {
         )
     }
 
-    match CLIENT.execute(request) {
-        Ok(response) => {
-            let status = response.status();
-            if status.is_success() {
-                LinkCheckResult::Ok
-            } else if status.is_redirection() {
-                LinkCheckResult::Warning(status_to_string(&status))
-            } else {
-                LinkCheckResult::Failed(status_to_string(&status))
-            }
+    let request = Request::new(Method::HEAD, url.clone());
+
+    let response = CLIENT.execute(request)?;
+    let status = response.status();
+    if status.is_success() {
+        Ok(LinkCheckResult::Ok)
+    } else if status.is_redirection() {
+        Ok(LinkCheckResult::Warning(status_to_string(&status)))
+    } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED {
+        warn!("Got the status code 405 Method Not Allowed. Retry with get-request.");
+        let get_request = Request::new(Method::GET, url.clone());
+        let response = CLIENT.execute(get_request)?;
+        let status = response.status();
+        if status.is_success() {
+            Ok(LinkCheckResult::Ok)
+        } else {
+            Ok(LinkCheckResult::Failed(status_to_string(&status)))
         }
+    } else {
+        Ok(LinkCheckResult::Failed(status_to_string(&status)))
+    }
+}
+
+fn check_http(target: &str) -> LinkCheckResult {
+    let url = reqwest::Url::parse(&target).expect("URL of unknown type");
+
+    match http_request(&url) {
+        Ok(response) => response,
         Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {}", error_msg)),
     }
 }
