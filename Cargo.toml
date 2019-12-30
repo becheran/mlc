@@ -25,7 +25,7 @@ colored = "1.9.0"
 reqwest = {version="0.9.24", features = ["default-tls-vendored"] }
 
 [dev-dependencies]
-ntest = "0.3.3"
+ntest = "0.4.1"
 criterion = "0.3.0"
 
 [[bench]]
