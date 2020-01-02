@@ -29,7 +29,7 @@ pub enum LinkCheckResult {
 
 pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
-    if config.ignore_links.iter().any(|i| i == link_target) {
+    if config.ignore_links.iter().any(|m| m.is_match(link_target)) {
         return LinkCheckResult::Ignored(
             "Ignore web link because of ignore-links option.".to_string(),
         );
@@ -247,5 +247,16 @@ mod tests {
             &config,
         );
         assert!(result != LinkCheckResult::Ok);
+    }
+    #[test]
+    fn ignore_link_pattern() {
+        let mut config = Config::default();
+        config.ignore_links = vec![wildmatch::WildMatch::new("http?*")];
+        let result = check(
+            "NotImportant",
+            "https://doesNotExist.me/even/less/likelly",
+            &config,
+        );
+        assert_eq!(result, LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string()));
     }
 }

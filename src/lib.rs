@@ -12,18 +12,18 @@ pub mod link_extractors;
 pub mod link_validator;
 pub mod logger;
 pub mod markup;
+pub use wildmatch::WildMatch;
 pub use colored::*;
 
 use link_validator::LinkCheckResult;
 
-#[derive(Default)]
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Config {
     pub log_level: logger::LogLevel,
     pub folder: String,
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
-    pub ignore_links: Vec<String>,
+    pub ignore_links: Vec<WildMatch>,
 }
 
 pub fn run(config: &Config) -> Result<(), ()> {

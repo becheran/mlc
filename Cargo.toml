@@ -21,8 +21,9 @@ walkdir = "2.2.9"
 regex = "1.3.1"
 lazy_static = "1.4.0"
 url = "2.1.0"
-colored = "1.9.0"
+colored = "1.9.1"
 reqwest = {version="0.9.24", features = ["default-tls-vendored"] }
+wildmatch = "1.0.1"
 
 [dev-dependencies]
 ntest = "0.4.1"
