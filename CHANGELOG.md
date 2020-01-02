@@ -16,6 +16,7 @@ Types for Changes:
 
 ## Added
 
+* Reference readme file
 * Ignore links option
 * No web link option for faster checks without following weblinks
 

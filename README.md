@@ -54,6 +54,8 @@ Call mlc with the `--help` flag to display all available cli arguments:
 mlc -h
 ```
 
+See the [reference](./docs/reference.md) for all available command line arguments.
+
 ## Changelog
 
 Checkout the [changelog file](https://github.com/becheran/mlc/blob/master/CHANGELOG.md) to see the changes between different versions.

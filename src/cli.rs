@@ -7,7 +7,7 @@ use wildmatch::WildMatch;
 pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
         .arg(
-            Arg::with_name("folder")
+            Arg::with_name("directory")
                 .help("Check all links in given folder and subfolders")
                 .required(false)
                 .index(1),
@@ -42,7 +42,7 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let folder = matches.value_of("folder").unwrap_or("./").parse().unwrap();
+    let folder = matches.value_of("directory").unwrap_or("./").parse().unwrap();
     let markup_types = vec![MarkupType::Markdown];
     let no_web_links = matches.is_present("no_web_links");
     let ignore_links: Vec<WildMatch> = matches
