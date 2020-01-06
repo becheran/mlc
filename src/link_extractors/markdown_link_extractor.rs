@@ -9,15 +9,11 @@ fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
     }
 }
 
-fn char_is(vector: &Vec<char>, pos: usize, check_char: char) -> bool {
-    pos < vector.len() && vector[pos] == check_char
-}
-
 fn forward_until(vector: &Vec<char>, pos: &mut usize, check_char: char) -> bool {
-    while *pos < vector.len() && vector[*pos] != check_char {
+    while vector.get(*pos).is_some() && vector.get(*pos) != Some(&check_char) {
         *pos += 1;
     }
-    *pos < vector.len() && vector[*pos] == check_char
+    vector.get(*pos).is_some()
 }
 
 impl LinkExtractor for MarkdownLinkExtractor {
@@ -28,19 +24,17 @@ impl LinkExtractor for MarkdownLinkExtractor {
         let mut is_code_block = false;
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
-            let len = line_chars.len();
             let mut column: usize = 0;
 
             skip_whitespace(&line_chars, &mut column);
 
-            if char_is(&line_chars, column, '#') {
+            if line_chars.get(column) == Some(&'#') {
                 continue;
             }
 
-            if column + 2 < len
-                && line_chars[column] == '`'
-                && line_chars[column + 1] == '`'
-                && line_chars[column + 2] == '`'
+            if line_chars.get(column) == Some(&'`')
+                && line_chars.get(column + 1) == Some(&'`')
+                && line_chars.get(column + 2) == Some(&'`')
             {
                 is_code_block = !is_code_block;
                 column += 3;
@@ -50,7 +44,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 continue;
             }
 
-            while column < len {
+            while column < line_chars.len() {
                 match line_chars[column] {
                     '`' => {
                         column += 1;
@@ -64,9 +58,20 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         if forward_until(&line_chars, &mut column, ']') {
                             let square_bracket_close = column;
                             column += 1;
-                            if column + 1 < len {
-                                let start_idx = column + 1;
-                                if line_chars[column] == '(' {
+                            let start_idx = column + 1;
+                            match line_chars.get(column) {
+                                None => {
+                                    let reference_link_tag = (&line_chars
+                                        [square_bracket_start + 1..square_bracket_close])
+                                        .iter()
+                                        .collect::<String>();
+                                    debug!(
+                                        "Found reference link of format [] {:?}",
+                                        reference_link_tags
+                                    );
+                                    reference_link_tags.push(reference_link_tag.to_lowercase());
+                                }
+                                Some(&'(') => {
                                     let bracket_start = column;
                                     column += 1;
                                     if forward_until(&line_chars, &mut column, ')') {
@@ -83,7 +88,8 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                             target: link.to_string(),
                                         });
                                     }
-                                } else if line_chars[column] == '[' {
+                                }
+                                Some(&'[') => {
                                     column += 1;
                                     if forward_until(&line_chars, &mut column, ']') {
                                         let reference_link = (&line_chars[start_idx..column])
@@ -92,11 +98,12 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                         debug!("Extract reference link {:?}", reference_link);
                                         link_tags.push(reference_link.to_lowercase());
                                     }
-                                } else if line_chars[column] == ':' {
+                                }
+                                Some(&':') => {
                                     column += 1;
                                     skip_whitespace(&line_chars, &mut column);
                                     let start_idx = column;
-                                    while column < len && !line_chars[column].is_whitespace() {
+                                    while column < line_chars.len() && !line_chars[column].is_whitespace() {
                                         column += 1;
                                     }
                                     let link =
@@ -114,32 +121,22 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                     debug!("Found reference link tag {:?}", reference_link_tags);
                                     reference_link_tags.push(reference_link_tag.to_lowercase());
                                 }
-                            } else {
-                                let reference_link_tag = (&line_chars
-                                    [square_bracket_start + 1..square_bracket_close])
-                                    .iter()
-                                    .collect::<String>();
-                                debug!(
-                                    "Found reference link of format [] {:?}",
-                                    reference_link_tags
-                                );
-                                reference_link_tags.push(reference_link_tag.to_lowercase());
+                                Some(_) => {}
                             }
                         }
                     }
                     ':' => {
-                        if column + 2 < len
-                            && line_chars[column + 1] == '/'
-                            && line_chars[column + 2] == '/'
+                        if line_chars.get(column + 1) == Some(&'/')
+                            && line_chars.get(column + 2) == Some(&'/')
                         {
                             let mut start_idx = column;
                             while start_idx > 0 && line_chars[start_idx - 1].is_alphabetic() {
                                 start_idx -= 1;
                             }
-                            while column < len
+                            while column < line_chars.len()
                                 && !(line_chars[column].is_whitespace()
-                                    || line_chars[column] == '>'                                
-                                    || line_chars[column] == ')'                                
+                                    || line_chars[column] == '>'
+                                    || line_chars[column] == ')'
                                     || line_chars[column] == ']')
                             {
                                 column += 1;
@@ -155,27 +152,26 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     '<' => {
                         let link_column = column;
                         column += 1;
-                        if column < len && line_chars[column] == 'a' {
+                        if line_chars.get(column) == Some(&'a') {
                             column += 1;
                             skip_whitespace(&line_chars, &mut column);
-                            if column + 3 < len
-                                && line_chars[column] == 'h'
-                                && line_chars[column + 1] == 'r'
-                                && line_chars[column + 2] == 'e'
-                                && line_chars[column + 3] == 'f'
+                            if line_chars.get(column) == Some(&'h')
+                                && line_chars.get(column + 1) == Some(&'r')
+                                && line_chars.get(column + 2) == Some(&'e')
+                                && line_chars.get(column + 3) == Some(&'f')
                             {
                                 column += 4;
                                 skip_whitespace(&line_chars, &mut column);
-                                if column < len && line_chars[column] == '=' {
+                                if line_chars.get(column) == Some(&'=') {
                                     column += 1;
-                                    while column < len
+                                    while column < line_chars.len()
                                         && (line_chars[column].is_whitespace()
                                             || line_chars[column] == '"')
                                     {
                                         column += 1;
                                     }
                                     let start_idx = column;
-                                    while column < len
+                                    while line_chars.get(column).is_some()
                                         && !line_chars[column].is_whitespace()
                                         && line_chars[column] != '"'
                                     {
