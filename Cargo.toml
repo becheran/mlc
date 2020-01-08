@@ -8,10 +8,11 @@ keywords = [ "link", "checker", "markup", "markdown"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/becheran/mlc"
-is-it-maintained-open-issues = { repository = "https://github.com/becheran/mlc" }
 
 [badges]
 maintenance = { status = "actively-developed" }
+is-it-maintained-open-issues = { repository = "becheran/mlc" }
+is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
 clap = {version = "2.33.0", features = ["yaml"]}
