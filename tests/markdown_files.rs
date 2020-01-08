@@ -5,7 +5,7 @@ use mlc::markup::{MarkupFile, MarkupType};
 
 #[test]
 fn no_links() {
-    let path = "./benches/benchmark/no_links/no_links.md".to_string();
+    let path = "./benches/benchmark/markdown/no_links/no_links.md".to_string();
     let file = MarkupFile {
         path,
         markup_type: MarkupType::Markdown,
@@ -16,7 +16,7 @@ fn no_links() {
 
 #[test]
 fn some_links() {
-    let path = "./benches/benchmark/many_links/many_links.md".to_string();
+    let path = "./benches/benchmark/markdown/many_links/many_links.md".to_string();
     let file = MarkupFile {
         path,
         markup_type: MarkupType::Markdown,

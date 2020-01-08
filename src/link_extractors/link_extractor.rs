@@ -1,4 +1,5 @@
 use super::markdown_link_extractor::MarkdownLinkExtractor;
+use super::html_link_extractor::HtmlLinkExtractor;
 use crate::markup::{MarkupFile, MarkupType};
 use std::fs;
 use std::fmt;

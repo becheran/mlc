@@ -5,7 +5,7 @@ use mlc::Config;
 
 #[test]
 fn find_markdown_files() {
-    let path = "./benches/benchmark/md_file_endings".to_string();
+    let path = "./benches/benchmark/markdown/md_file_endings".to_string();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],
@@ -19,7 +19,7 @@ fn find_markdown_files() {
 
 #[test]
 fn empty_folder() {
-    let path = "./benches/benchmark/empty".to_string();
+    let path = "./benches/benchmark/markdown/empty".to_string();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],
