@@ -26,8 +26,13 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
     let link_extractor = link_extractor_factory(&file.markup_type);
 
     info!("Scan file at path '{}' for links.", path);
-    let text = fs::read_to_string(path).expect("File could not be opened.");
-    link_extractor.find_links(&text)
+    match fs::read_to_string(path) {
+        Ok(text) => link_extractor.find_links(&text),
+        Err(e) => {
+            warn!("File '{}'. IO Error: \"{}\". Check your file encoding.", path, e);
+            vec![]
+        }
+    }
 }
 
 fn link_extractor_factory(markup_type: &MarkupType) -> impl LinkExtractor {

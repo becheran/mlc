@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## Fixed
+
+* No panic for not UTF-8 encoded files
+
 ## [0.7.0] - 2020-01-02
 
 ## Added
