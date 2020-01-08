@@ -3,55 +3,87 @@ use crate::link_extractors::link_extractor::MarkupLink;
 
 pub struct HtmlLinkExtractor();
 
-fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
-    while *pos < vector.len() && vector[*pos].is_whitespace() {
-        *pos += 1;
-    }
+enum ParserState {
+    Text,
+    Comment,
+    Anchor,
+    EqualSign,
+    Link,
 }
-
-fn forward_until(vector: &Vec<char>, pos: &mut usize, check_char: char) -> bool {
-    while vector.get(*pos).is_some() && vector.get(*pos) != Some(&check_char) {
-        *pos += 1;
-    }
-    vector.get(*pos).is_some()
-}
-
 impl LinkExtractor for HtmlLinkExtractor {
     fn find_links(&self, text: &str) -> Vec<MarkupLink> {
         let mut result: Vec<MarkupLink> = Vec::new();
-        let mut is_comment_block = false;
-        let mut is_anchor = false;
+        let mut state: ParserState = ParserState::Text;
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
-
-            if is_comment_block {
-                if line_chars.get(column) == Some(&'-')
-                    && line_chars.get(column + 1) == Some(&'-')
-                    && line_chars.get(column + 2) == Some(&'>')
-                {
-                    column += 3;
-                    is_comment_block = false;
-                } else {
-                    continue;
+            while line_chars.get(column).is_some() {
+                match state {
+                    ParserState::Comment => {
+                        if line_chars.get(column) == Some(&'-')
+                            && line_chars.get(column + 1) == Some(&'-')
+                            && line_chars.get(column + 2) == Some(&'>')
+                        {
+                            column += 2;
+                            state = ParserState::Text;
+                        }
+                    }
+                    ParserState::Text => {
+                        if line_chars.get(column) == Some(&'<')
+                            && line_chars.get(column + 1) == Some(&'!')
+                            && line_chars.get(column + 2) == Some(&'-')
+                            && line_chars.get(column + 3) == Some(&'-')
+                        {
+                            column += 3;
+                            state = ParserState::Comment;
+                        } else if line_chars.get(column) == Some(&'<')
+                            && line_chars.get(column + 1) == Some(&'a')
+                        {
+                            column += 1;
+                            state = ParserState::Anchor;
+                        }
+                    }
+                    ParserState::Anchor => {
+                        if line_chars.get(column) == Some(&'h')
+                            && line_chars.get(column + 1) == Some(&'r')
+                            && line_chars.get(column + 2) == Some(&'e')
+                            && line_chars.get(column + 3) == Some(&'f')
+                        {
+                            column += 3;
+                            state = ParserState::EqualSign;
+                        }
+                    }
+                    ParserState::EqualSign => {
+                        if line_chars.get(column) == Some(&'=') {
+                            state = ParserState::Link;
+                        }
+                    }
+                    ParserState::Link => {
+                        let current_char = line_chars.get(column);
+                        if current_char.is_some()
+                            && !current_char.unwrap().is_whitespace()
+                            && current_char.unwrap() != &'"'
+                        {
+                            let link_column = column;
+                            while line_chars.get(column).is_some()
+                                && !line_chars[column].is_whitespace()
+                                && line_chars[column] != '"'
+                            {
+                                column += 1;
+                            }
+                            let link = (&line_chars[link_column..column])
+                                .iter()
+                                .collect::<String>();
+                            result.push(MarkupLink {
+                                column: link_column + 1,
+                                line: line + 1,
+                                target: link.to_string(),
+                            });
+                            state = ParserState::Text;
+                        }
+                    }
                 }
-            }  
-            
-            if is_anchor {
-                if line_chars.get(column) == Some(&'h')
-                    && line_chars.get(column + 1) == Some(&'r')
-                    && line_chars.get(column + 2) == Some(&'e')
-                    && line_chars.get(column + 3) == Some(&'f')
-                {}
-
-            } else {
-                if forward_until(&line_chars, &mut column, '<') {
-                    column += 1;
-                }
-                if line_chars.get(column) == Some(&'a') {
-                    is_anchor = true;
-                    column += 1;
-                }
+                column += 1;
             }
         }
         result
@@ -79,21 +111,32 @@ mod tests {
         assert!(result.is_empty());
     }
 
-    #[test_case("<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>", 4)]
+    #[test_case(
+        "<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
+        1,
+        10
+    )]
     #[test_case(
         "<a\nhref\n=\n  \"https://www.w3schools.com\">\nVisit W3Schools.com!\n</a>",
+        4,
         4
     )]
     #[test_case(
         "<a hreflang=\"en\" href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
+        1,
         4
     )]
-    fn links(input: &str, column: usize) {
+    #[test_case(
+        "<!--comment--><a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
+        1,
+        24
+    )]
+    fn links(input: &str, line: usize, column: usize) {
         let le = HtmlLinkExtractor();
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: "https://www.w3schools.com".to_string(),
-            line: 1,
+            line: line,
             column: column,
         };
         assert_eq!(vec![expected], result);
