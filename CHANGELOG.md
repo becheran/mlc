@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## Added
+
+* HTML support
+
 ## Fixed
 
 * No panic for not UTF-8 encoded files
