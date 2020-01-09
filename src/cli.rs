@@ -32,6 +32,15 @@ pub fn parse_args() -> Config {
                 .min_values(1)
                 .required(false),
         )
+        .arg(
+            Arg::with_name("markup_types")
+                .long("markup-types")
+                .short("t")
+                .help("List of markup types which shall be checked")
+                .min_values(1)
+                .possible_values(&["md", "html"])
+                .required(false),
+        )
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
@@ -42,8 +51,20 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let folder = matches.value_of("directory").unwrap_or("./").parse().unwrap();
-    let markup_types = vec![MarkupType::Markdown];
+    let folder = matches
+        .value_of("directory")
+        .unwrap_or("./")
+        .parse()
+        .unwrap();
+
+    let markup_types: Vec<MarkupType> = matches
+        .values_of("markup_types")
+        //.unwrap_or(vec![MarkupType::Markdown, MarkupType::HTML])
+        .unwrap()
+        .map(|x| x.parse().unwrap())
+        .collect();
+
+
     let no_web_links = matches.is_present("no_web_links");
     let ignore_links: Vec<WildMatch> = matches
         .values_of("ignore_links")

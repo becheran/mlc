@@ -1,8 +1,8 @@
-use super::markdown_link_extractor::MarkdownLinkExtractor;
 use super::html_link_extractor::HtmlLinkExtractor;
+use super::markdown_link_extractor::MarkdownLinkExtractor;
 use crate::markup::{MarkupFile, MarkupType};
-use std::fs;
 use std::fmt;
+use std::fs;
 
 /// Links found in markup files
 #[derive(PartialEq)]
@@ -17,7 +17,11 @@ pub struct MarkupLink {
 
 impl fmt::Debug for MarkupLink {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} (line {}, column {})", self.target, self.line, self.column)
+        write!(
+            f,
+            "{} (line {}, column {})",
+            self.target, self.line, self.column
+        )
     }
 }
 
@@ -29,16 +33,19 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
     match fs::read_to_string(path) {
         Ok(text) => link_extractor.find_links(&text),
         Err(e) => {
-            warn!("File '{}'. IO Error: \"{}\". Check your file encoding.", path, e);
+            warn!(
+                "File '{}'. IO Error: \"{}\". Check your file encoding.",
+                path, e
+            );
             vec![]
         }
     }
 }
 
-fn link_extractor_factory(markup_type: &MarkupType) -> impl LinkExtractor {
+fn link_extractor_factory(markup_type: &MarkupType) -> Box<dyn LinkExtractor> {
     match markup_type {
-        MarkupType::Markdown => MarkdownLinkExtractor(),
-        MarkupType::HTML => unimplemented!(),
+        MarkupType::Markdown => Box::new(MarkdownLinkExtractor()),
+        MarkupType::HTML => Box::new(HtmlLinkExtractor()),
     }
 }
 
