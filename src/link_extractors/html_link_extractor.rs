@@ -54,33 +54,41 @@ impl LinkExtractor for HtmlLinkExtractor {
                         }
                     }
                     ParserState::EqualSign => {
-                        if line_chars.get(column) == Some(&'=') {
-                            state = ParserState::Link;
-                        }
+                        match line_chars.get(column) {
+                            Some(x) if x.is_whitespace() => {}
+                            Some(x) if x == &'=' => state = ParserState::Link,
+                            Some(_) => state = ParserState::Anchor,
+                            None => {}
+                        };
                     }
                     ParserState::Link => {
-                        let current_char = line_chars.get(column);
-                        if current_char.is_some()
-                            && !current_char.unwrap().is_whitespace()
-                            && current_char.unwrap() != &'"'
-                        {
-                            let link_column = column;
-                            while line_chars.get(column).is_some()
-                                && !line_chars[column].is_whitespace()
-                                && line_chars[column] != '"'
-                            {
-                                column += 1;
+                        match line_chars.get(column) {
+                            Some(x) if !x.is_whitespace() && x != &'"' => {
+                                let link_column = column;
+                                while line_chars.get(column).is_some()
+                                    && !line_chars[column].is_whitespace()
+                                    && line_chars[column] != '"'
+                                {
+                                    column += 1;
+                                }
+                                while let Some(c) = line_chars.get(column) {
+                                    if c.is_whitespace() || c == &'"'{
+                                        break;
+                                    }
+                                    column += 1;
+                                }
+                                let link = (&line_chars[link_column..column])
+                                    .iter()
+                                    .collect::<String>();
+                                result.push(MarkupLink {
+                                    column: link_column + 1,
+                                    line: line + 1,
+                                    target: link.to_string(),
+                                });
+                                state = ParserState::Text;
                             }
-                            let link = (&line_chars[link_column..column])
-                                .iter()
-                                .collect::<String>();
-                            result.push(MarkupLink {
-                                column: link_column + 1,
-                                line: line + 1,
-                                target: link.to_string(),
-                            });
-                            state = ParserState::Text;
-                        }
+                            Some(_) | None => {}
+                        };
                     }
                 }
                 column += 1;
@@ -124,7 +132,7 @@ mod tests {
     #[test_case(
         "<a hreflang=\"en\" href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
         1,
-        4
+        24
     )]
     #[test_case(
         "<!--comment--><a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
