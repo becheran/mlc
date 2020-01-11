@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.8.0] - 2020-01-11
+
 ## Added
 
 * HTML support
