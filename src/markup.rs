@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Debug)]
 pub struct MarkupFile {
     pub markup_type: MarkupType,
@@ -8,6 +10,18 @@ pub struct MarkupFile {
 pub enum MarkupType {
     Markdown,
     HTML,
+}
+
+impl FromStr for MarkupType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<MarkupType, ()> {
+        match s {
+            "md" => Ok(MarkupType::Markdown),
+            "html" => Ok(MarkupType::HTML),
+            _ => Err(()),
+        }
+    }
 }
 
 impl MarkupType {
