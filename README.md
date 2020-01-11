@@ -5,7 +5,7 @@
 [![Build Status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
 [![](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Check for broken links in markdown files. Can easily be integrated in your CI/CD pipeline to prevent broken links in your docs.
+Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI/CD pipeline to prevent broken links in your markdown docs.
 
 ## Install
 
@@ -67,10 +67,3 @@ All contributions and comments welcome! Open an issue or create a Pull Request w
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE file](https://github.com/becheran/mlc/blob/master/LICENSE) for details.
-
-## Planned Features
-
-- Timeout for requests as cl argument
-- Improve speed
-- Add .ignore file support
-- Support other markup files such as tex or html
