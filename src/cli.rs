@@ -57,13 +57,10 @@ pub fn parse_args() -> Config {
         .parse()
         .unwrap();
 
-    let markup_types: Vec<MarkupType> = matches
-        .values_of("markup_types")
-        //.unwrap_or(vec![MarkupType::Markdown, MarkupType::HTML])
-        .unwrap()
-        .map(|x| x.parse().unwrap())
-        .collect();
-
+    let mut markup_types = vec![MarkupType::Markdown, MarkupType::HTML];
+    if let Some(types) = matches.values_of("markup_types") {
+        markup_types = types.map(|x| x.parse().unwrap()).collect();
+    }
 
     let no_web_links = matches.is_present("no_web_links");
     let ignore_links: Vec<WildMatch> = matches
