@@ -18,6 +18,8 @@ Types for Changes:
 
 ## [0.8.0] - 2020-01-11
 
+## [0.8.0] - 2020-01-11
+
 ## Added
 
 * HTML support
