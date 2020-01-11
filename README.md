@@ -5,7 +5,7 @@
 [![Build Status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
 [![](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI/CD pipeline to prevent broken links in your markdown docs.
+Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI/CD pipeline to prevent broken links in your markup docs.
 
 ## Install
 

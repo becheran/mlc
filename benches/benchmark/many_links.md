@@ -1,5 +1,7 @@
+# Many Links
+
 [local_file](many_links.md)
-[folder](no_links)
+[folder](./markdown)
 [https_link](https://www.google.de/)
 [https_link2](https://www.google.de/?hl=de)
 
