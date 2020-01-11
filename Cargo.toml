@@ -1,6 +1,6 @@
 [package]
 name = "mlc"
-version = "0.8.0"
+version = "0.7.0"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"
 description = "The markup link checker (mlc) checks for broken links in markup files."
@@ -19,10 +19,10 @@ clap = {version = "2.33.0", features = ["yaml"]}
 log = "0.4.8"
 simplelog = "0.7.4"
 walkdir = "2.2.9"
-regex = "1.3.1"
+regex = "1.3.3"
 lazy_static = "1.4.0"
-url = "2.1.0"
-colored = "1.9.1"
+url = "2.1.1"
+colored = "1.9.2"
 reqwest = {version="0.9.24", features = ["default-tls-vendored"] }
 wildmatch = "1.0.1"
 
