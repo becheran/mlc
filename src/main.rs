@@ -26,12 +26,13 @@ fn print_header() {
     println!();
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_header();
     let config = cli::parse_args();
     logger::init(&config.log_level);
     info!("Config: {:?}", &config);
-    if let Err(_) = mlc::run(&config) {
+    if let Err(_) = mlc::run(&config).await {
         process::exit(1);
     } else {
         process::exit(0);

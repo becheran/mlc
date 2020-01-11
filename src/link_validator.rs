@@ -27,7 +27,7 @@ pub enum LinkCheckResult {
     NotImplemented(String),
 }
 
-pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
+pub async fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
     if config.ignore_links.iter().any(|m| m.is_match(link_target)) {
         return LinkCheckResult::Ignored(
@@ -51,7 +51,7 @@ pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheck
                         "Ignore web link because of the no-web-link flag.".to_string(),
                     )
                 } else {
-                    check_http(link_target)
+                    check_http(link_target).await
                 }
             }
             LinkType::FileSystem => check_filesystem(link_source, link_target),
@@ -73,7 +73,7 @@ fn check_mail(target: &str) -> LinkCheckResult {
     }
 }
 
-fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
+async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = Client::new();
     }
@@ -88,7 +88,7 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
 
     let request = Request::new(Method::HEAD, url.clone());
 
-    let response = CLIENT.execute(request)?;
+    let response = CLIENT.execute(request).await?;
     let status = response.status();
     if status.is_success() {
         Ok(LinkCheckResult::Ok)
@@ -97,7 +97,7 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED {
         warn!("Got the status code 405 Method Not Allowed. Retry with get-request.");
         let get_request = Request::new(Method::GET, url.clone());
-        let response = CLIENT.execute(get_request)?;
+        let response = CLIENT.execute(get_request).await?;
         let status = response.status();
         if status.is_success() {
             Ok(LinkCheckResult::Ok)
@@ -109,10 +109,10 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     }
 }
 
-fn check_http(target: &str) -> LinkCheckResult {
+async fn check_http(target: &str) -> LinkCheckResult {
     let url = reqwest::Url::parse(&target).expect("URL of unknown type");
 
-    match http_request(&url) {
+    match http_request(&url).await {
         Ok(response) => response,
         Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {}", error_msg)),
     }

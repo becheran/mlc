@@ -26,7 +26,7 @@ pub struct Config {
     pub ignore_links: Vec<WildMatch>,
 }
 
-pub fn run(config: &Config) -> Result<(), ()> {
+pub async fn run(config: &Config) -> Result<(), ()> {
     let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut files);
 
@@ -39,7 +39,7 @@ pub fn run(config: &Config) -> Result<(), ()> {
         let links = link_extractors::link_extractor::find_links(&file);
         for link in links {
             link_ctr += 1;
-            let result = link_validator::check(&file.path, &link.target, &config);
+            let result = link_validator::check(&file.path, &link.target, &config).await;
             match result {
                 LinkCheckResult::Ok => {
                     println!(
