@@ -30,6 +30,11 @@ pub struct Config {
     pub ignore_links: Vec<WildMatch>,
 }
 
+struct FinalResult {
+    link: MarkupLink,
+    result_code: LinkCheckResult,
+}
+
 fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut files);
@@ -43,30 +48,40 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
 pub async fn run(config: &Config) -> Result<(), ()> {
     let links = find_all_links(&config);
 
-    println!("START");
     let link_check_results = stream::iter(links)
         .map(|link| {
             async move {
-                let result = link_validator::check(&link.source, &link.target, &config).await;
-                match result {
+                let result_code = link_validator::check(&link.source, &link.target, &config).await;
+                FinalResult {
+                    link: link,
+                    result_code: result_code,
+                }
+            }
+        })
+        .buffer_unordered(PARALLEL_REQUESTS);
+    let mut final_result = vec![];
+    link_check_results
+        .for_each(|result| {
+            async {
+                match result.result_code {
                     LinkCheckResult::Ok => {
                         println!(
                             "[{:^4}] {} ({}, {}) => {}",
                             "OK".green(),
-                            link.source,
-                            link.line,
-                            link.column,
-                            link.target
+                            result.link.source,
+                            result.link.line,
+                            result.link.column,
+                            result.link.target
                         );
                     }
                     LinkCheckResult::NotImplemented(msg) => {
                         println!(
                             "[{:^4}] {} ({}, {}) => {}. {}",
                             "Warn".yellow(),
-                            link.source,
-                            link.line,
-                            link.column,
-                            link.target,
+                            result.link.source,
+                            result.link.line,
+                            result.link.column,
+                            result.link.target,
                             msg
                         );
                     }
@@ -74,10 +89,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                         println!(
                             "[{:^4}] {} ({}, {}) => {}. {}",
                             "Warn".yellow(),
-                            link.source,
-                            link.line,
-                            link.column,
-                            link.target,
+                            result.link.source,
+                            result.link.line,
+                            result.link.column,
+                            result.link.target,
                             msg
                         );
                     }
@@ -85,10 +100,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                         println!(
                             "[{:^4}] {} ({}, {}) => {}. {}",
                             "Skip".green(),
-                            link.source,
-                            link.line,
-                            link.column,
-                            link.target,
+                            result.link.source,
+                            result.link.line,
+                            result.link.column,
+                            result.link.target,
                             msg
                         );
                     }
@@ -96,47 +111,86 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                         let error_msg = format!(
                             "[{:^4}] {} ({}, {}) => {}. {}",
                             "Err".red(),
-                            link.source,
-                            link.line,
-                            link.column,
-                            link.target,
+                            result.link.source,
+                            result.link.line,
+                            result.link.column,
+                            result.link.target,
                             msg
                         );
                         eprintln!("{}", &error_msg);
                     }
                 }
-                1
+                final_result.push(result);
             }
         })
-        .buffer_unordered(PARALLEL_REQUESTS);
-    println!("END");
+        .await;
 
-    link_check_results.for_each(|b|{
-        async {
-            println!("Bla");
-        }
-    }).await;
-    /*
     println!();
-    println!("Result ({} links):", link_ctr);
+    println!("Result ({} links):", final_result.len());
     println!();
-    println!("OK       {}", ok_ctr);
-    println!("Skipped  {}", skipped_ctr);
-    println!("Warnings {}", warnings_ctr);
-    println!("Errors   {}", &invalid_links.len());
+    println!(
+        "OK       {}",
+        final_result
+            .iter()
+            .filter(|x| match x.result_code {
+                LinkCheckResult::Ok => true,
+                _ => false,
+            })
+            .count()
+    );
+    println!(
+        "Skipped  {}",
+        final_result
+            .iter()
+            .filter(|x| match x.result_code {
+                LinkCheckResult::Ignored(_) => true,
+                _ => false,
+            })
+            .count()
+    );
+    println!(
+        "Warnings {}",
+        final_result
+            .iter()
+            .filter(|x| match x.result_code {
+                LinkCheckResult::Warning(_) => true,
+                _ => false,
+            })
+            .count()
+    );
+    println!(
+        "Errors   {}",
+        final_result
+            .iter()
+            .filter(|x| match x.result_code {
+                LinkCheckResult::Failed(_) => true,
+                _ => false,
+            })
+            .count()
+    );
     println!();
 
-    if !invalid_links.is_empty() {
+    if final_result
+        .iter()
+        .filter(|x| match x.result_code {
+            LinkCheckResult::Failed(_) => true,
+            _ => false,
+        })
+        .count()
+        > 0
+    {
         eprintln!();
         eprintln!("The following links could not be resolved:");
         println!();
-        for il in invalid_links {
-            eprintln!("{}", il);
+        for res in final_result.iter().filter(|x| match x.result_code {
+            LinkCheckResult::Failed(_) => true,
+            _ => false,
+        }) {
+            eprintln!("{:?}", res.link);
         }
         println!();
         Err(())
     } else {
         Ok(())
-    }*/
-    Ok(())
+    }
 }
