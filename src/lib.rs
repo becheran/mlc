@@ -30,6 +30,7 @@ pub struct Config {
     pub ignore_links: Vec<WildMatch>,
 }
 
+#[derive(Debug, Clone)]
 struct FinalResult {
     link: MarkupLink,
     result_code: LinkCheckResult,
@@ -48,7 +49,7 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
 pub async fn run(config: &Config) -> Result<(), ()> {
     let links = find_all_links(&config);
 
-    let link_check_results = stream::iter(links)
+    let mut link_check_results = stream::iter(links)
         .map(|link| {
             async move {
                 let result_code = link_validator::check(&link.source, &link.target, &config).await;
@@ -59,71 +60,68 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             }
         })
         .buffer_unordered(PARALLEL_REQUESTS);
+
     let mut final_result = vec![];
-    link_check_results
-        .for_each(|result| {
-            async {
-                match result.result_code {
-                    LinkCheckResult::Ok => {
-                        println!(
-                            "[{:^4}] {} ({}, {}) => {}",
-                            "OK".green(),
-                            result.link.source,
-                            result.link.line,
-                            result.link.column,
-                            result.link.target
-                        );
-                    }
-                    LinkCheckResult::NotImplemented(msg) => {
-                        println!(
-                            "[{:^4}] {} ({}, {}) => {}. {}",
-                            "Warn".yellow(),
-                            result.link.source,
-                            result.link.line,
-                            result.link.column,
-                            result.link.target,
-                            msg
-                        );
-                    }
-                    LinkCheckResult::Warning(msg) => {
-                        println!(
-                            "[{:^4}] {} ({}, {}) => {}. {}",
-                            "Warn".yellow(),
-                            result.link.source,
-                            result.link.line,
-                            result.link.column,
-                            result.link.target,
-                            msg
-                        );
-                    }
-                    LinkCheckResult::Ignored(msg) => {
-                        println!(
-                            "[{:^4}] {} ({}, {}) => {}. {}",
-                            "Skip".green(),
-                            result.link.source,
-                            result.link.line,
-                            result.link.column,
-                            result.link.target,
-                            msg
-                        );
-                    }
-                    LinkCheckResult::Failed(msg) => {
-                        let error_msg = format!(
-                            "[{:^4}] {} ({}, {}) => {}. {}",
-                            "Err".red(),
-                            result.link.source,
-                            result.link.line,
-                            result.link.column,
-                            result.link.target,
-                            msg
-                        );
-                        eprintln!("{}", &error_msg);
-                    }
-                }
-                final_result.push(result);
+    while let Some(result) = link_check_results.next().await {
+        final_result.push(result.clone());
+        match result.result_code {
+            LinkCheckResult::Ok => {
+                println!(
+                    "[{:^4}] {} ({}, {}) => {}",
+                    "OK".green(),
+                    result.link.source,
+                    result.link.line,
+                    result.link.column,
+                    &result.link.target
+                );
             }
-        })
-        .await;
+            LinkCheckResult::NotImplemented(msg) => {
+                println!(
+                    "[{:^4}] {} ({}, {}) => {}. {}",
+                    "Warn".yellow(),
+                    result.link.source,
+                    result.link.line,
+                    result.link.column,
+                    result.link.target,
+                    msg
+                );
+            }
+            LinkCheckResult::Warning(msg) => {
+                println!(
+                    "[{:^4}] {} ({}, {}) => {}. {}",
+                    "Warn".yellow(),
+                    result.link.source,
+                    result.link.line,
+                    result.link.column,
+                    result.link.target,
+                    msg
+                );
+            }
+            LinkCheckResult::Ignored(msg) => {
+                println!(
+                    "[{:^4}] {} ({}, {}) => {}. {}",
+                    "Skip".green(),
+                    result.link.source,
+                    result.link.line,
+                    result.link.column,
+                    result.link.target,
+                    msg
+                );
+            }
+            LinkCheckResult::Failed(msg) => {
+                let error_msg = format!(
+                    "[{:^4}] {} ({}, {}) => {}. {}",
+                    "Err".red(),
+                    result.link.source,
+                    result.link.line,
+                    result.link.column,
+                    result.link.target,
+                    msg
+                );
+                eprintln!("{}", &error_msg);
+            }
+        }
+    }
 
     println!();
     println!("Result ({} links):", final_result.len());

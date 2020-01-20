@@ -18,7 +18,7 @@ pub enum LinkType {
     FileSystem,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum LinkCheckResult {
     Ok,
     Failed(String),
@@ -247,7 +247,8 @@ mod tests {
             "NotImportant",
             "https://doesNotExist.me/even/less/likelly",
             &config,
-        ).await;
+        )
+        .await;
         assert!(result != LinkCheckResult::Ok);
     }
 
@@ -259,7 +260,11 @@ mod tests {
             "NotImportant",
             "https://doesNotExist.me/even/less/likelly",
             &config,
-        ).await;
-        assert_eq!(result, LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string()));
+        )
+        .await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string())
+        );
     }
 }

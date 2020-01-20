@@ -5,7 +5,7 @@ use std::fmt;
 use std::fs;
 
 /// Links found in markup files
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct MarkupLink {
     /// The source file of the link
     pub source: String,
