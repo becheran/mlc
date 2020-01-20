@@ -173,13 +173,13 @@ mod tests {
         assert_eq!(link_type, *expected_type);
     }
 
-    /*
     #[test_case("mailto://+bar@bar.com")]
     #[test_case("mailto://foo+@bar.com")]
     #[test_case("mailto://foo.lastname@bar.com")]
     fn mail_links(link: &str) {
+        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
-        let result = check("NotImportant", link, &config);
+        let result = runtime.block_on(check("NotImportant", link, &config));
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -187,11 +187,11 @@ mod tests {
     #[test_case("mailto://foobar.com")]
     #[test_case("mailto://foo.lastname.com")]
     fn invalid_mail_links(link: &str) {
+        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
-        let result = check("NotImportant", link, &config);
+        let result = runtime.block_on(check("NotImportant", link, &config));
         assert!(result != LinkCheckResult::Ok);
     }
-    */
 
     #[test_case("https://doc.rust-lang.org.html")]
     #[test_case("http://www.website.php")]
