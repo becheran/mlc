@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.9.0] - 2020-01-20
+
 ### Changed
 
 * Faster execution with async tasks
