@@ -46,6 +46,66 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     links
 }
 
+fn print_result(result: &FinalResult) {
+    match &result.result_code {
+        LinkCheckResult::Ok => {
+            println!(
+                "[{:^4}] {} ({}, {}) => {}",
+                "OK".green(),
+                result.link.source,
+                result.link.line,
+                result.link.column,
+                &result.link.target
+            );
+        }
+        LinkCheckResult::NotImplemented(msg) => {
+            println!(
+                "[{:^4}] {} ({}, {}) => {}. {}",
+                "Warn".yellow(),
+                result.link.source,
+                result.link.line,
+                result.link.column,
+                result.link.target,
+                msg
+            );
+        }
+        LinkCheckResult::Warning(msg) => {
+            println!(
+                "[{:^4}] {} ({}, {}) => {}. {}",
+                "Warn".yellow(),
+                result.link.source,
+                result.link.line,
+                result.link.column,
+                result.link.target,
+                msg
+            );
+        }
+        LinkCheckResult::Ignored(msg) => {
+            println!(
+                "[{:^4}] {} ({}, {}) => {}. {}",
+                "Skip".green(),
+                result.link.source,
+                result.link.line,
+                result.link.column,
+                result.link.target,
+                msg
+            );
+        }
+        LinkCheckResult::Failed(msg) => {
+            let error_msg = format!(
+                "[{:^4}] {} ({}, {}) => {}. {}",
+                "Err".red(),
+                result.link.source,
+                result.link.line,
+                result.link.column,
+                result.link.target,
+                msg
+            );
+            eprintln!("{}", &error_msg);
+        }
+    }
+}
+
 pub async fn run(config: &Config) -> Result<(), ()> {
     let links = find_all_links(&config);
 
@@ -64,63 +124,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut final_result = vec![];
     while let Some(result) = link_check_results.next().await {
         final_result.push(result.clone());
-        match result.result_code {
-            LinkCheckResult::Ok => {
-                println!(
-                    "[{:^4}] {} ({}, {}) => {}",
-                    "OK".green(),
-                    result.link.source,
-                    result.link.line,
-                    result.link.column,
-                    &result.link.target
-                );
-            }
-            LinkCheckResult::NotImplemented(msg) => {
-                println!(
-                    "[{:^4}] {} ({}, {}) => {}. {}",
-                    "Warn".yellow(),
-                    result.link.source,
-                    result.link.line,
-                    result.link.column,
-                    result.link.target,
-                    msg
-                );
-            }
-            LinkCheckResult::Warning(msg) => {
-                println!(
-                    "[{:^4}] {} ({}, {}) => {}. {}",
-                    "Warn".yellow(),
-                    result.link.source,
-                    result.link.line,
-                    result.link.column,
-                    result.link.target,
-                    msg
-                );
-            }
-            LinkCheckResult::Ignored(msg) => {
-                println!(
-                    "[{:^4}] {} ({}, {}) => {}. {}",
-                    "Skip".green(),
-                    result.link.source,
-                    result.link.line,
-                    result.link.column,
-                    result.link.target,
-                    msg
-                );
-            }
-            LinkCheckResult::Failed(msg) => {
-                let error_msg = format!(
-                    "[{:^4}] {} ({}, {}) => {}. {}",
-                    "Err".red(),
-                    result.link.source,
-                    result.link.line,
-                    result.link.column,
-                    result.link.target,
-                    msg
-                );
-                eprintln!("{}", &error_msg);
-            }
-        }
+        print_result(&result);
     }
 
     println!();
