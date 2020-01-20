@@ -121,74 +121,48 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         })
         .buffer_unordered(PARALLEL_REQUESTS);
 
-    let mut final_result = vec![];
+    let mut skipped = vec![];
+    let mut errors = vec![];
+    let mut warnings = vec![];
+    let mut oks = vec![];
     while let Some(result) = link_check_results.next().await {
-        final_result.push(result.clone());
         print_result(&result);
+        match &result.result_code {
+            LinkCheckResult::Ok => {
+                oks.push(result.clone());
+            }
+            LinkCheckResult::NotImplemented(_) | LinkCheckResult::Warning(_) => {
+                warnings.push(result.clone());
+            }
+            LinkCheckResult::Ignored(_) => {
+                skipped.push(result.clone());
+            }
+            LinkCheckResult::Failed(_) => {
+                errors.push(result.clone());
+            }
+        }
     }
 
     println!();
-    println!("Result ({} links):", final_result.len());
+    let sum = skipped.len() + errors.len() + warnings.len() + oks.len();
+    println!("Result ({} links):", sum);
     println!();
-    println!(
-        "OK       {}",
-        final_result
-            .iter()
-            .filter(|x| match x.result_code {
-                LinkCheckResult::Ok => true,
-                _ => false,
-            })
-            .count()
-    );
-    println!(
-        "Skipped  {}",
-        final_result
-            .iter()
-            .filter(|x| match x.result_code {
-                LinkCheckResult::Ignored(_) => true,
-                _ => false,
-            })
-            .count()
-    );
-    println!(
-        "Warnings {}",
-        final_result
-            .iter()
-            .filter(|x| match x.result_code {
-                LinkCheckResult::Warning(_) => true,
-                _ => false,
-            })
-            .count()
-    );
-    println!(
-        "Errors   {}",
-        final_result
-            .iter()
-            .filter(|x| match x.result_code {
-                LinkCheckResult::Failed(_) => true,
-                _ => false,
-            })
-            .count()
-    );
+    println!("OK       {}", oks.len());
+    println!("Skipped  {}", skipped.len());
+    println!("Warnings {}", warnings.len());
+    println!("Errors   {}", errors.len());
     println!();
 
-    if final_result
-        .iter()
-        .filter(|x| match x.result_code {
-            LinkCheckResult::Failed(_) => true,
-            _ => false,
-        })
-        .count()
-        > 0
-    {
+    if errors.len() > 0 {
         eprintln!();
         eprintln!("The following links could not be resolved:");
         println!();
-        for res in final_result.iter().filter(|x| match x.result_code {
-            LinkCheckResult::Failed(_) => true,
-            _ => false,
-        }) {
-            eprintln!("{:?}", res.link);
+        for res in errors {
+            let error_msg = format!(
+                "{} ({}, {}) => {}.",
+                res.link.source, res.link.line, res.link.column, res.link.target
+            );
+            eprintln!("{}", error_msg);
         }
         println!();
         Err(())
