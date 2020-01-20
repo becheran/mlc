@@ -5,8 +5,10 @@ use std::fmt;
 use std::fs;
 
 /// Links found in markup files
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub struct MarkupLink {
+    /// The source file of the link
+    pub source: String,
     /// The target the links points to
     pub target: String,
     /// The line number were the link was found
@@ -19,8 +21,8 @@ impl fmt::Debug for MarkupLink {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} (line {}, column {})",
-            self.target, self.line, self.column
+            "{} => {} (line {}, column {})",
+            self.source, self.target, self.line, self.column
         )
     }
 }
@@ -31,7 +33,13 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
 
     info!("Scan file at path '{}' for links.", path);
     match fs::read_to_string(path) {
-        Ok(text) => link_extractor.find_links(&text),
+        Ok(text) => {
+            let mut links = link_extractor.find_links(&text);
+            for l in &mut links{
+                l.source = path.to_string();
+            }
+            return links;
+        }
         Err(e) => {
             warn!(
                 "File '{}'. IO Error: \"{}\". Check your file encoding.",

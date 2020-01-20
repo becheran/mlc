@@ -18,7 +18,7 @@ pub enum LinkType {
     FileSystem,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum LinkCheckResult {
     Ok,
     Failed(String),
@@ -27,7 +27,7 @@ pub enum LinkCheckResult {
     NotImplemented(String),
 }
 
-pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
+pub async fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheckResult {
     info!("Check link {} => {}.", &link_source, &link_target);
     if config.ignore_links.iter().any(|m| m.is_match(link_target)) {
         return LinkCheckResult::Ignored(
@@ -51,7 +51,7 @@ pub fn check(link_source: &str, link_target: &str, config: &Config) -> LinkCheck
                         "Ignore web link because of the no-web-link flag.".to_string(),
                     )
                 } else {
-                    check_http(link_target)
+                    check_http(link_target).await
                 }
             }
             LinkType::FileSystem => check_filesystem(link_source, link_target),
@@ -73,7 +73,7 @@ fn check_mail(target: &str) -> LinkCheckResult {
     }
 }
 
-fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
+async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = Client::new();
     }
@@ -88,7 +88,7 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
 
     let request = Request::new(Method::HEAD, url.clone());
 
-    let response = CLIENT.execute(request)?;
+    let response = CLIENT.execute(request).await?;
     let status = response.status();
     if status.is_success() {
         Ok(LinkCheckResult::Ok)
@@ -97,7 +97,7 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED {
         warn!("Got the status code 405 Method Not Allowed. Retry with get-request.");
         let get_request = Request::new(Method::GET, url.clone());
-        let response = CLIENT.execute(get_request)?;
+        let response = CLIENT.execute(get_request).await?;
         let status = response.status();
         if status.is_success() {
             Ok(LinkCheckResult::Ok)
@@ -109,10 +109,10 @@ fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     }
 }
 
-fn check_http(target: &str) -> LinkCheckResult {
+async fn check_http(target: &str) -> LinkCheckResult {
     let url = reqwest::Url::parse(&target).expect("URL of unknown type");
 
-    match http_request(&url) {
+    match http_request(&url).await {
         Ok(response) => response,
         Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {}", error_msg)),
     }
@@ -177,8 +177,9 @@ mod tests {
     #[test_case("mailto://foo+@bar.com")]
     #[test_case("mailto://foo.lastname@bar.com")]
     fn mail_links(link: &str) {
+        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
-        let result = check("NotImportant", link, &config);
+        let result = runtime.block_on(check("NotImportant", link, &config));
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -186,8 +187,9 @@ mod tests {
     #[test_case("mailto://foobar.com")]
     #[test_case("mailto://foo.lastname.com")]
     fn invalid_mail_links(link: &str) {
+        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
-        let result = check("NotImportant", link, &config);
+        let result = runtime.block_on(check("NotImportant", link, &config));
         assert!(result != LinkCheckResult::Ok);
     }
 
@@ -224,39 +226,45 @@ mod tests {
         test_link(link, &LinkType::FileSystem);
     }
 
-    #[test]
-    fn check_http_request() {
+    #[tokio::test]
+    async fn check_http_request() {
         let config = Config::default();
-        let result = check("NotImportant", "http://gitlab.com/becheran/mlc", &config);
+        let result = check("NotImportant", "http://gitlab.com/becheran/mlc", &config).await;
         assert!(result == LinkCheckResult::Ok);
     }
 
-    #[test]
-    fn check_https_request() {
+    #[tokio::test]
+    async fn check_https_request() {
         let config = Config::default();
-        let result = check("NotImportant", "https://gitlab.com/becheran/mlc", &config);
+        let result = check("NotImportant", "https://gitlab.com/becheran/mlc", &config).await;
         assert!(result == LinkCheckResult::Ok);
     }
 
-    #[test]
-    fn check_wrong_http_request() {
+    #[tokio::test]
+    async fn check_wrong_http_request() {
         let config = Config::default();
         let result = check(
             "NotImportant",
             "https://doesNotExist.me/even/less/likelly",
             &config,
-        );
+        )
+        .await;
         assert!(result != LinkCheckResult::Ok);
     }
-    #[test]
-    fn ignore_link_pattern() {
+
+    #[tokio::test]
+    async fn ignore_link_pattern() {
         let mut config = Config::default();
         config.ignore_links = vec![wildmatch::WildMatch::new("http?*")];
         let result = check(
             "NotImportant",
             "https://doesNotExist.me/even/less/likelly",
             &config,
+        )
+        .await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string())
         );
-        assert_eq!(result, LinkCheckResult::Ignored("Ignore web link because of ignore-links option.".to_string()));
     }
 }

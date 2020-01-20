@@ -10,6 +10,7 @@ enum ParserState {
     EqualSign,
     Link,
 }
+
 impl LinkExtractor for HtmlLinkExtractor {
     fn find_links(&self, text: &str) -> Vec<MarkupLink> {
         let mut result: Vec<MarkupLink> = Vec::new();
@@ -72,7 +73,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     column += 1;
                                 }
                                 while let Some(c) = line_chars.get(column) {
-                                    if c.is_whitespace() || c == &'"'{
+                                    if c.is_whitespace() || c == &'"' {
                                         break;
                                     }
                                     column += 1;
@@ -84,6 +85,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     column: link_column + 1,
                                     line: line + 1,
                                     target: link.to_string(),
+                                    source: "".to_string(),
                                 });
                                 state = ParserState::Text;
                             }
@@ -146,6 +148,7 @@ mod tests {
             target: "https://www.w3schools.com".to_string(),
             line: line,
             column: column,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }

@@ -14,23 +14,27 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
-## [0.8.0] - 2020-01-11
+### Changed
+
+* Faster execution with async tasks
+
+### Fixed
+
+* Wildcard parser for excluded links
 
 ## [0.8.0] - 2020-01-11
 
-## [0.8.0] - 2020-01-11
-
-## Added
+### Added
 
 * HTML support
 
-## Fixed
+### Fixed
 
 * No panic for not UTF-8 encoded files
 
 ## [0.7.0] - 2020-01-02
 
-## Added
+### Added
 
 * Reference readme file
 * Ignore links option
