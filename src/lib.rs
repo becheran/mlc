@@ -47,61 +47,38 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
 }
 
 fn print_result(result: &FinalResult) {
+    fn print_helper(
+        link: &MarkupLink,
+        status_code: &colored::ColoredString,
+        msg: &str,
+        error_channel: bool,
+    ) {
+        let link_str = format!(
+            "[{:^4}] {} ({}, {}) => {}. {}",
+            status_code, link.source, link.line, link.column, link.target, msg
+        );
+        if error_channel {
+            eprintln!("{}", link_str);
+        } else {
+            println!("{}", link_str);
+        }
+    }
+
     match &result.result_code {
         LinkCheckResult::Ok => {
-            println!(
-                "[{:^4}] {} ({}, {}) => {}",
-                "OK".green(),
-                result.link.source,
-                result.link.line,
-                result.link.column,
-                &result.link.target
-            );
+            print_helper(&result.link, &"OK".green(), "", false);
         }
         LinkCheckResult::NotImplemented(msg) => {
-            println!(
-                "[{:^4}] {} ({}, {}) => {}. {}",
-                "Warn".yellow(),
-                result.link.source,
-                result.link.line,
-                result.link.column,
-                result.link.target,
-                msg
-            );
+            print_helper(&result.link, &"Warn".yellow(), msg, false);
         }
         LinkCheckResult::Warning(msg) => {
-            println!(
-                "[{:^4}] {} ({}, {}) => {}. {}",
-                "Warn".yellow(),
-                result.link.source,
-                result.link.line,
-                result.link.column,
-                result.link.target,
-                msg
-            );
+            print_helper(&result.link, &"Warn".yellow(), msg, false);
         }
         LinkCheckResult::Ignored(msg) => {
-            println!(
-                "[{:^4}] {} ({}, {}) => {}. {}",
-                "Skip".green(),
-                result.link.source,
-                result.link.line,
-                result.link.column,
-                result.link.target,
-                msg
-            );
+            print_helper(&result.link, &"Skip".green(), msg, false);
         }
         LinkCheckResult::Failed(msg) => {
-            let error_msg = format!(
-                "[{:^4}] {} ({}, {}) => {}. {}",
-                "Err".red(),
-                result.link.source,
-                result.link.line,
-                result.link.column,
-                result.link.target,
-                msg
-            );
-            eprintln!("{}", &error_msg);
+            print_helper(&result.link, &"Err".red(), msg, true);
         }
     }
 }
