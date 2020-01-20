@@ -86,6 +86,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                             column: bracket_start + 2,
                                             line: line + 1,
                                             target: link.to_string(),
+                                            source: "".to_string(),
                                         });
                                     }
                                 }
@@ -112,6 +113,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                         column: start_idx + 1,
                                         line: line + 1,
                                         target: link.to_string(),
+                                        source: "".to_string(),
                                     });
                                     debug!("Extract link of format []: {:?}", link);
                                     let reference_link_tag = (&line_chars
@@ -146,6 +148,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                 column: start_idx + 1,
                                 line: line + 1,
                                 target: link.to_string(),
+                                source: "".to_string(),
                             });
                         }
                     }
@@ -183,6 +186,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                         column: link_column + 1,
                                         line: line + 1,
                                         target: link.to_string(),
+                                        source: "".to_string(),
                                     });
                                 }
                             }
@@ -224,11 +228,13 @@ mod tests {
             target: "http://meritbadge.herokuapp.com/mlc".to_string(),
             line: 1,
             column: 6,
+            source: "".to_string(),
         };
         let link = MarkupLink {
             target: "https://crates.io/crates/mlc".to_string(),
             line: 1,
             column: 44,
+            source: "".to_string(),
         };
         assert_eq!(vec![img, link], result);
     }
@@ -266,6 +272,7 @@ mod tests {
             target: "http://example.net/".to_string(),
             line: 1,
             column: 22,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -288,6 +295,7 @@ mod tests {
             target: link_str.to_string(),
             line: 3,
             column: 30,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -302,6 +310,7 @@ mod tests {
             target: link_str.to_string(),
             line: 1,
             column: 13,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -316,6 +325,7 @@ mod tests {
             target: link_str.to_string(),
             line: 2,
             column: 21,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -331,6 +341,7 @@ mod tests {
             target: "http://example.net/".to_string(),
             line: 1,
             column: column,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -350,6 +361,7 @@ mod tests {
             target: "http://example.net/".to_string(),
             line: 1,
             column: 1,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -364,6 +376,7 @@ mod tests {
             target: link_str.to_string(),
             line: 2,
             column: 46,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
@@ -381,6 +394,7 @@ mod tests {
             target: link_str.to_string(),
             line: 2,
             column: 46,
+            source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
     }
