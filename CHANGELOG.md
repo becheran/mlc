@@ -10,11 +10,13 @@ Types for Changes:
 
 # Changelog
 
+<!-- next-header -->
+
 ### Fixed
 
 * Mailto URI path accepted without double shlases
 
-## [Unreleased] - ReleaseDate
+## [0.9.1] - 2020-01-29
 
 ## [0.9.0] - 2020-01-20
 
