@@ -10,7 +10,9 @@ Types for Changes:
 
 # Changelog
 
-<!-- next-header -->
+### Fixed
+
+* Mailto URI path accepted without double shlases
 
 ## [Unreleased] - ReleaseDate
 

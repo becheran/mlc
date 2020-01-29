@@ -62,7 +62,7 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
 fn check_mail(target: &str) -> LinkCheckResult {
     lazy_static! {
         static ref EMAIL_REGEX: Regex = Regex::new(
-            r"^mailto://([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
+            r"^mailto:(//)?([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
         )
         .unwrap();
     }
@@ -176,6 +176,8 @@ mod tests {
     #[test_case("mailto://+bar@bar.com")]
     #[test_case("mailto://foo+@bar.com")]
     #[test_case("mailto://foo.lastname@bar.com")]
+    #[test_case("mailto://tst@xyz.us")]
+    #[test_case("mailto:bla.bla@web.de")]
     fn mail_links(link: &str) {
         let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
@@ -202,12 +204,6 @@ mod tests {
     #[test_case("ftp://mueller:12345@ftp.downloading.ch")]
     fn ftp_link_types(ftp: &str) {
         test_link(ftp, &LinkType::FTP);
-    }
-
-    #[test_case("mailto://name.latname@company.com")]
-    #[test_case("mailto://tst@xyz.us")]
-    fn mail_link_types(mail: &str) {
-        test_link(mail, &LinkType::Mail);
     }
 
     #[test_case("F:/fake/windows/paths")]
