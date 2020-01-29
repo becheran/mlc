@@ -24,13 +24,13 @@ lazy_static = "1.4.0"
 url = "2.1.1"
 colored = "1.9.2"
 reqwest = {version="0.10.1", features = ["native-tls-vendored"] }
-tokio = {version="0.2.9", features = ["rt-threaded", "macros"] }
+tokio = {version="0.2.11", features = ["rt-threaded", "macros"] }
 futures = "0.3.1"
 wildmatch = "1.0.3"
 
 [dev-dependencies]
 ntest = "0.5.1"
-criterion = "0.3.0"
+criterion = "0.3.1"
 
 [[bench]]
 name = "benchmarks"
