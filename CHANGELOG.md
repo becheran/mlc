@@ -13,6 +13,8 @@ Types for Changes:
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.9.1] - 2020-01-29
 ### Fixed
 
 * Mailto URI path accepted without double shlases
