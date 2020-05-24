@@ -86,16 +86,26 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         )
     }
 
-    let request = Request::new(Method::HEAD, url.clone());
+    let head_request = Request::new(Method::HEAD, url.clone());
+    let get_request = Request::new(Method::GET, url.clone());
 
-    let response = CLIENT.execute(request).await?;
+    let response = match CLIENT.execute(head_request).await {
+        Ok(r) => r,
+        Err(e) => {
+            println!("Head request error: {}. Retry with get-request.", e);
+            CLIENT.execute(get_request).await?
+        }
+    };
+
     let status = response.status();
     if status.is_success() {
         Ok(LinkCheckResult::Ok)
     } else if status.is_redirection() {
         Ok(LinkCheckResult::Warning(status_to_string(&status)))
-    } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED {
-        warn!("Got the status code 405 Method Not Allowed. Retry with get-request.");
+    } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED
+        || status == reqwest::StatusCode::BAD_REQUEST
+    {
+        warn!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
@@ -226,7 +236,7 @@ mod tests {
     async fn check_http_request() {
         let config = Config::default();
         let result = check("NotImportant", "http://gitlab.com/becheran/mlc", &config).await;
-        assert!(result == LinkCheckResult::Ok);
+        assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
