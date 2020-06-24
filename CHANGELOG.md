@@ -17,10 +17,10 @@ Types for Changes:
 ## [0.9.2] - 2020-05-24
 
 ## [0.9.1] - 2020-01-29
+
 ### Fixed
 
-* Mailto URI path accepted without double shlases
-
+* Mailto URI path accepted without double slashes
 
 ## [0.9.0] - 2020-01-20
 

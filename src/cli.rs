@@ -8,7 +8,7 @@ pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
         .arg(
             Arg::with_name("directory")
-                .help("Check all links in given folder and subfolders")
+                .help("Check all links in given directory and subdirectory")
                 .required(false)
                 .index(1),
         )
@@ -51,7 +51,7 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let folder = matches
+    let directory = matches
         .value_of("directory")
         .unwrap_or("./")
         .parse()
@@ -71,7 +71,7 @@ pub fn parse_args() -> Config {
 
     Config {
         log_level,
-        folder: folder,
+        folder: directory,
         markup_types,
         no_web_links,
         ignore_links,
