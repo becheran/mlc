@@ -9,6 +9,8 @@
 
 Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI/CD pipeline to prevent broken links in your markup docs.
 
+Fast execution because of [async](https://rust-lang.github.io/async-book/) usage.
+
 ## Install
 
 There are different ways to install and use *mlc*.
