@@ -105,7 +105,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED
         || status == reqwest::StatusCode::BAD_REQUEST
     {
-        warn!("Got the status code {:?}. Retry with get-request.", status);
+        debug!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
