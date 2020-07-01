@@ -7,6 +7,7 @@ use reqwest::Request;
 use reqwest::StatusCode;
 use std::path::Path;
 use std::path::PathBuf;
+use std::path::MAIN_SEPARATOR;
 
 extern crate url;
 
@@ -54,7 +55,17 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                     check_http(link_target).await
                 }
             }
-            LinkType::FileSystem => check_filesystem(link_source, link_target),
+            LinkType::FileSystem => {
+                let mut fs_link_target = Path::new(link_target).to_path_buf();
+                if link_target.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
+                    match std::fs::canonicalize(&config.root_dir.as_ref().unwrap())
+                    {
+                        Ok(new_root) => fs_link_target = new_root.join(Path::new(&link_target[1..])),
+                        Err(e) => panic!("Root path could not be converted to an absolute path. Does the directory exit? {}", e)
+                    }
+                }
+                check_filesystem(link_source, &fs_link_target)
+            }
         },
     }
 }
@@ -128,7 +139,7 @@ async fn check_http(target: &str) -> LinkCheckResult {
     }
 }
 
-fn check_filesystem(source: &str, target: &str) -> LinkCheckResult {
+fn check_filesystem(source: &str, target: &PathBuf) -> LinkCheckResult {
     let target = absolute_target_path(source, target);
     if target.exists() {
         LinkCheckResult::Ok
@@ -137,12 +148,12 @@ fn check_filesystem(source: &str, target: &str) -> LinkCheckResult {
     }
 }
 
-fn absolute_target_path(source: &str, target: &str) -> PathBuf {
-    if Path::new(target).is_relative() {
+fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
+    if target.is_relative() {
         let parent = Path::new(source).parent().unwrap_or(Path::new("./"));
         parent.join(target)
     } else {
-        Path::new(target).to_path_buf()
+        target.to_owned()
     }
 }
 

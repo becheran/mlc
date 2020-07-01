@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Virtual root dir for easier local testing
+
 ## [0.9.3] - 2020-06-24
 
 ## [0.9.2] - 2020-05-24
