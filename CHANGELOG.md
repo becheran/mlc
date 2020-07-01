@@ -14,11 +14,15 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.9.3] - 2020-06-24
+
+## [0.9.2] - 2020-05-24
+
 ## [0.9.1] - 2020-01-29
+
 ### Fixed
 
-* Mailto URI path accepted without double shlases
-
+* Mailto URI path accepted without double slashes
 
 ## [0.9.0] - 2020-01-20
 
