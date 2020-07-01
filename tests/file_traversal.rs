@@ -2,10 +2,11 @@
 use mlc::file_traversal;
 use mlc::markup::{MarkupFile, MarkupType};
 use mlc::Config;
+use std::path::Path;
 
 #[test]
 fn find_markdown_files() {
-    let path = "./benches/benchmark/markdown/md_file_endings".to_string();
+    let path = Path::new("./benches/benchmark/markdown/md_file_endings").to_path_buf();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],
@@ -19,7 +20,7 @@ fn find_markdown_files() {
 
 #[test]
 fn empty_folder() {
-    let path = "./benches/benchmark/markdown/empty".to_string();
+    let path = Path::new("./benches/benchmark/markdown/empty").to_path_buf();
     let config: Config = Config {
         folder: path,
         markup_types: vec![MarkupType::Markdown],

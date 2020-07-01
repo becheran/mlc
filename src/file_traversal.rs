@@ -8,7 +8,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     let root = &config.folder;
     let markup_types = &config.markup_types;
 
-    info!("Search for files of markup types '{:?}' in directory '{}'", markup_types, root);
+    info!("Search for files of markup types '{:?}' in directory '{:?}'", markup_types, root);
 
     for entry in WalkDir::new(root)
         .follow_links(false)

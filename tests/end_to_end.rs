@@ -1,18 +1,49 @@
+use mlc::logger;
+use mlc::markup::MarkupType;
 #[cfg(test)]
 use mlc::Config;
-use mlc::markup::MarkupType;
-use mlc::logger;
 use std::path::Path;
 
-#[test]
-fn end_to_end() {
-    let test_files = Path::new(file!()).parent().unwrap().parent().unwrap().join("benches").join("benchmark");
+#[tokio::test]
+async fn end_to_end() {
+    let test_files = Path::new(file!())
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("benches")
+        .join("benchmark");
     let config = Config {
-        folder: test_files.to_str().unwrap().to_string(),
+        folder: test_files,
         log_level: logger::LogLevel::Debug,
         markup_types: vec![MarkupType::Markdown],
         no_web_links: false,
         ignore_links: vec![],
+        root_dir: None,
     };
-    let _ = mlc::run(&config);
+    if let Err(_) = mlc::run(&config).await {
+        panic!();
+    }
+}
+
+#[tokio::test]
+async fn end_to_end_different_root() {
+    let test_files = Path::new(file!())
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("benches")
+        .join("different_root");
+    let config = Config {
+        folder: test_files.clone(),
+        log_level: logger::LogLevel::Debug,
+        markup_types: vec![MarkupType::Markdown],
+        no_web_links: false,
+        ignore_links: vec![],
+        root_dir: Some(test_files),
+    };
+    if let Err(e) = mlc::run(&config).await {
+        panic!("Test with custom root failed. {:?}", e);
+    }
 }

@@ -5,6 +5,7 @@ extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 
+use std::path::PathBuf;
 use crate::link_extractors::link_extractor::MarkupLink;
 use crate::markup::MarkupFile;
 pub mod cli;
@@ -24,10 +25,11 @@ const PARALLEL_REQUESTS: usize = 20;
 #[derive(Default, Debug)]
 pub struct Config {
     pub log_level: logger::LogLevel,
-    pub folder: String,
+    pub folder: PathBuf,
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
     pub ignore_links: Vec<WildMatch>,
+    pub root_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone)]
