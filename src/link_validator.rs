@@ -7,7 +7,6 @@ use reqwest::Request;
 use reqwest::StatusCode;
 use std::path::Path;
 use std::path::PathBuf;
-use std::path::MAIN_SEPARATOR;
 
 extern crate url;
 
@@ -57,7 +56,7 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
             }
             LinkType::FileSystem => {
                 let mut fs_link_target = Path::new(link_target).to_path_buf();
-                if link_target.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
+                if (link_target.starts_with('/') || link_target.starts_with('\\')) && config.root_dir.is_some() {
                     match std::fs::canonicalize(&config.root_dir.as_ref().unwrap())
                     {
                         Ok(new_root) => fs_link_target = new_root.join(Path::new(&link_target[1..])),
