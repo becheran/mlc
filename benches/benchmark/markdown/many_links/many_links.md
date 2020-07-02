@@ -70,3 +70,6 @@ relictus.
 [many_links](./many_links.md)
 [many_links](./many_links.md)
 [many_links](./many_links.md)
+
+* [option one] foo
+* [option two]: bar

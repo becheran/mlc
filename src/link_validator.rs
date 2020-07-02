@@ -261,6 +261,13 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn check_http_request_with_hash() {
+        let config = Config::default();
+        let result = check("NotImportant", "http://gitlab.com/becheran/mlc#bla", &config).await;
+        assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
     async fn check_https_request() {
         let config = Config::default();
         let result = check("NotImportant", "https://gitlab.com/becheran/mlc", &config).await;

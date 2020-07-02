@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Link refs only allowed at beginning of line
+
 ### Changed
 
 * Allow mails without mailto schema

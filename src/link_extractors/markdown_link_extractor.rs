@@ -101,10 +101,18 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                     }
                                 }
                                 Some(&':') => {
+                                    if line_chars[..square_bracket_start]
+                                        .iter()
+                                        .any(|c| !c.is_whitespace())
+                                    {
+                                        continue;
+                                    }
                                     column += 1;
                                     skip_whitespace(&line_chars, &mut column);
                                     let start_idx = column;
-                                    while column < line_chars.len() && !line_chars[column].is_whitespace() {
+                                    while column < line_chars.len()
+                                        && !line_chars[column].is_whitespace()
+                                    {
                                         column += 1;
                                     }
                                     let link =
@@ -251,6 +259,14 @@ mod tests {
     fn link_in_headline() {
         let le = MarkdownLinkExtractor();
         let input = format!("  # This is not a [link](http://example.net/).");
+        let result = le.find_links(&input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn no_link_colon() {
+        let le = MarkdownLinkExtractor();
+        let input = format!("This is not a [link]:bla.");
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
