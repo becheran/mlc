@@ -34,8 +34,7 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
             "Ignore web link because of ignore-links option.".to_string(),
         );
     }
-    let link_type_opt = get_link_type(link_target);
-    match link_type_opt {
+    match get_link_type(link_target) {
         None => {
             LinkCheckResult::Failed(format!("Could not determine link type of {}.", link_target))
         }
@@ -70,16 +69,22 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
 }
 
 fn check_mail(target: &str) -> LinkCheckResult {
+    let mut mail = target;
+    if target.starts_with("mailto://"){
+        mail = &target[9..];
+    } else if target.starts_with("mailto:") {
+        mail = &target[7..];
+    }
     lazy_static! {
         static ref EMAIL_REGEX: Regex = Regex::new(
-            r"^mailto:(//)?([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
+            r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
         )
         .unwrap();
     }
-    if EMAIL_REGEX.is_match(target) {
+    if EMAIL_REGEX.is_match(mail) {
         LinkCheckResult::Ok
     } else {
-        LinkCheckResult::Failed(format!("Not a valid mail adress."))
+        LinkCheckResult::Failed(format!("Not a valid mail address."))
     }
 }
 
@@ -163,7 +168,11 @@ fn get_link_type(link: &str) -> Option<LinkType> {
     }
 
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
-        return Some(LinkType::FileSystem);
+        if link.contains('@'){
+            return Some(LinkType::Mail);
+        } else {
+            return Some(LinkType::FileSystem);
+        }
     }
 
     if let Ok(url) = Url::parse(&link) {
@@ -198,6 +207,7 @@ mod tests {
     #[test_case("mailto://foo.lastname@bar.com")]
     #[test_case("mailto://tst@xyz.us")]
     #[test_case("mailto:bla.bla@web.de")]
+    #[test_case("bla.bla@web.de")]
     fn mail_links(link: &str) {
         let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
         let config = Config::default();
