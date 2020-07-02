@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.10.1] - 2020-07-02
+
 ## [0.10.0] - 2020-07-01
 
 ### Added
