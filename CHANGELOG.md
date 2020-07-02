@@ -12,11 +12,13 @@ Types for Changes:
 
 <!-- next-header -->
 
+## [Unreleased] - ReleaseDate
+
 ### Changed
 
 * Allow mails without mailto schema
 
-## [Unreleased] - ReleaseDate
+## [0.10.2] - 2020-07-02
 
 ## [0.10.1] - 2020-07-02
 
