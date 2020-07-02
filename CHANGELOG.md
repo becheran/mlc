@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.10.3] - 2020-07-02
+
 ### Fixed
 
 * Link refs only allowed at beginning of line
