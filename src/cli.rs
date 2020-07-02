@@ -2,9 +2,9 @@ use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
 use clap::{App, Arg};
-use wildmatch::WildMatch;
 use std::path::Path;
-
+use std::path::MAIN_SEPARATOR;
+use wildmatch::WildMatch;
 
 pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
@@ -42,7 +42,7 @@ pub fn parse_args() -> Config {
                 .min_values(1)
                 .possible_values(&["md", "html"])
                 .required(false),
-        )        
+        )
         .arg(
             Arg::with_name("root_dir")
                 .long("root-dir")
@@ -79,10 +79,15 @@ pub fn parse_args() -> Config {
         .unwrap_or_default()
         .map(|x| WildMatch::new(x))
         .collect();
-    
-    let root_dir = if let Some(root_path) = matches.value_of("root_dir"){
-        let root_path = Path::new(root_path).to_path_buf();
-        if !root_path.is_dir(){
+
+    let root_dir = if let Some(root_path) = matches.value_of("root_dir") {
+        let root_path = Path::new(
+            &root_path
+                .replace('/', &MAIN_SEPARATOR.to_string())
+                .replace('\\', &MAIN_SEPARATOR.to_string()),
+        )
+        .to_path_buf();
+        if !root_path.is_dir() {
             eprintln!("Root path {:?} must be a directory!", root_path);
             std::process::exit(1);
         }

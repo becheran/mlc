@@ -7,6 +7,7 @@ use reqwest::Request;
 use reqwest::StatusCode;
 use std::path::Path;
 use std::path::PathBuf;
+use std::path::MAIN_SEPARATOR;
 
 extern crate url;
 
@@ -54,11 +55,14 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                 }
             }
             LinkType::FileSystem => {
-                let mut fs_link_target = Path::new(link_target).to_path_buf();
-                if (link_target.starts_with('/') || link_target.starts_with('\\')) && config.root_dir.is_some() {
+                let os_link = link_target
+                    .replace('/', &MAIN_SEPARATOR.to_string())
+                    .replace('\\', &MAIN_SEPARATOR.to_string());
+                let mut fs_link_target = Path::new(&os_link).to_path_buf();
+                if os_link.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
                     match std::fs::canonicalize(&config.root_dir.as_ref().unwrap())
                     {
-                        Ok(new_root) => fs_link_target = new_root.join(Path::new(&link_target[1..])),
+                        Ok(new_root) => fs_link_target = new_root.join(Path::new(&os_link[1..])),
                         Err(e) => panic!("Root path could not be converted to an absolute path. Does the directory exit? {}", e)
                     }
                 }
@@ -69,8 +73,9 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
 }
 
 fn check_mail(target: &str) -> LinkCheckResult {
+    debug!("Check mail target {:?}", target);
     let mut mail = target;
-    if target.starts_with("mailto://"){
+    if target.starts_with("mailto://") {
         mail = &target[9..];
     } else if target.starts_with("mailto:") {
         mail = &target[7..];
@@ -135,6 +140,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
 }
 
 async fn check_http(target: &str) -> LinkCheckResult {
+    debug!("Check http link target {:?}", target);
     let url = reqwest::Url::parse(&target).expect("URL of unknown type");
 
     match http_request(&url).await {
@@ -144,7 +150,9 @@ async fn check_http(target: &str) -> LinkCheckResult {
 }
 
 fn check_filesystem(source: &str, target: &PathBuf) -> LinkCheckResult {
+    debug!("Check file system link target {:?}", target);
     let target = absolute_target_path(source, target);
+    debug!("Absolute target path {:?}", target);
     if target.exists() {
         LinkCheckResult::Ok
     } else {
@@ -168,7 +176,7 @@ fn get_link_type(link: &str) -> Option<LinkType> {
     }
 
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
-        if link.contains('@'){
+        if link.contains('@') {
             return Some(LinkType::Mail);
         } else {
             return Some(LinkType::FileSystem);
@@ -263,7 +271,12 @@ mod tests {
     #[tokio::test]
     async fn check_http_request_with_hash() {
         let config = Config::default();
-        let result = check("NotImportant", "http://gitlab.com/becheran/mlc#bla", &config).await;
+        let result = check(
+            "NotImportant",
+            "http://gitlab.com/becheran/mlc#bla",
+            &config,
+        )
+        .await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 

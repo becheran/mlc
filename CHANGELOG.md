@@ -17,6 +17,7 @@ Types for Changes:
 ### Fixed
 
 * Link refs only allowed at beginning of line
+* Path separator for os
 
 ### Changed
 
