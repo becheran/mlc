@@ -12,6 +12,10 @@ Types for Changes:
 
 <!-- next-header -->
 
+### Changed
+
+* Allow mails without mailto schema
+
 ## [Unreleased] - ReleaseDate
 
 ## [0.10.1] - 2020-07-02

@@ -207,6 +207,7 @@ mod tests {
     #[test_case("mailto://foo.lastname@bar.com")]
     #[test_case("mailto://tst@xyz.us")]
     #[test_case("mailto:bla.bla@web.de")]
+    #[test_case("mailto:bla.bla.ext@web.de")]
     #[test_case("bla.bla@web.de")]
     fn mail_links(link: &str) {
         let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
