@@ -55,14 +55,21 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                 }
             }
             LinkType::FileSystem => {
-                let os_link = link_target
+                let mut normalized_link = link_target
                     .replace('/', &MAIN_SEPARATOR.to_string())
                     .replace('\\', &MAIN_SEPARATOR.to_string());
-                let mut fs_link_target = Path::new(&os_link).to_path_buf();
-                if os_link.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
+                if let Some(idx) = normalized_link.find('#') {
+                    warn!(
+                        "Strip everything after #. The chapter part ´{}´ is not checked.",
+                        &normalized_link[idx..]
+                    );
+                    normalized_link = normalized_link[..idx].to_string();
+                }
+                let mut fs_link_target = Path::new(&normalized_link).to_path_buf();
+                if normalized_link.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
                     match std::fs::canonicalize(&config.root_dir.as_ref().unwrap())
                     {
-                        Ok(new_root) => fs_link_target = new_root.join(Path::new(&os_link[1..])),
+                        Ok(new_root) => fs_link_target = new_root.join(Path::new(&normalized_link[1..])),
                         Err(e) => panic!("Root path could not be converted to an absolute path. Does the directory exit? {}", e)
                     }
                 }

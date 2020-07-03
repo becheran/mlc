@@ -16,6 +16,7 @@ Types for Changes:
 
 ### Fixed
 
+* Ref links with hashtag are not classified as error
 * Case insensitive mail addresses
 
 ## [0.10.3] - 2020-07-02
