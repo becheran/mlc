@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* No error for unknown URL schemes
+
 ### Fixed
 
 * Ref links with hashtag are not classified as error

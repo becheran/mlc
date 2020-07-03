@@ -17,6 +17,7 @@ pub enum LinkType {
     FTP,
     Mail,
     FileSystem,
+    UnknownUrlSchema,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -44,6 +45,9 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                 "Link type '{:?}' is not supported yet...",
                 &link_type
             )),
+            LinkType::UnknownUrlSchema => LinkCheckResult::NotImplemented(
+                "Url schema is unknown and cannot be checked.".to_string(),
+            ),
             LinkType::Mail => check_mail(link_target),
             LinkType::HTTP => {
                 if config.no_web_links {
@@ -200,7 +204,7 @@ fn get_link_type(link: &str) -> Option<LinkType> {
             "ftps" => return Some(LinkType::FTP),
             "mailto" => return Some(LinkType::Mail),
             "file" => return Some(LinkType::FileSystem),
-            _ => return None,
+            _ => return Some(LinkType::UnknownUrlSchema),
         }
     }
     None

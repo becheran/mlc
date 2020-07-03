@@ -6,3 +6,5 @@
 [https_link2](https://www.google.de/?hl=de)
 
 [mail](mailto://test.mail@tester.com)
+
+[unkown_url](another://foobar)
