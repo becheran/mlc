@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.10.4] - 2020-07-03
+
 ### Changed
 
 * No error for unknown URL schemes
