@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Case insensitive mail addresses
+
 ## [0.10.3] - 2020-07-02
 
 ### Fixed
