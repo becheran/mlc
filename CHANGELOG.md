@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.10.5] - 2020-07-07
+
 ### Fixed
 
 * Allow email address with special chars
