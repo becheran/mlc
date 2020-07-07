@@ -22,6 +22,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
         let mut link_tags: Vec<String> = Vec::new();
         let mut reference_link_tags: Vec<String> = Vec::new();
         let mut is_code_block = false;
+        let mut is_comment = false;
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
@@ -38,13 +39,35 @@ impl LinkExtractor for MarkdownLinkExtractor {
             {
                 is_code_block = !is_code_block;
                 column += 3;
+            } else if line_chars.get(column) == Some(&'<')
+                && line_chars.get(column + 1) == Some(&'/')
+                && line_chars.get(column + 2) == Some(&'s')
+                && line_chars.get(column + 3) == Some(&'c')
+                && line_chars.get(column + 4) == Some(&'r')
+                && line_chars.get(column + 5) == Some(&'i')
+                && line_chars.get(column + 6) == Some(&'p')
+                && line_chars.get(column + 7) == Some(&'t')
+                && line_chars.get(column + 8) == Some(&'>')
+            {
+                is_code_block = false;
+                column += 8;
+            } else if line_chars.get(column) == Some(&'-')
+                && line_chars.get(column + 1) == Some(&'-')
+                && line_chars.get(column + 2) == Some(&'>')
+            {
+                is_comment = false;
+                column += 2;
             }
 
-            if is_code_block {
+            if is_code_block || is_comment {
                 continue;
             }
 
             while column < line_chars.len() {
+                if is_comment && line_chars[column] != '-' {
+                    column += 1;
+                    continue;
+                }
                 match line_chars[column] {
                     '`' => {
                         column += 1;
@@ -163,41 +186,72 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     '<' => {
                         let link_column = column;
                         column += 1;
-                        if line_chars.get(column) == Some(&'a') {
-                            column += 1;
-                            skip_whitespace(&line_chars, &mut column);
-                            if line_chars.get(column) == Some(&'h')
-                                && line_chars.get(column + 1) == Some(&'r')
-                                && line_chars.get(column + 2) == Some(&'e')
-                                && line_chars.get(column + 3) == Some(&'f')
-                            {
-                                column += 4;
+                        match line_chars.get(column) {
+                            Some(&'a') | Some(&'A') => {
+                                column += 1;
                                 skip_whitespace(&line_chars, &mut column);
-                                if line_chars.get(column) == Some(&'=') {
-                                    column += 1;
-                                    while column < line_chars.len()
-                                        && (line_chars[column].is_whitespace()
-                                            || line_chars[column] == '"')
-                                    {
+                                if line_chars.get(column) == Some(&'h')
+                                    && line_chars.get(column + 1) == Some(&'r')
+                                    && line_chars.get(column + 2) == Some(&'e')
+                                    && line_chars.get(column + 3) == Some(&'f')
+                                {
+                                    column += 4;
+                                    skip_whitespace(&line_chars, &mut column);
+                                    if line_chars.get(column) == Some(&'=') {
                                         column += 1;
+                                        while column < line_chars.len()
+                                            && (line_chars[column].is_whitespace()
+                                                || line_chars[column] == '"')
+                                        {
+                                            column += 1;
+                                        }
+                                        let start_idx = column;
+                                        while line_chars.get(column).is_some()
+                                            && !line_chars[column].is_whitespace()
+                                            && line_chars[column] != '"'
+                                        {
+                                            column += 1;
+                                        }
+                                        let link = (&line_chars[start_idx..column])
+                                            .iter()
+                                            .collect::<String>();
+                                        result.push(MarkupLink {
+                                            column: link_column + 1,
+                                            line: line + 1,
+                                            target: link.to_string(),
+                                            source: "".to_string(),
+                                        });
                                     }
-                                    let start_idx = column;
-                                    while line_chars.get(column).is_some()
-                                        && !line_chars[column].is_whitespace()
-                                        && line_chars[column] != '"'
-                                    {
-                                        column += 1;
-                                    }
-                                    let link =
-                                        (&line_chars[start_idx..column]).iter().collect::<String>();
-                                    result.push(MarkupLink {
-                                        column: link_column + 1,
-                                        line: line + 1,
-                                        target: link.to_string(),
-                                        source: "".to_string(),
-                                    });
                                 }
                             }
+                            Some(&'s') | Some(&'S') => {
+                                if line_chars.get(column + 1) == Some(&'c')
+                                    && line_chars.get(column + 2) == Some(&'r')
+                                    && line_chars.get(column + 3) == Some(&'i')
+                                    && line_chars.get(column + 4) == Some(&'p')
+                                    && line_chars.get(column + 5) == Some(&'t')
+                                {
+                                    column += 5;
+                                    is_code_block = true;
+                                }
+                            }
+                            Some(&'!') => {
+                                if line_chars.get(column + 1) == Some(&'-')
+                                    && line_chars.get(column + 2) == Some(&'-')
+                                {
+                                    column += 2;
+                                    is_comment = true;
+                                }
+                            }
+                            Some(_) | None => {}
+                        }
+                    }
+                    '-' => {
+                        if line_chars.get(column + 1) == Some(&'-')
+                            && line_chars.get(column + 2) == Some(&'>')
+                        {
+                            is_comment = false;
+                            column += 2;
                         }
                     }
                     _ => {}
@@ -223,6 +277,14 @@ mod tests {
     fn inline_no_link() {
         let le = MarkdownLinkExtractor();
         let input = "]This is not a () link](! has no title attribute.";
+        let result = le.find_links(&input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn commented_link() {
+        let le = MarkdownLinkExtractor();
+        let input = "]This is not a () <!--[link](link)-->.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -272,9 +334,25 @@ mod tests {
     }
 
     #[test]
-    fn code_block() {
+    fn inline_code() {
         let le = MarkdownLinkExtractor();
         let input = format!(" `[code](http://example.net/)`, no link!.");
+        let result = le.find_links(&input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn code_block() {
+        let le = MarkdownLinkExtractor();
+        let input = format!(" ``` js\n[code](http://example.net/)```, no link!.");
+        let result = le.find_links(&input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn html_code_block() {
+        let le = MarkdownLinkExtractor();
+        let input = format!("<script>\n[code](http://example.net/)</script>, no link!.");
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }

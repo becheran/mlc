@@ -17,6 +17,7 @@ Types for Changes:
 ### Fixed
 
 * Allow email address with special chars
+* Add html comment support to markdown files
 
 ## [0.10.4] - 2020-07-03
 
