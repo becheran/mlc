@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Ignore files and directories
+
 ## [0.10.5] - 2020-07-07
 
 ### Fixed

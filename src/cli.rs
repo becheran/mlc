@@ -28,6 +28,13 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::with_name("ignore_path")
+                .long("ignore-path")
+                .help("List of files and directories which will not be checked")
+                .min_values(1)
+                .required(false),
+        )
+        .arg(
             Arg::with_name("ignore_links")
                 .long("ignore-links")
                 .help("List of links which will not be checked")
@@ -80,6 +87,12 @@ pub fn parse_args() -> Config {
         .map(|x| WildMatch::new(x))
         .collect();
 
+    let ignore_path: Vec<String> = matches
+        .values_of("ignore_links")
+        .unwrap_or_default()
+        .map(|x| x.to_string())
+        .collect();
+
     let root_dir = if let Some(root_path) = matches.value_of("root_dir") {
         let root_path = Path::new(
             &root_path
@@ -102,6 +115,7 @@ pub fn parse_args() -> Config {
         markup_types,
         no_web_links,
         ignore_links,
+        ignore_path,
         root_dir,
     }
 }

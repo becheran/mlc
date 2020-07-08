@@ -1,30 +1,56 @@
 extern crate walkdir;
 
-use walkdir::WalkDir;
+use crate::markup::{MarkupFile, MarkupType};
 use crate::Config;
-use crate::markup::{MarkupType, MarkupFile};
+use std::path::Path;
+use std::path::PathBuf;
+use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     let root = &config.folder;
     let markup_types = &config.markup_types;
+    let ignore_paths: Vec<PathBuf> = config
+        .ignore_path
+        .iter()
+        .map(|x| Path::new(x).to_path_buf())
+        .collect();
 
-    info!("Search for files of markup types '{:?}' in directory '{:?}'", markup_types, root);
+    info!(
+        "Search for files of markup types '{:?}' in directory '{:?}'",
+        markup_types, root
+    );
 
     for entry in WalkDir::new(root)
         .follow_links(false)
         .into_iter()
         .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_dir()) {
+        .filter(|e| !e.file_type().is_dir())
+    {
         let f_name = entry.file_name().to_string_lossy();
 
         if let Some(markup_type) = markup_type(&f_name, &markup_types) {
-            let path = entry.path().to_string_lossy().to_string();
-            let file = MarkupFile {
-                markup_type,
-                path,
-            };
-            debug!("Found file: {:?}", file);
-            result.push(file);
+            let path = entry.path();
+            if ignore_paths.iter().any(|ignore_path| {
+                if ignore_path.is_file() {
+                    ignore_path == path
+                } else if ignore_path.is_dir() {
+                    path.starts_with(ignore_path)
+                } else {
+                    false
+                }
+            }) {
+                debug!(
+                    "Ignore file {:?}, because it is in the ignore path list.",
+                    path
+                );
+            } else {
+                let file = MarkupFile {
+                    markup_type,
+                    path: path.to_string_lossy().to_string(),
+                };
+                debug!("Found file: {:?}.", file);
+                result.push(file);
+            }
         }
     }
 }
