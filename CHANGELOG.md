@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.11.0] - 2020-07-08
+
 ### Added
 
 * Ignore files and directories
