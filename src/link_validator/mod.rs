@@ -1,6 +1,10 @@
-use self::url::Url;
+mod link_type;
+mod mail;
+
+use mail::check_mail;
+use link_type::LinkType;
+use link_type::get_link_type;
 use crate::Config;
-use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
@@ -9,16 +13,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
 
-extern crate url;
-
-#[derive(Debug, PartialEq)]
-pub enum LinkType {
-    HTTP,
-    FTP,
-    Mail,
-    FileSystem,
-    UnknownUrlSchema,
-}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum LinkCheckResult {
@@ -80,27 +74,6 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                 check_filesystem(link_source, &fs_link_target)
             }
         },
-    }
-}
-
-fn check_mail(target: &str) -> LinkCheckResult {
-    debug!("Check mail target {:?}", target);
-    let mut mail = target;
-    if target.starts_with("mailto://") {
-        mail = &target[9..];
-    } else if target.starts_with("mailto:") {
-        mail = &target[7..];
-    }
-    lazy_static! {
-        static ref EMAIL_REGEX: Regex = Regex::new(
-            r"^((?i)[a-z0-9_!#$%&'*+-/=?^`{|}~+]([a-z0-9_!#$%&'*+-/=?^`{|}~+.]*[a-z0-9_!#$%&'*+-/=?^_{|}~+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
-        )
-        .unwrap();
-    }
-    if EMAIL_REGEX.is_match(mail) {
-        LinkCheckResult::Ok
-    } else {
-        LinkCheckResult::Failed(format!("Not a valid mail address."))
     }
 }
 
@@ -180,104 +153,9 @@ fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
     }
 }
 
-fn get_link_type(link: &str) -> Option<LinkType> {
-    lazy_static! {
-        static ref FILE_SYSTEM_REGEX: Regex =
-            Regex::new(r"^(([[:alpha:]]:(\\|/))|(..?(\\|/))|((\\\\?|//?))).*").unwrap();
-    }
-
-    if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
-        if link.contains('@') {
-            return Some(LinkType::Mail);
-        } else {
-            return Some(LinkType::FileSystem);
-        }
-    }
-
-    if let Ok(url) = Url::parse(&link) {
-        let scheme = url.scheme();
-        debug!("Link {} is a URL type with scheme {}", link, scheme);
-        match scheme {
-            "http" => return Some(LinkType::HTTP),
-            "https" => return Some(LinkType::HTTP),
-            "ftp" => return Some(LinkType::FTP),
-            "ftps" => return Some(LinkType::FTP),
-            "mailto" => return Some(LinkType::Mail),
-            "file" => return Some(LinkType::FileSystem),
-            _ => return Some(LinkType::UnknownUrlSchema),
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ntest::test_case;
-
-    fn test_link(link: &str, expected_type: &LinkType) {
-        let link_type =
-            get_link_type(link).expect(format!("Unknown link type for link {}", link).as_str());
-        assert_eq!(link_type, *expected_type);
-    }
-
-    #[test_case("mailto://+bar@bar.com")]
-    #[test_case("mailto://foo+@bar.com")]
-    #[test_case("mailto://foo.lastname@bar.com")]
-    #[test_case("mailto://tst@xyz.us")]
-    #[test_case("mailto:bla.bla@web.de")]
-    #[test_case("mailto:bla.bla.ext@web.de")]
-    #[test_case("mailto:BlA.bLa.ext@web.de")]
-    #[test_case("mailto:foo-bar@foobar.com")]
-    #[test_case("mailto:!#$%&'*+-/=?^_`{|}~-foo@foobar.com")]
-    #[test_case("mailto:some@hostnumbers123.com")]
-    #[test_case("mailto:some@host-name.com")]
-    #[test_case("bla.bla@web.de")]
-    fn mail_links(link: &str) {
-        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
-        let config = Config::default();
-        let result = runtime.block_on(check("NotImportant", link, &config));
-        assert_eq!(result, LinkCheckResult::Ok);
-    }
-
-    #[test_case("mailto://@bar@bar")]
-    #[test_case("mailto://foobar.com")]
-    #[test_case("mailto://foo.lastname.com")]
-    #[test_case("mailto:foo.do@l$astname.cOM")]
-    #[test_case("mailto:foo@l_astname.cOM")]
-    fn invalid_mail_links(link: &str) {
-        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
-        let config = Config::default();
-        let result = runtime.block_on(check("NotImportant", link, &config));
-        assert!(result != LinkCheckResult::Ok);
-    }
-
-    #[test_case("https://doc.rust-lang.org.html")]
-    #[test_case("http://www.website.php")]
-    fn http_link_types(link: &str) {
-        test_link(link, &LinkType::HTTP);
-    }
-
-    #[test_case("ftp://mueller:12345@ftp.downloading.ch")]
-    fn ftp_link_types(ftp: &str) {
-        test_link(ftp, &LinkType::FTP);
-    }
-
-    #[test_case("F:/fake/windows/paths")]
-    #[test_case("\\\\smb}\\paths")]
-    #[test_case("C:\\traditional\\paths")]
-    #[test_case("\\file.ext")]
-    #[test_case("file:///some/path/")]
-    #[test_case("path")]
-    #[test_case("./file.ext")]
-    #[test_case(".\\file.md")]
-    #[test_case("../upper_dir.md")]
-    #[test_case("..\\upper_dir.mdc")]
-    #[test_case("D:\\Program Files(x86)\\file.log")]
-    #[test_case("D:\\Program Files(x86)\\folder\\file.log")]
-    fn test_file_system_link_types(link: &str) {
-        test_link(link, &LinkType::FileSystem);
-    }
 
     #[tokio::test]
     async fn check_http_request() {
