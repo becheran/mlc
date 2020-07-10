@@ -2,18 +2,13 @@ extern crate walkdir;
 
 use crate::markup::{MarkupFile, MarkupType};
 use crate::Config;
-use std::path::Path;
-use std::path::PathBuf;
+use std::fs;
 use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     let root = &config.folder;
     let markup_types = &config.markup_types;
-    let ignore_paths: Vec<PathBuf> = config
-        .ignore_path
-        .iter()
-        .map(|x| Path::new(x).to_path_buf())
-        .collect();
+    let ignore_paths = &config.ignore_path;
 
     info!(
         "Search for files of markup types '{:?}' in directory '{:?}'",
@@ -29,10 +24,10 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
         let f_name = entry.file_name().to_string_lossy();
 
         if let Some(markup_type) = markup_type(&f_name, &markup_types) {
-            let path = entry.path();
+            let path = fs::canonicalize(entry.path()).expect("Expected path to exist.");
             if ignore_paths.iter().any(|ignore_path| {
                 if ignore_path.is_file() {
-                    ignore_path == path
+                    ignore_path == &path
                 } else if ignore_path.is_dir() {
                     path.starts_with(ignore_path)
                 } else {

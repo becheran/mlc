@@ -38,15 +38,15 @@ release_github_artifact:
     - tags
 
 release_docker:
-    stage: release
-    image: docker:stable
-    services:
+  stage: release
+  image: docker:stable
+  services:
     - docker:dind
-   script:
+  script:
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - docker build -t becheran/mlc .
     - version="${CI_COMMIT_TAG:1}"
     - docker tag becheran/mlc becheran/mlc:version
     - docker push becheran/mlc
-    only:
-      -tags
+  only:
+    - tags

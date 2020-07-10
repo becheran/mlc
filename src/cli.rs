@@ -2,7 +2,9 @@ use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
 use clap::{App, Arg};
+use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
 use wildmatch::WildMatch;
 
@@ -87,10 +89,16 @@ pub fn parse_args() -> Config {
         .map(|x| WildMatch::new(x))
         .collect();
 
-    let ignore_path: Vec<String> = matches
-        .values_of("ignore_links")
+    let ignore_path: Vec<PathBuf> = matches
+        .values_of("ignore_path")
         .unwrap_or_default()
-        .map(|x| x.to_string())
+        .map(|x| {
+            let path = Path::new(x).to_path_buf();
+            match fs::canonicalize(&path) {
+                Ok(p) => p,
+                Err(e) => panic!("Ignore path {:?} not found. {:?}.", &path, e),
+            }
+        })
         .collect();
 
     let root_dir = if let Some(root_path) = matches.value_of("root_dir") {

@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Ignore path parameter
+
 ## [0.11.0] - 2020-07-08
 
 ### Added

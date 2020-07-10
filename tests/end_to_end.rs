@@ -2,6 +2,7 @@ use mlc::logger;
 use mlc::markup::MarkupType;
 #[cfg(test)]
 use mlc::Config;
+use std::fs;
 use std::path::Path;
 
 #[tokio::test]
@@ -19,7 +20,10 @@ async fn end_to_end() {
         markup_types: vec![MarkupType::Markdown],
         no_web_links: false,
         ignore_links: vec![],
-        ignore_path: vec!["benches/benchmark/markdown/ignore_me.md".to_string(),"benches/benchmark/markdown/ignore_me".to_string()],
+        ignore_path: vec![
+            fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
+            fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
+        ],
         root_dir: None,
     };
     if let Err(_) = mlc::run(&config).await {

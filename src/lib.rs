@@ -29,7 +29,7 @@ pub struct Config {
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
     pub ignore_links: Vec<WildMatch>,
-    pub ignore_path: Vec<String>,
+    pub ignore_path: Vec<PathBuf>,
     pub root_dir: Option<PathBuf>,
 }
 
