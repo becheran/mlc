@@ -46,7 +46,7 @@ pub async fn check(link_source: &str, link_target: &str, config: &Config) -> Lin
                     check_http(link_target).await
                 }
             }
-            LinkType::FileSystem => check_filesystem(link_source, &link_target, &config),
+            LinkType::FileSystem => check_filesystem(link_source, &link_target, &config).await,
         },
     }
 }
