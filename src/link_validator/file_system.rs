@@ -2,6 +2,7 @@ use crate::Config;
 use crate::link_validator::LinkCheckResult;
 use async_std::path::Path;
 use std::path::MAIN_SEPARATOR;
+use async_std::fs::canonicalize;
 use async_std::path::PathBuf;
 
 pub async fn check_filesystem(source: &str, target: &str, config: &Config) -> LinkCheckResult {
@@ -17,7 +18,7 @@ pub async fn check_filesystem(source: &str, target: &str, config: &Config) -> Li
     }
     let mut fs_link_target = Path::new(&normalized_link).to_path_buf();
     if normalized_link.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
-        match async_std::fs::canonicalize(&config.root_dir.as_ref().unwrap()).await {
+        match canonicalize(&config.root_dir.as_ref().unwrap()).await {
             Ok(new_root) => fs_link_target = new_root.join(Path::new(&normalized_link[1..])),
             Err(e) => panic!(
                 "Root path could not be converted to an absolute path. Does the directory exit? {}",
@@ -27,7 +28,7 @@ pub async fn check_filesystem(source: &str, target: &str, config: &Config) -> Li
     }
 
     debug!("Check file system link target {:?}", target);
-    let target = absolute_target_path(source, &fs_link_target);
+    let target = absolute_target_path(source, &fs_link_target).await;
     debug!("Absolute target path {:?}", target);
     if target.exists().await {
         LinkCheckResult::Ok
@@ -36,9 +37,10 @@ pub async fn check_filesystem(source: &str, target: &str, config: &Config) -> Li
     }
 }
 
-fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
+async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
+    let abs_source = canonicalize(source).await.expect("Expected path to exist.");
     if target.is_relative() {
-        let parent = Path::new(source).parent().unwrap_or(Path::new("./"));
+        let parent = abs_source.parent().unwrap_or(Path::new("./"));
         parent.join(target)
     } else {
         target.to_owned()
