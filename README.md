@@ -29,6 +29,8 @@ To download a compiled binary version of *mlc* go to [github releases](https://g
 
 ### CI/CD Pipeline Integration
 
+**Binary**
+
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
 
 ``` bash
@@ -37,6 +39,10 @@ chmod +x mlc
 ```
 
 For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses *mlc* in the CI pipeline.
+
+**Docker**
+
+Use the *mlc* docker image from the [docker hub](https://hub.docker.com/repository/docker/becheran/mlc) which includes *mlc*.
 
 ## Usage
 
