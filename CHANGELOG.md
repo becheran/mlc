@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Improve fs checkup speed
+
 ## [0.11.1] - 2020-07-10
 
 ### Fixed
