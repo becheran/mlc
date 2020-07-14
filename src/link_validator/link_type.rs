@@ -3,7 +3,7 @@ extern crate url;
 use self::url::Url;
 use regex::Regex;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum LinkType {
     HTTP,
     FTP,
@@ -12,7 +12,7 @@ pub enum LinkType {
     UnknownUrlSchema,
 }
 
-pub fn get_link_type(link: &str) -> Option<LinkType> {
+pub fn get_link_type(link: &str) -> LinkType {
     lazy_static! {
         static ref FILE_SYSTEM_REGEX: Regex =
             Regex::new(r"^(([[:alpha:]]:(\\|/))|(..?(\\|/))|((\\\\?|//?))).*").unwrap();
@@ -20,9 +20,9 @@ pub fn get_link_type(link: &str) -> Option<LinkType> {
 
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
         if link.contains('@') {
-            return Some(LinkType::Mail);
+            return LinkType::Mail;
         } else {
-            return Some(LinkType::FileSystem);
+            return LinkType::FileSystem;
         }
     }
 
@@ -30,16 +30,16 @@ pub fn get_link_type(link: &str) -> Option<LinkType> {
         let scheme = url.scheme();
         debug!("Link {} is a URL type with scheme {}", link, scheme);
         match scheme {
-            "http" => return Some(LinkType::HTTP),
-            "https" => return Some(LinkType::HTTP),
-            "ftp" => return Some(LinkType::FTP),
-            "ftps" => return Some(LinkType::FTP),
-            "mailto" => return Some(LinkType::Mail),
-            "file" => return Some(LinkType::FileSystem),
-            _ => return Some(LinkType::UnknownUrlSchema),
+            "http" => return LinkType::HTTP,
+            "https" => return LinkType::HTTP,
+            "ftp" => return LinkType::FTP,
+            "ftps" => return LinkType::FTP,
+            "mailto" => return LinkType::Mail,
+            "file" => return LinkType::FileSystem,
+            _ => return LinkType::UnknownUrlSchema,
         }
     }
-    None
+    LinkType::UnknownUrlSchema
 }
 
 #[cfg(test)]
@@ -48,8 +48,7 @@ mod tests {
     use ntest::test_case;
 
     fn test_link(link: &str, expected_type: &LinkType) {
-        let link_type =
-            get_link_type(link).expect(format!("Unknown link type for link {}", link).as_str());
+        let link_type = get_link_type(link);
         assert_eq!(link_type, *expected_type);
     }
 
