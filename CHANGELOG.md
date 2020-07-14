@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Added `--match-file-extension` switch
+
 ## [0.11.2] - 2020-07-13
 
 ### Changed

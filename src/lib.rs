@@ -5,9 +5,9 @@ extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 
-use std::path::PathBuf;
 use crate::link_extractors::link_extractor::MarkupLink;
 use crate::markup::MarkupFile;
+use std::path::PathBuf;
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractors;
@@ -28,6 +28,7 @@ pub struct Config {
     pub folder: PathBuf,
     pub markup_types: Vec<markup::MarkupType>,
     pub no_web_links: bool,
+    pub match_file_extension: bool,
     pub ignore_links: Vec<WildMatch>,
     pub ignore_path: Vec<PathBuf>,
     pub root_dir: Option<PathBuf>,
@@ -90,13 +91,11 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let links = find_all_links(&config);
 
     let mut link_check_results = stream::iter(links)
-        .map(|link| {
-            async move {
-                let result_code = link_validator::check(&link.source, &link.target, &config).await;
-                FinalResult {
-                    link: link,
-                    result_code: result_code,
-                }
+        .map(|link| async move {
+            let result_code = link_validator::check(&link.source, &link.target, &config).await;
+            FinalResult {
+                link: link,
+                result_code: result_code,
             }
         })
         .buffer_unordered(PARALLEL_REQUESTS);

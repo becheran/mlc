@@ -30,6 +30,12 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::with_name("match-file-extension")
+                .long("match-file-extension")
+                .help("Do check for the exact file extension when searching for a file.")
+                .required(false),
+        )
+        .arg(
             Arg::with_name("ignore_path")
                 .long("ignore-path")
                 .help("List of files and directories which will not be checked")
@@ -83,6 +89,8 @@ pub fn parse_args() -> Config {
 
     let no_web_links = matches.is_present("no_web_links");
 
+    let match_file_extension = matches.is_present("match-file-extension");
+
     let ignore_links: Vec<WildMatch> = matches
         .values_of("ignore_links")
         .unwrap_or_default()
@@ -122,6 +130,7 @@ pub fn parse_args() -> Config {
         folder: directory,
         markup_types,
         no_web_links,
+        match_file_extension,
         ignore_links,
         ignore_path,
         root_dir,
