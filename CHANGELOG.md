@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.12.0] - 2020-07-15
+
 * Added `--match-file-extension` switch
 * Changed check links only once for speed improvement  
 
