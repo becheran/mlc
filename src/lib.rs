@@ -10,8 +10,11 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
+use futures::future;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Duration;
+use tokio::time::throttle;
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractors;
@@ -36,6 +39,7 @@ pub struct Config {
     pub ignore_links: Vec<WildMatch>,
     pub ignore_path: Vec<PathBuf>,
     pub root_dir: Option<PathBuf>,
+    pub throttle: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -121,7 +125,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let mut link_check_results = stream::iter(link_target_groups.keys())
+    let do_throttle = config.throttle > 0;
+    info!("Use throttle for HTTP: {:?}", do_throttle);
+    let mut buffered_stream = stream::iter(link_target_groups.keys())
+        .filter(|t| future::ready(!do_throttle || t.link_type != LinkType::HTTP))
         .map(|target| async move {
             let result_code =
                 link_validator::check(&target.target, &target.link_type, &config).await;
@@ -131,12 +138,27 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             }
         })
         .buffer_unordered(PARALLEL_REQUESTS);
+    let mut throttled_stream = throttle(
+        Duration::from_millis(config.throttle.into()),
+        stream::iter(link_target_groups.keys())
+            .filter(|t| future::ready(do_throttle && t.link_type == LinkType::HTTP))
+            .map(|target| async move {
+                let result_code =
+                    link_validator::check(&target.target, &target.link_type, &config).await;
+                FinalResult {
+                    target: target.clone(),
+                    result_code: result_code,
+                }
+            })
+            .buffer_unordered(1),
+    );
 
     let mut skipped = 0;
     let mut oks = 0;
     let mut warnings = 0;
     let mut errors = vec![];
-    while let Some(result) = link_check_results.next().await {
+
+    let mut process_result = |result| {
         print_result(&result, &link_target_groups);
         match &result.result_code {
             LinkCheckResult::Ok => {
@@ -152,6 +174,14 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 errors.push(result.clone());
             }
         }
+    };
+
+    while let Some(result) = buffered_stream.next().await {
+        process_result(result);
+    }
+
+    while let Some(result) = throttled_stream.next().await {
+        process_result(result);
     }
 
     println!();

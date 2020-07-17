@@ -59,6 +59,13 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::with_name("throttle")
+                .long("throttle")
+                .help("Wait between http request for a defined number of milliseconds.")
+                .required(false)
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("root_dir")
                 .long("root-dir")
                 .takes_value(true)
@@ -71,6 +78,14 @@ pub fn parse_args() -> Config {
         .about(crate_description!())
         .get_matches();
     let debug = matches.is_present("debug");
+
+    let throttle = match matches.value_of("throttle") {
+        Some(v) => v
+            .parse()
+            .expect("Integer expected. Throttle time in milliseconds."),
+        None => 0,
+    };
+
     let log_level = if debug {
         logger::LogLevel::Debug
     } else {
@@ -134,5 +149,6 @@ pub fn parse_args() -> Config {
         ignore_links,
         ignore_path,
         root_dir,
+        throttle,
     }
 }

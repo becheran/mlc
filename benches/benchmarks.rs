@@ -16,6 +16,7 @@ fn end_to_end_benchmark() {
         match_file_extension: false,
         ignore_path: vec![],
         root_dir: None,
+        throttle: 0,
         no_web_links: false,
     };
     let _ = mlc::run(&config);

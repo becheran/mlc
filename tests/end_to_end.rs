@@ -20,6 +20,7 @@ async fn end_to_end() {
         markup_types: vec![MarkupType::Markdown],
         no_web_links: false,
         match_file_extension: false,
+        throttle: 0,
         ignore_links: vec![],
         ignore_path: vec![
             fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
@@ -49,6 +50,7 @@ async fn end_to_end_different_root() {
         match_file_extension: false,
         ignore_links: vec![],
         ignore_path: vec![],
+        throttle: 0,
         root_dir: Some(test_files),
     };
     if let Err(e) = mlc::run(&config).await {
