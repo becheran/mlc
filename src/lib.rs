@@ -39,6 +39,7 @@ pub struct Config {
     pub ignore_links: Vec<WildMatch>,
     pub ignore_path: Vec<PathBuf>,
     pub root_dir: Option<PathBuf>,
+    pub throttle: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -124,8 +125,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
+    let do_throttle = config.throttle > 0;
+    info!("Use throttle for HTTP: {:?}", do_throttle);
     let mut buffered_stream = stream::iter(link_target_groups.keys())
-        .filter(|t| future::ready(t.link_type != LinkType::HTTP))
+        .filter(|t| future::ready(!do_throttle || t.link_type != LinkType::HTTP))
         .map(|target| async move {
             let result_code =
                 link_validator::check(&target.target, &target.link_type, &config).await;
@@ -136,9 +139,9 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         })
         .buffer_unordered(PARALLEL_REQUESTS);
     let mut throttled_stream = throttle(
-        Duration::from_secs(2),
+        Duration::from_millis(config.throttle.into()),
         stream::iter(link_target_groups.keys())
-            .filter(|t| future::ready(t.link_type == LinkType::HTTP))
+            .filter(|t| future::ready(do_throttle && t.link_type == LinkType::HTTP))
             .map(|target| async move {
                 let result_code =
                     link_validator::check(&target.target, &target.link_type, &config).await;
