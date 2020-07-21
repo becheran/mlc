@@ -90,8 +90,37 @@ async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
     let abs_source = canonicalize(source).await.expect("Expected path to exist.");
     if target.is_relative() {
         let parent = abs_source.parent().unwrap_or(Path::new("/"));
-        parent.join(target)
+        let new_target = match target.strip_prefix(".") {
+            Ok(t) => t,
+            Err(_) => target,
+        };
+        parent.join(new_target)
     } else {
         target.to_owned()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[tokio::test]
+    async fn remove_dot() {
+        let source = Path::new(file!())
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("benches")
+            .join("benchmark");
+        let target = Path::new("./script_and_comments.md").to_path_buf();
+
+        let path = absolute_target_path(&source.to_str().unwrap(), &target).await;
+
+        let path_str = path.to_str().unwrap().to_string();
+        println!("{:?}", path_str);
+        assert_eq!(path_str.matches(".").count(), 1);
     }
 }
