@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.1] - 2020-07-21
+
 ## [0.13.0] - 2020-07-17
 
 * Added `--throttle` command
