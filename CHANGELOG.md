@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Fixed https requests in docker container (#17)
+
 ## [0.13.2] - 2020-07-21
 
 ## [0.13.1] - 2020-07-21
