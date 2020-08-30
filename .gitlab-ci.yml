@@ -12,9 +12,11 @@ build_osx:
   stage: build
   artifacts:
     paths:
-      - /builds/becheran/mlc_ci
+      - apple-darwin.zip
   script:
+    - apt-get install zip
     - cargo build --release --target x86_64-apple-darwin
+    - zip -r /builds/becheran/mlc_ci/target/x86_64-apple-darwin/release apple-darwin.zip
 
 build_linux:
   stage: build
@@ -43,7 +45,7 @@ release_github_artifact:
     - go get github.com/aktau/github-release
     - github-release release --user becheran --repo mlc --tag $CI_COMMIT_TAG
     - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-linux" --file target/release/mlc
-    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file /builds/becheran/mlc_ci
+    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file apple-darwin.zip
   only:
     - tags
 
