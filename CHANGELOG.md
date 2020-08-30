@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.5] - 2020-08-30
+
 * Fixed http requests to crates.io. Added header fields (#20)
 
 ## [0.13.4] - 2020-08-04
