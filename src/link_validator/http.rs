@@ -4,6 +4,8 @@ use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
 use reqwest::StatusCode;
+use reqwest::header::HeaderValue;
+use reqwest::header::ACCEPT;
 
 pub async fn check_http(target: &str) -> LinkCheckResult {
     debug!("Check http link target {:?}", target);
@@ -28,8 +30,11 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         )
     }
 
-    let head_request = Request::new(Method::HEAD, url.clone());
-    let get_request = Request::new(Method::GET, url.clone());
+    let header = HeaderValue::from_static("text/html");
+    let mut head_request = Request::new(Method::HEAD, url.clone());
+    head_request.headers_mut().insert(ACCEPT, header.clone());
+    let mut get_request = Request::new(Method::GET, url.clone());
+    get_request.headers_mut().insert(ACCEPT, header);
 
     let response = match CLIENT.execute(head_request).await {
         Ok(r) => r,
