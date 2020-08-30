@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.6] - 2020-08-31
+
 * OSX builds
 
 ## [0.13.5] - 2020-08-30

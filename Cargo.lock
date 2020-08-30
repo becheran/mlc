@@ -809,7 +809,7 @@ dependencies = [
 
 [[package]]
 name = "mlc"
-version = "0.13.6-alpha.0"
+version = "0.13.6"
 dependencies = [
  "async-std 1.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.3 (registry+https://github.com/rust-lang/crates.io-index)",
