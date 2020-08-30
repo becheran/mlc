@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* OSX builds
+
 ## [0.13.5] - 2020-08-30
 
 * Fixed http requests to crates.io. Added header fields (#20)
