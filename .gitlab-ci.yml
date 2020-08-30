@@ -15,7 +15,7 @@ build_osx:
       - apple-darwin.zip
   script:
     - apt-get update
-    - apt-get install zip
+    - apt-get install zip -y
     - cargo build --release --target x86_64-apple-darwin
     - zip -r /builds/becheran/mlc_ci/target/x86_64-apple-darwin/release apple-darwin.zip
 
