@@ -7,6 +7,15 @@ stages:
   - build
   - release
 
+test_darwin:
+  image: joseluisq/rust-linux-darwin-builder:latest
+  stage: build
+  artifacts:
+    paths:
+      - target/release/mlc
+  script:
+    - cargo build --release --target x86_64-apple-darwin
+
 build_linux:
   stage: build
   artifacts:
