@@ -44,7 +44,6 @@ release_github_artifact:
     - github-release release --user becheran --repo mlc --tag $CI_COMMIT_TAG
     - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-linux" --file target/release/mlc
     - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file /builds/becheran/mlc_ci
-    /builds/becheran/mlc_ci
   only:
     - tags
 
