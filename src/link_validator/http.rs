@@ -1,5 +1,6 @@
 use crate::link_validator::LinkCheckResult;
 
+use reqwest::header::ACCEPT;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
@@ -15,6 +16,13 @@ pub async fn check_http(target: &str) -> LinkCheckResult {
     }
 }
 
+fn new_request(method: Method, url: &reqwest::Url) -> Request{
+    let mut req = Request::new(method, url.clone());
+    let headers = req.headers_mut();
+    headers.insert(ACCEPT, "text/html, text/markdown".parse().unwrap());
+    return req;
+}
+
 async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = Client::new();
@@ -28,8 +36,8 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         )
     }
 
-    let head_request = Request::new(Method::HEAD, url.clone());
-    let get_request = Request::new(Method::GET, url.clone());
+    let head_request = new_request(Method::HEAD, url);
+    let get_request = new_request(Method::GET, url);
 
     let response = match CLIENT.execute(head_request).await {
         Ok(r) => r,
@@ -68,6 +76,12 @@ mod test {
     #[tokio::test]
     async fn check_http_is_available() {
         let result = check_http("http://gitlab.com/becheran/mlc").await;
+        assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
+    async fn check_https_crates_io_available() {
+        let result = check_http("https://crates.io").await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
