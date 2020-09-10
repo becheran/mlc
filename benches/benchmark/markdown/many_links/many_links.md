@@ -1,7 +1,7 @@
 # Torrentur suum abstrahor quique Iuppiter rerum mediocris
 
 [many_links](./many_links.md)
-
+[a Stack data structure](https://en.wikipedia.org/wiki/Stack_(abstract_data_type))
 ## Siquid suis Anguem sola
 
 Lorem markdownum illum Hymenaee crudelius, sub magni, sic missa, sui quas dixit
