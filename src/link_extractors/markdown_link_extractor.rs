@@ -9,9 +9,42 @@ fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
     }
 }
 
-fn forward_until(vector: &Vec<char>, pos: &mut usize, check_char: char) -> bool {
-    while vector.get(*pos).is_some() && vector.get(*pos) != Some(&check_char) {
+/// Advance the `pos` index in the vector until reaching a character that
+/// matches the character at the index `pos` began at.
+///
+/// # Examples
+///
+/// ```ignore
+/// let vector = vec!['(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')'];
+/// let pos = 0;
+///
+/// let matching_char = forward_until_matching(&vector, &mut pos);
+/// assert_eq!(pos, 14);
+/// assert_eq!(matching_char, ')');
+/// ```
+fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
+    let start_char = vector.get(*pos);
+    let matching_char = match start_char {
+        Some(&'`') => Some(&'`'),
+        Some(&'(') => Some(&')'),
+        Some(&'[') => Some(&']'),
+        _ => panic!("no matching arm for char {:?} in forward_until_matching", start_char),
+    };
+
+    // iterate through the chars until we've reached a char that matches
+    // the start_char we began at
+    let mut num_unmatched_start_chars = 1;
+    while vector.get(*pos).is_some() && num_unmatched_start_chars != 0 {
         *pos += 1;
+
+        // keep track of any new start_chars we find so we know when we've found
+        // a char that matches our first start_char
+        if vector.get(*pos) == start_char {
+            num_unmatched_start_chars += 1;
+        }
+        if vector.get(*pos) == matching_char {
+            num_unmatched_start_chars -= 1;
+        }
     }
     vector.get(*pos).is_some()
 }
@@ -70,16 +103,32 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 }
                 match line_chars[column] {
                     '`' => {
-                        column += 1;
-                        forward_until(&line_chars, &mut column, '`');
+                        forward_until_matching(&line_chars, &mut column);
                     }
                     '\\' => {
                         column += 1; // Escape next character
                     }
                     '[' => {
-                        let square_bracket_start = column;
-                        if forward_until(&line_chars, &mut column, ']') {
+                         let square_bracket_start = column;
+                        if forward_until_matching(&line_chars, &mut column) {
                             let square_bracket_close = column;
+
+                            // recurse on line of text within the square brackets to find any
+                            // nested links contained within it
+                            let nested_text = (&line_chars
+                                [square_bracket_start + 1..square_bracket_close])
+                                .iter()
+                                .collect::<String>();
+                            let mut nested_links = self.find_links(&nested_text);
+
+                            // at this point any MarkupLinks in nested_links have an
+                            // incorrect column field, and to correct them we need to
+                            // account for the offset of nested_text within line_chars
+                            for mut link in nested_links.iter_mut() {
+                                link.column += square_bracket_start + 1;
+                            }
+                            result.append(&mut nested_links);
+
                             column += 1;
                             let start_idx = column + 1;
                             match line_chars.get(column) {
@@ -96,8 +145,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                 }
                                 Some(&'(') => {
                                     let bracket_start = column;
-                                    column += 1;
-                                    if forward_until(&line_chars, &mut column, ')') {
+                                    if forward_until_matching(&line_chars, &mut column) {
                                         let link = (&line_chars[start_idx..column])
                                             .iter()
                                             .collect::<String>();
@@ -106,7 +154,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                         let link = spl.next().unwrap_or("");
                                         debug!("Extract link link in format []() {:?}", link);
                                         result.push(MarkupLink {
-                                            column: bracket_start + 2,
+                                            column: bracket_start + 1,
                                             line: line + 1,
                                             target: link.to_string(),
                                             source: "".to_string(),
@@ -114,8 +162,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                     }
                                 }
                                 Some(&'[') => {
-                                    column += 1;
-                                    if forward_until(&line_chars, &mut column, ']') {
+                                    if forward_until_matching(&line_chars, &mut column) {
                                         let reference_link = (&line_chars[start_idx..column])
                                             .iter()
                                             .collect::<String>();
@@ -297,13 +344,13 @@ mod tests {
         let img = MarkupLink {
             target: "http://meritbadge.herokuapp.com/mlc".to_string(),
             line: 1,
-            column: 6,
+            column: 5,
             source: "".to_string(),
         };
         let link = MarkupLink {
             target: "https://crates.io/crates/mlc".to_string(),
             line: 1,
-            column: 44,
+            column: 43,
             source: "".to_string(),
         };
         assert_eq!(vec![img, link], result);
@@ -365,7 +412,7 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
-            column: 22,
+            column: 21,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -388,7 +435,7 @@ mod tests {
         let expected = MarkupLink {
             target: link_str.to_string(),
             line: 3,
-            column: 30,
+            column: 29,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -403,7 +450,7 @@ mod tests {
         let expected = MarkupLink {
             target: link_str.to_string(),
             line: 1,
-            column: 13,
+            column: 12,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -418,7 +465,7 @@ mod tests {
         let expected = MarkupLink {
             target: link_str.to_string(),
             line: 2,
-            column: 21,
+            column: 20,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);

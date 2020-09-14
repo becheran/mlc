@@ -22,5 +22,5 @@ fn some_links() {
         markup_type: MarkupType::Markdown,
     };
     let result = find_links(&file);
-    assert_eq!(result.len(), 10);
+    assert_eq!(result.len(), 11);
 }
