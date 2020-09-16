@@ -1,6 +1,7 @@
 use crate::link_validator::LinkCheckResult;
 
 use reqwest::header::ACCEPT;
+use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
@@ -20,6 +21,7 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request{
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
     headers.insert(ACCEPT, "text/html, text/markdown".parse().unwrap());
+    headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
     return req;
 }
 

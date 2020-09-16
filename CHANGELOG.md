@@ -14,6 +14,9 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Fixed #24 - thanks to Alex Melville (Melvillian) for fixing the issue
+* Fixed #26 - add user-agent to requests 
+
 ## [0.13.6] - 2020-08-31
 
 * OSX builds
