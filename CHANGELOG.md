@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.7] - 2020-09-16
+
 * Fixed #24 - thanks to Alex Melville (Melvillian) for fixing the issue
 * Fixed #26 - add user-agent to requests 
 
