@@ -1,0 +1,12 @@
+name: 'Markup Link Checker (mlc)'
+description: 'Check links in markup files'
+inputs:
+  args:
+    description: 'arguments'
+    default: './'
+runs:
+  using: 'docker'
+  image: 'GithubAction-Dockerfile'
+branding:
+  icon: 'link'  
+  color: 'green'

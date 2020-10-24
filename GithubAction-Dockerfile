@@ -1,0 +1,15 @@
+FROM ubuntu:18.04
+
+LABEL repository="https://github.com/becheran/mlc"
+
+RUN apt-get update; apt-get install -y ca-certificates; update-ca-certificates
+ADD ./mlc /bin/mlc
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+RUN PATH=$PATH:/bin/mlc
+RUN chmod +x /bin/mlc
+
+COPY LICENSE README.md /
+
+
+ENTRYPOINT ["/entrypoint.sh"]

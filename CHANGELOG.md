@@ -14,6 +14,7 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* #23 - Add github action
 * Upgrade external dependencies
 
 ## [0.13.7] - 2020-09-16
