@@ -14,10 +14,12 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Upgrade external dependencies
+
 ## [0.13.7] - 2020-09-16
 
 * Fixed #24 - thanks to Alex Melville (Melvillian) for fixing the issue
-* Fixed #26 - add user-agent to requests 
+* Fixed #26 - add user-agent to requests
 
 ## [0.13.6] - 2020-08-31
 
