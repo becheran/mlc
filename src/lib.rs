@@ -114,9 +114,17 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let links = find_all_links(&config);
     let mut link_target_groups: HashMap<Target, Vec<MarkupLink>> = HashMap::new();
 
+    let mut skipped = 0;
+
     for link in &links {
         if config.ignore_links.iter().any(|m| m.is_match(&link.target)) {
-            print_helper(&link, &"Skip".green(), "Ignore link because of ignore-links option.", false);
+            print_helper(
+                &link,
+                &"Skip".green(),
+                "Ignore link because of ignore-links option.",
+                false,
+            );
+            skipped += 1;
             continue;
         }
         let link_type = get_link_type(&link.target);
@@ -158,7 +166,6 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             .buffer_unordered(1),
     );
 
-    let mut skipped = 0;
     let mut oks = 0;
     let mut warnings = 0;
     let mut errors = vec![];
