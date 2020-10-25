@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.8] - 2020-10-25
+
 * Fix ignore-links
 * Add -i short for ignore-links argument
 * #23 - Add github action
