@@ -71,23 +71,24 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     links
 }
 
-fn print_result(result: &FinalResult, map: &HashMap<Target, Vec<MarkupLink>>) {
-    fn print_helper(
-        link: &MarkupLink,
-        status_code: &colored::ColoredString,
-        msg: &str,
-        error_channel: bool,
-    ) {
-        let link_str = format!(
-            "[{:^4}] {} ({}, {}) => {}. {}",
-            status_code, link.source, link.line, link.column, link.target, msg
-        );
-        if error_channel {
-            eprintln!("{}", link_str);
-        } else {
-            println!("{}", link_str);
-        }
+fn print_helper(
+    link: &MarkupLink,
+    status_code: &colored::ColoredString,
+    msg: &str,
+    error_channel: bool,
+) {
+    let link_str = format!(
+        "[{:^4}] {} ({}, {}) => {}. {}",
+        status_code, link.source, link.line, link.column, link.target, msg
+    );
+    if error_channel {
+        eprintln!("{}", link_str);
+    } else {
+        println!("{}", link_str);
     }
+}
+
+fn print_result(result: &FinalResult, map: &HashMap<Target, Vec<MarkupLink>>) {
     for link in &map[&result.target] {
         match &result.result_code {
             LinkCheckResult::Ok => {
@@ -114,6 +115,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut link_target_groups: HashMap<Target, Vec<MarkupLink>> = HashMap::new();
 
     for link in &links {
+        if config.ignore_links.iter().any(|m| m.is_match(&link.target)) {
+            print_helper(&link, &"Skip".green(), "Ignore link because of ignore-links option.", false);
+            continue;
+        }
         let link_type = get_link_type(&link.target);
         let target = resolve_target_link(&link, &link_type, config).await;
         let t = Target { target, link_type };

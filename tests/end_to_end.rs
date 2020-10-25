@@ -21,7 +21,7 @@ async fn end_to_end() {
         no_web_links: false,
         match_file_extension: false,
         throttle: 0,
-        ignore_links: vec![],
+        ignore_links: vec![wildmatch::WildMatch::new("./doc/broken-local-link.doc")],
         ignore_path: vec![
             fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
             fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),

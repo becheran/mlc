@@ -45,6 +45,7 @@ pub fn parse_args() -> Config {
         .arg(
             Arg::with_name("ignore_links")
                 .long("ignore-links")
+                .short("i")
                 .help("List of links which will not be checked")
                 .min_values(1)
                 .required(false),

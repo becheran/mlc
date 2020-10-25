@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Fix ignore-links
+* Add -i short for ignore-links argument
 * #23 - Add github action
 * Upgrade external dependencies
 

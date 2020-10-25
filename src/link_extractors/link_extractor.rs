@@ -35,7 +35,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
     match fs::read_to_string(path) {
         Ok(text) => {
             let mut links = link_extractor.find_links(&text);
-            for l in &mut links{
+            for l in &mut links {
                 l.source = path.to_string();
             }
             return links;
