@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.9] - 2020-10-25
+
 * Fix wrong count output for skipped links
 
 ## [0.13.8] - 2020-10-25
