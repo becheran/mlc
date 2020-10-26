@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.13.12] - 2020-10-26
+
 * Added GitHub action to README.md
 
 ## [0.13.11] - 2020-10-26

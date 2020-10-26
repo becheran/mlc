@@ -52,7 +52,7 @@ Use *mlc* [command line arguments](./docs/reference.md) using the `with` argumen
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v0.13.11/mlc -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v0.13.12/mlc -o mlc
 chmod +x mlc
 ```
 
