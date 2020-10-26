@@ -29,6 +29,24 @@ To download a compiled binary version of *mlc* go to [github releases](https://g
 
 ### CI/CD Pipeline Integration
 
+**GitHub Actions**
+
+Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://github.com/marketplace/actions/markup-link-checker-mlc).
+
+``` yaml
+- name: Markup Link Checker (mlc)
+  uses: becheran/mlc@v0.13.11
+```
+
+Use *mlc* [command line arguments](./docs/reference.md) using the `with` argument:
+
+``` yaml
+- name: Markup Link Checker (mlc)
+  uses: becheran/mlc@v0.13.11
+  with:
+    args: ./README.md
+```
+
 **Binary**
 
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
