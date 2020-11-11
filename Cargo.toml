@@ -21,7 +21,7 @@ simplelog = "0.6"
 walkdir = "2.3.1"
 regex = "1"
 lazy_static = "1.4.0"
-url = "2.1.1"
+url = "2.2.0"
 colored = "2"
 async-std = "1.6"
 reqwest = {version="0.10.8", features = ["native-tls-vendored"] }
@@ -30,7 +30,7 @@ futures = "0.3"
 wildmatch = "1.0.12"
 
 [dev-dependencies]
-ntest = "0.7.1"
+ntest = "0.7.2"
 criterion = "0.3.3"
 
 [[bench]]
