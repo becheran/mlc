@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Fallback to GET requests if HEAD fails. See https://github.com/becheran/mlc/issues/28
+
 ## [0.13.12] - 2020-10-26
 
 * Added GitHub action to README.md

@@ -17,7 +17,7 @@ pub async fn check_http(target: &str) -> LinkCheckResult {
     }
 }
 
-fn new_request(method: Method, url: &reqwest::Url) -> Request{
+fn new_request(method: Method, url: &reqwest::Url) -> Request {
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
     headers.insert(ACCEPT, "text/html, text/markdown".parse().unwrap());
@@ -54,9 +54,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         Ok(LinkCheckResult::Ok)
     } else if status.is_redirection() {
         Ok(LinkCheckResult::Warning(status_to_string(&status)))
-    } else if status == reqwest::StatusCode::METHOD_NOT_ALLOWED
-        || status == reqwest::StatusCode::BAD_REQUEST
-    {
+    } else {
         debug!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
         let response = CLIENT.execute(get_request).await?;
@@ -66,8 +64,6 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         } else {
             Ok(LinkCheckResult::Failed(status_to_string(&status)))
         }
-    } else {
-        Ok(LinkCheckResult::Failed(status_to_string(&status)))
     }
 }
 
@@ -78,6 +74,12 @@ mod test {
     #[tokio::test]
     async fn check_http_is_available() {
         let result = check_http("http://gitlab.com/becheran/mlc").await;
+        assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
+    async fn check_link_available_issue_28() {
+        let result = check_http("https://deps.rs/repo/github/stanislav-tkach/os_info").await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
