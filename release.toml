@@ -1,5 +1,6 @@
 pre-release-replacements = [
   {file="README.md", search="releases/download/v[0-9\\.-]+", replace="releases/download/v{{version}}"},
+  {file="README.md", search="mlc@v[0-9\\.-]+", replace="mlc@v{{version}}"},
   {file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
   {file="CHANGELOG.md", search="ReleaseDate", replace="{{date}}"},
   {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n\n## [Unreleased] - ReleaseDate"},

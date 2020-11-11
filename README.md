@@ -35,14 +35,14 @@ Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://git
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.13.11
+  uses: becheran/mlc@v0.14.0
 ```
 
 Use *mlc* [command line arguments](./docs/reference.md) using the `with` argument:
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.13.11
+  uses: becheran/mlc@v0.14.0
   with:
     args: ./README.md
 ```
