@@ -17,7 +17,7 @@ is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 [dependencies]
 clap = {version = "2.33.3", features = ["yaml"]}
 log = "0.4.11"
-simplelog = "0.6"
+simplelog = "0.9"
 walkdir = "2.3.1"
 regex = "1"
 lazy_static = "1.4.0"
@@ -27,10 +27,10 @@ async-std = "1.6"
 reqwest = {version="0.10.8", features = ["native-tls-vendored"] }
 tokio = {version="0.2", features = ["rt-threaded", "macros"] }
 futures = "0.3"
-wildmatch = "1.0.12"
+wildmatch = "1.1.0"
 
 [dev-dependencies]
-ntest = "0.7.2"
+ntest = "0.7.3"
 criterion = "0.3.3"
 
 [[bench]]

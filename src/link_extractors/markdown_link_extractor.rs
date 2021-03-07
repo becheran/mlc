@@ -28,7 +28,10 @@ fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
         Some(&'`') => Some(&'`'),
         Some(&'(') => Some(&')'),
         Some(&'[') => Some(&']'),
-        _ => panic!("no matching arm for char {:?} in forward_until_matching", start_char),
+        _ => panic!(
+            "no matching arm for char {:?} in forward_until_matching",
+            start_char
+        ),
     };
 
     // iterate through the chars until we've reached a char that matches
@@ -109,7 +112,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         column += 1; // Escape next character
                     }
                     '[' => {
-                         let square_bracket_start = column;
+                        let square_bracket_start = column;
                         if forward_until_matching(&line_chars, &mut column) {
                             let square_bracket_close = column;
 
