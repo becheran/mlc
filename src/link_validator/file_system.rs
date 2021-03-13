@@ -9,18 +9,17 @@ use walkdir::WalkDir;
 pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult {
     let target = Path::new(target);
     debug!("Absolute target path {:?}", target);
-    let error_result = LinkCheckResult::Failed("Target path not found.".to_string());
     if target.exists().await {
         LinkCheckResult::Ok
     } else if !config.match_file_extension && target.extension().is_none() {
         // Check if file exists ignoring the file extension
         let target_file_name = match target.file_name() {
             Some(s) => s,
-            None => return error_result,
+            None => return LinkCheckResult::Failed("Target path not found.".to_string()),
         };
         let target_parent = match target.parent() {
             Some(s) => s,
-            None => return error_result,
+            None => return LinkCheckResult::Failed("Target parent not found.".to_string()),
         };
         debug!("Check if file ignoring the extension exists.");
         if target_parent.exists().await {
@@ -44,15 +43,17 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
                             return LinkCheckResult::Ok;
                         }
                     }
-                    None => return error_result,
+                    None => {
+                        return LinkCheckResult::Failed("Target filename not found.".to_string())
+                    }
                 }
             }
-            return error_result;
+            return LinkCheckResult::Failed("Target not found.".to_string());
         } else {
-            return error_result;
+            return LinkCheckResult::Failed("Target not found.".to_string());
         }
     } else {
-        error_result
+        LinkCheckResult::Failed("Target filename not found.".to_string())
     }
 }
 
@@ -79,17 +80,22 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
     }
 
     debug!("Check file system link target {:?}", target);
-    absolute_target_path(source, &fs_link_target)
+    let abs_path = absolute_target_path(source, &fs_link_target)
         .await
         .to_str()
         .expect("Could not resolve target path")
-        .to_string()
+        .to_string();
+    // Remove verbatim path identifier which causes trouble on windows when using ../../ in paths
+    return abs_path
+        .strip_prefix("\\\\?\\")
+        .unwrap_or_else(|| &abs_path)
+        .to_string();
 }
 
 async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
     let abs_source = canonicalize(source).await.expect("Expected path to exist.");
     if target.is_relative() {
-        let root = format!("{}",MAIN_SEPARATOR);
+        let root = format!("{}", MAIN_SEPARATOR);
         let parent = abs_source.parent().unwrap_or(Path::new(&root));
         let new_target = match target.strip_prefix(format!(".{}", MAIN_SEPARATOR)) {
             Ok(t) => t,

@@ -21,9 +21,9 @@ simplelog = "0.9"
 walkdir = "2.3.1"
 regex = "1"
 lazy_static = "1.4.0"
-url = "2.2.0"
+url = "2.2.1"
 colored = "2"
-async-std = "1.6"
+async-std = "1.9.0"
 reqwest = {version="0.10.8", features = ["native-tls-vendored"] }
 tokio = {version="0.2", features = ["rt-threaded", "macros"] }
 futures = "0.3"
@@ -31,7 +31,7 @@ wildmatch = "1.1.0"
 
 [dev-dependencies]
 ntest = "0.7.3"
-criterion = "0.3.3"
+criterion = "0.3.4"
 
 [[bench]]
 name = "benchmarks"
