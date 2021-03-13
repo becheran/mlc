@@ -16,6 +16,8 @@ Types for Changes:
 
 ## [0.14.2] - 2021-03-13
 
+* Fixed broken path check if ../ were included on windows file systems
+
 ## [0.14.1] - 2021-03-07
 
 ## [0.14.0] - 2020-11-11
