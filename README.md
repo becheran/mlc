@@ -12,7 +12,7 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 
 Fast execution because of [async](https://rust-lang.github.io/async-book/) usage.
 
-## Install
+## Install Locally
 
 There are different ways to install and use *mlc*.
 
@@ -28,9 +28,9 @@ cargo install mlc
 
 To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu` and `x86_64-apple-darwin`.
 
-### CI/CD Pipeline Integration
+## CI/CD Pipeline Integration
 
-#### GitHub Actions
+### GitHub Actions
 
 Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://github.com/marketplace/actions/markup-link-checker-mlc).
 
@@ -48,7 +48,7 @@ Use *mlc* [command line arguments](./docs/reference.md) using the `with` argumen
     args: ./README.md
 ```
 
-#### Binary
+### Binary
 
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
 
@@ -59,7 +59,7 @@ chmod +x mlc
 
 For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses *mlc* in the CI pipeline.
 
-#### Docker
+### Docker
 
 Use the *mlc* docker image from the [docker hub](https://hub.docker.com/repository/docker/becheran/mlc) which includes *mlc*.
 
