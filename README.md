@@ -1,9 +1,10 @@
 # Markup Link Checker
 
-[![](http://meritbadge.herokuapp.com/mlc)](https://crates.io/crates/mlc)
-[![](https://badgen.net/crates/d/mlc)](https://crates.io/crates/mlc)
-[![Build Status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
-[![](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![crates.io](https://img.shields.io/crates/v/mlc.svg?color=orange)](https://crates.io/crates/mlc)
+[![downloads](https://badgen.net/crates/d/mlc?color=blue)](https://crates.io/crates/mlc)
+[![build status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/main/CONTRIBUTING.md)
 
 [![asciicast](https://asciinema.org/a/299100.svg)](https://asciinema.org/a/299100)
 
@@ -25,11 +26,11 @@ cargo install mlc
 
 ### Download Binaries
 
-To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu`.
+To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu` and `x86_64-apple-darwin`.
 
 ### CI/CD Pipeline Integration
 
-**GitHub Actions**
+#### GitHub Actions
 
 Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://github.com/marketplace/actions/markup-link-checker-mlc).
 
@@ -47,7 +48,7 @@ Use *mlc* [command line arguments](./docs/reference.md) using the `with` argumen
     args: ./README.md
 ```
 
-**Binary**
+#### Binary
 
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
 
@@ -58,7 +59,7 @@ chmod +x mlc
 
 For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses *mlc* in the CI pipeline.
 
-**Docker**
+#### Docker
 
 Use the *mlc* docker image from the [docker hub](https://hub.docker.com/repository/docker/becheran/mlc) which includes *mlc*.
 
