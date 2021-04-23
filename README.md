@@ -4,13 +4,19 @@
 [![downloads](https://badgen.net/crates/d/mlc?color=blue)](https://crates.io/crates/mlc)
 [![build status](https://gitlab.com/becheran/mlc_ci/badges/master/pipeline.svg)](https://gitlab.com/becheran/mlc_ci/pipelines)
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/main/CONTRIBUTING.md)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/master/CONTRIBUTING.md)
 
 [![asciicast](https://asciinema.org/a/299100.svg)](https://asciinema.org/a/299100)
 
-Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI/CD pipeline to prevent broken links in your markup docs.
+Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI pipeline to prevent broken links in your markup docs.
 
-Fast execution because of [async](https://rust-lang.github.io/async-book/) usage.
+## Features
+
+* Find and check links in `markdown` and `html` files (HTML links in `markdown` files)
+* Validated absolute and relative file paths and URLs
+* User friendly command line interface
+* Easy [CI pipeline integration](#ci-pipeline-integration)
+* Very fast execution using [async](https://rust-lang.github.io/async-book/)
 
 ## Install Locally
 
@@ -28,7 +34,7 @@ cargo install mlc
 
 To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu` and `x86_64-apple-darwin`.
 
-## CI/CD Pipeline Integration
+## CI Pipeline Integration
 
 ### GitHub Actions
 
