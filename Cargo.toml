@@ -27,7 +27,7 @@ async-std = "1.9.0"
 reqwest = {version="0.10.8", features = ["native-tls-vendored"] }
 tokio = {version="0.2", features = ["rt-threaded", "macros"] }
 futures = "0.3"
-wildmatch = "1.1.0"
+wildmatch = "2.1.0"
 
 [dev-dependencies]
 ntest = "0.7.3"

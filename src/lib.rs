@@ -117,7 +117,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut skipped = 0;
 
     for link in &links {
-        if config.ignore_links.iter().any(|m| m.is_match(&link.target)) {
+        if config.ignore_links.iter().any(|m| m.matches(&link.target)) {
             print_helper(
                 &link,
                 &"Skip".green(),
