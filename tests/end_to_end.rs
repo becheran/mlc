@@ -1,6 +1,6 @@
+#[cfg(test)]
 use mlc::logger;
 use mlc::markup::MarkupType;
-#[cfg(test)]
 use mlc::Config;
 use std::fs;
 use std::path::Path;

@@ -28,6 +28,7 @@ pub fn init(log_level: &LogLevel) {
         level_filter,
         Config::default(),
         TerminalMode::Mixed,
+        ColorChoice::Auto,
     )]);
     if err.is_err() {
         panic!("Failied to init logger! Error: {:?}", err)
