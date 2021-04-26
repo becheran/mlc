@@ -1,7 +1,7 @@
 # Many Links
 
 [local_file](many_links.md)
-[folder](./markdown)
+[folder](./deep)
 [https_link](https://www.google.de/)
 [https_link2](https://www.google.de/?hl=de)
 

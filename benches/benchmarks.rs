@@ -1,3 +1,5 @@
+#[cfg(test)]
+
 #[macro_use]
 extern crate criterion;
 
