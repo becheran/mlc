@@ -10,10 +10,10 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
-use futures::future;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use tokio::time::{sleep, Duration};
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractors;
@@ -137,12 +137,20 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let do_throttle = config.throttle > 0;
-    info!("Use throttle for HTTP: {:?}", do_throttle);
+    info!("Throttle HTTP requests to same host: {:?}", do_throttle);
+    //let waitTimes : Arc<Vec<Mutex<HashMap<String, Vec<u8>>>>>;
+    let db:Arc<Vec<Mutex<HashMap<String, Vec<u8>>>>> = Arc::new(Vec::new(Mutex::new(HashMap::new())));
+
+    // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let mut buffered_stream = stream::iter(link_target_groups.keys())
-        .filter(|t| future::ready(!do_throttle || t.link_type != LinkType::HTTP))
         .map(|target| async move {
+            if do_throttle && target.link_type == LinkType::HTTP{
+                // TODO: 
+               sleep(Duration::from_millis(config.throttle.into())).await;
+
+            }
+
             let result_code =
                 link_validator::check(&target.target, &target.link_type, &config).await;
             FinalResult {
@@ -192,10 +200,6 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     while let Some(result) = buffered_stream.next().await {
         process_result(result);
     }
-
-    /*     while let Some(result) = throttled_stream.next().await {
-        process_result(result);
-    } */
 
     println!();
     let error_sum: usize = errors
