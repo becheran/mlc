@@ -10,10 +10,12 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
+use chashmap::CHashMap;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use tokio::time::{sleep, Duration};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::time::{sleep_until, Duration, Instant};
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractors;
@@ -25,6 +27,7 @@ pub use wildmatch::WildMatch;
 
 use futures::{stream, StreamExt};
 use link_validator::LinkCheckResult;
+use url::Url;
 
 const PARALLEL_REQUESTS: usize = 20;
 
@@ -137,44 +140,39 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let do_throttle = config.throttle > 0;
-    info!("Throttle HTTP requests to same host: {:?}", do_throttle);
-    //let waitTimes : Arc<Vec<Mutex<HashMap<String, Vec<u8>>>>>;
-    let db:Arc<Vec<Mutex<HashMap<String, Vec<u8>>>>> = Arc::new(Vec::new(Mutex::new(HashMap::new())));
-
+    let throttle = config.throttle > 0;
+    info!("Throttle HTTP requests to same host: {:?}", throttle);
+    let db = Arc::new(Mutex::new(HashMap::new()));
     // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let mut buffered_stream = stream::iter(link_target_groups.keys())
-        .map(|target| async move {
-            if do_throttle && target.link_type == LinkType::HTTP{
-                // TODO: 
-               sleep(Duration::from_millis(config.throttle.into())).await;
+        .map(|target| {
+            let db = db.clone();
+            async move {
+                if throttle && target.link_type == LinkType::HTTP {
+                    let parsed = Url::parse(&target.target).unwrap(); //TODO: ERROR IF Impossible
+                    let host = parsed.host_str().unwrap().to_string(); //TODO: ERRR IF impossible
 
-            }
+                    let mut db = db.lock().await;
 
-            let result_code =
-                link_validator::check(&target.target, &target.link_type, &config).await;
-            FinalResult {
-                target: target.clone(),
-                result_code: result_code,
+                    let val = db.get(&host);
+
+                    if let Some(deadline) = val {
+                        sleep_until(*deadline).await;
+                    }
+
+                    let wait_until = Instant::now() + Duration::from_millis(config.throttle.into());
+                    db.insert(host, wait_until);
+                }
+                let result_code =
+                    link_validator::check(&target.target, &target.link_type, &config).await;
+                FinalResult {
+                    target: target.clone(),
+                    result_code: result_code,
+                }
             }
         })
         .buffer_unordered(PARALLEL_REQUESTS);
 
-    /*     let mut throttled_stream =buffered_stream throttle(
-           Duration::from_millis(config.throttle.into()),
-           stream::iter(link_target_groups.keys())
-               .filter(|t| future::ready(do_throttle && t.link_type == LinkType::HTTP))
-               .map(|target| async move {
-                   let result_code =
-                       link_validator::check(&target.target, &target.link_type, &config).await;
-                   FinalResult {
-                       target: target.clone(),
-                       result_code: result_code,
-                   }
-               })
-               .buffer_unordered(1),
-       );
-    */
     let mut oks = 0;
     let mut warnings = 0;
     let mut errors = vec![];

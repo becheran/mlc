@@ -27,7 +27,7 @@ async fn throttle_different_hosts() {
     };
 
     let start = Instant::now();
-    mlc::run(&config).await.unwrap();
+    mlc::run(&config).await.unwrap_or(());
     let duration = start.elapsed();
     assert!(duration < Duration::from_millis(TEST_THROTTLE_MS.into()) * TEST_URLS / 2)
 }
@@ -48,7 +48,28 @@ async fn throttle_same_hosts() {
     };
 
     let start = Instant::now();
-    mlc::run(&config).await;
+    mlc::run(&config).await.unwrap_or(());
+    let duration = start.elapsed();
+    assert!(duration > Duration::from_millis(TEST_THROTTLE_MS.into()) * TEST_URLS / 2)
+}
+
+#[tokio::test]
+async fn throttle_same_ip() {
+    let test_file = benches_dir().join("throttle").join("same_ip.md");
+    let config = Config {
+        folder: test_file,
+        log_level: logger::LogLevel::Debug,
+        markup_types: vec![MarkupType::Markdown],
+        no_web_links: false,
+        match_file_extension: false,
+        throttle: TEST_THROTTLE_MS,
+        ignore_links: vec![],
+        ignore_path: vec![],
+        root_dir: None,
+    };
+
+    let start = Instant::now();
+    mlc::run(&config).await.unwrap_or(());
     let duration = start.elapsed();
     assert!(duration > Duration::from_millis(TEST_THROTTLE_MS.into()) * TEST_URLS / 2)
 }
