@@ -1,21 +1,16 @@
 #[cfg(test)]
+mod helper;
+
+use helper::benches_dir;
 use mlc::logger;
 use mlc::markup::MarkupType;
 use mlc::Config;
 use std::fs;
-use std::path::Path;
 
 #[tokio::test]
 async fn end_to_end() {
-    let test_files = Path::new(file!())
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("benches")
-        .join("benchmark");
     let config = Config {
-        folder: test_files,
+        folder: benches_dir().join("benchmark"),
         log_level: logger::LogLevel::Debug,
         markup_types: vec![MarkupType::Markdown],
         no_web_links: false,
@@ -28,20 +23,14 @@ async fn end_to_end() {
         ],
         root_dir: None,
     };
-    if let Err(_) = mlc::run(&config).await {
-        panic!();
+    if let Err(e) = mlc::run(&config).await {
+        panic!("Test with custom root failed. {:?}", e);
     }
 }
 
 #[tokio::test]
 async fn end_to_end_different_root() {
-    let test_files = Path::new(file!())
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("benches")
-        .join("different_root");
+    let test_files = benches_dir().join("different_root");
     let config = Config {
         folder: test_files.clone(),
         log_level: logger::LogLevel::Debug,

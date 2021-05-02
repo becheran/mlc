@@ -10,11 +10,11 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
-use futures::future;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::Duration;
-use tokio::time::throttle;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::time::{sleep_until, Duration, Instant};
 pub mod cli;
 pub mod file_traversal;
 pub mod link_extractors;
@@ -26,6 +26,7 @@ pub use wildmatch::WildMatch;
 
 use futures::{stream, StreamExt};
 use link_validator::LinkCheckResult;
+use url::Url;
 
 const PARALLEL_REQUESTS: usize = 20;
 
@@ -138,33 +139,66 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let do_throttle = config.throttle > 0;
-    info!("Use throttle for HTTP: {:?}", do_throttle);
+    let throttle = config.throttle > 0;
+    info!("Throttle HTTP requests to same host: {:?}", throttle);
+    let waits = Arc::new(Mutex::new(HashMap::new()));
+    // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let mut buffered_stream = stream::iter(link_target_groups.keys())
-        .filter(|t| future::ready(!do_throttle || t.link_type != LinkType::HTTP))
-        .map(|target| async move {
-            let result_code =
-                link_validator::check(&target.target, &target.link_type, &config).await;
-            FinalResult {
-                target: target.clone(),
-                result_code: result_code,
-            }
-        })
-        .buffer_unordered(PARALLEL_REQUESTS);
-    let mut throttled_stream = throttle(
-        Duration::from_millis(config.throttle.into()),
-        stream::iter(link_target_groups.keys())
-            .filter(|t| future::ready(do_throttle && t.link_type == LinkType::HTTP))
-            .map(|target| async move {
+        .map(|target| {
+            let waits = waits.clone();
+            async move {
+                if throttle && target.link_type == LinkType::HTTP {
+                    let parsed = match Url::parse(&target.target) {
+                        Ok(parsed) => parsed,
+                        Err(error) => {
+                            return FinalResult {
+                                target: target.clone(),
+                                result_code: LinkCheckResult::Failed(
+                                    format!("Could not parse URL type. Err: {:?}", error)
+                                        .to_string(),
+                                ),
+                            }
+                        }
+                    };
+                    let host = match parsed.host_str() {
+                        Some(host) => host.to_string(),
+                        None => {
+                            return FinalResult {
+                                target: target.clone(),
+                                result_code: LinkCheckResult::Failed(
+                                    "Failed to determine host".to_string(),
+                                ),
+                            }
+                        }
+                    };
+                    let mut waits = waits.lock().await;
+
+                    let mut wait_until : Option<Instant> = None;
+                    let next_wait = match waits.get(&host) {
+                        Some(old) => {
+                            wait_until = Some(*old);
+                            *old + Duration::from_millis(config.throttle.into())
+                        },
+                        None => Instant::now() + Duration::from_millis(config.throttle.into()),
+                    };
+                    waits.insert(host, next_wait);
+                    drop(waits);
+
+                    if let Some(deadline) = wait_until {
+                        sleep_until(deadline).await;
+                    }
+                }
+
                 let result_code =
                     link_validator::check(&target.target, &target.link_type, &config).await;
+                    
                 FinalResult {
                     target: target.clone(),
                     result_code: result_code,
                 }
-            })
-            .buffer_unordered(1),
-    );
+            }
+        })
+        .buffer_unordered(PARALLEL_REQUESTS);
 
     let mut oks = 0;
     let mut warnings = 0;
@@ -189,10 +223,6 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     };
 
     while let Some(result) = buffered_stream.next().await {
-        process_result(result);
-    }
-
-    while let Some(result) = throttled_stream.next().await {
         process_result(result);
     }
 

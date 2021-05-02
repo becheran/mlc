@@ -14,6 +14,9 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Changed throttle for increased performance
+* Security upgraded external dependencies
+
 ## [0.14.2] - 2021-03-13
 
 * Fixed broken path check if ../ were included on windows file systems
