@@ -12,11 +12,14 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 
 ## Features
 
-* Find and check links in `markdown` and `html` files (HTML links in `markdown` files)
+* Find and check links in `markdown` and `html` files
+* Support HTML links and plain URLs in `markdown` files
 * Validated absolute and relative file paths and URLs
 * User friendly command line interface
 * Easy [CI pipeline integration](#ci-pipeline-integration)
 * Very fast execution using [async](https://rust-lang.github.io/async-book/)
+* Efficient link resolving strategy which tries with minimized network load
+* Throttle option to prevent *429 Too Many Requests* errors
 
 ## Install Locally
 
