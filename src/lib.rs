@@ -10,7 +10,6 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
-use chashmap::CHashMap;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -142,29 +141,57 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let throttle = config.throttle > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);
-    let db = Arc::new(Mutex::new(HashMap::new()));
+    let waits = Arc::new(Mutex::new(HashMap::new()));
     // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let mut buffered_stream = stream::iter(link_target_groups.keys())
         .map(|target| {
-            let db = db.clone();
+            let waits = waits.clone();
             async move {
                 if throttle && target.link_type == LinkType::HTTP {
-                    let parsed = Url::parse(&target.target).unwrap(); //TODO: ERROR IF Impossible
-                    let host = parsed.host_str().unwrap().to_string(); //TODO: ERRR IF impossible
+                    let parsed = match Url::parse(&target.target) {
+                        Ok(parsed) => parsed,
+                        Err(error) => {
+                            return FinalResult {
+                                target: target.clone(),
+                                result_code: LinkCheckResult::Failed(
+                                    format!("Could not parse URL type. Err: {:?}", error)
+                                        .to_string(),
+                                ),
+                            }
+                        }
+                    };
+                    let host = match parsed.host_str() {
+                        Some(host) => host.to_string(),
+                        None => {
+                            return FinalResult {
+                                target: target.clone(),
+                                result_code: LinkCheckResult::Failed(
+                                    "Failed to determine host".to_string(),
+                                ),
+                            }
+                        }
+                    };
+                    let mut waits = waits.lock().await;
 
-                    let mut db = db.lock().await;
+                    let mut wait_until : Option<Instant> = None;
+                    let next_wait = match waits.get(&host) {
+                        Some(old) => {
+                            wait_until = Some(*old);
+                            *old + Duration::from_millis(config.throttle.into())
+                        },
+                        None => Instant::now() + Duration::from_millis(config.throttle.into()),
+                    };
+                    waits.insert(host, next_wait);
+                    drop(waits);
 
-                    let val = db.get(&host);
-
-                    if let Some(deadline) = val {
-                        sleep_until(*deadline).await;
+                    if let Some(deadline) = wait_until {
+                        sleep_until(deadline).await;
                     }
-
-                    let wait_until = Instant::now() + Duration::from_millis(config.throttle.into());
-                    db.insert(host, wait_until);
                 }
+
                 let result_code =
                     link_validator::check(&target.target, &target.link_type, &config).await;
+                    
                 FinalResult {
                     target: target.clone(),
                     result_code: result_code,
