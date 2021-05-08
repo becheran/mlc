@@ -4,12 +4,12 @@ use crate::markup::{MarkupFile, MarkupType};
 use std::fmt;
 use std::fs;
 
-/// Links found in markup files
+/// Link found in markup files
 #[derive(PartialEq, Clone)]
 pub struct MarkupLink {
     /// The source file of the link
     pub source: String,
-    /// The target the links points to
+    /// The target the link points to
     pub target: String,
     /// The line number were the link was found
     pub line: usize,
