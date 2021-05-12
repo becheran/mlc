@@ -11,17 +11,6 @@ fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
 
 /// Advance the `pos` index in the vector until reaching a character that
 /// matches the character at the index `pos` began at.
-///
-/// # Examples
-///
-/// ```ignore
-/// let vector = vec!['(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')'];
-/// let pos = 0;
-///
-/// let matching_char = forward_until_matching(&vector, &mut pos);
-/// assert_eq!(pos, 14);
-/// assert_eq!(matching_char, ')');
-/// ```
 fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
     let start_char = vector.get(*pos);
     let matching_char = match start_char {
@@ -555,5 +544,17 @@ mod tests {
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn forward_until_matching_find_match() {
+        let vector = vec![
+            '(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')',
+        ];
+        let mut pos = 0;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert_eq!(pos, 14);
+        assert!(matching);
+        assert_eq!(vector[pos], ')');
     }
 }
