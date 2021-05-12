@@ -96,6 +96,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 match line_chars[column] {
                     '`' => {
                         forward_until_matching(&line_chars, &mut column);
+                        column += 1; // Forward to next char after `
                     }
                     '\\' => {
                         column += 1; // Escape next character
@@ -389,6 +390,20 @@ mod tests {
             target: "http://example.net/".to_string(),
             line: 1,
             column: 14,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn link_very_near_inline_code() {
+        let le = MarkdownLinkExtractor();
+        let input = format!("`bug`[code](http://example.net/)");
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 1,
+            column: 13,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
