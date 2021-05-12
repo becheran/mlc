@@ -11,17 +11,6 @@ fn skip_whitespace(vector: &Vec<char>, pos: &mut usize) {
 
 /// Advance the `pos` index in the vector until reaching a character that
 /// matches the character at the index `pos` began at.
-///
-/// # Examples
-///
-/// ```ignore
-/// let vector = vec!['(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')'];
-/// let pos = 0;
-///
-/// let matching_char = forward_until_matching(&vector, &mut pos);
-/// assert_eq!(pos, 14);
-/// assert_eq!(matching_char, ')');
-/// ```
 fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
     let start_char = vector.get(*pos);
     let matching_char = match start_char {
@@ -42,7 +31,7 @@ fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
 
         // keep track of any new start_chars we find so we know when we've found
         // a char that matches our first start_char
-        if vector.get(*pos) == start_char {
+        if vector.get(*pos) == start_char && matching_char != start_char{
             num_unmatched_start_chars += 1;
         }
         if vector.get(*pos) == matching_char {
@@ -107,6 +96,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 match line_chars[column] {
                     '`' => {
                         forward_until_matching(&line_chars, &mut column);
+                        column += 1; // Forward to next char after `
                     }
                     '\\' => {
                         column += 1; // Escape next character
@@ -392,6 +382,34 @@ mod tests {
     }
 
     #[test]
+    fn link_near_inline_code() {
+        let le = MarkdownLinkExtractor();
+        let input = format!(" `bug` [code](http://example.net/), link!.");
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 1,
+            column: 14,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn link_very_near_inline_code() {
+        let le = MarkdownLinkExtractor();
+        let input = format!("`bug`[code](http://example.net/)");
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 1,
+            column: 13,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
     fn code_block() {
         let le = MarkdownLinkExtractor();
         let input = format!(" ``` js\n[code](http://example.net/)```, no link!.");
@@ -541,5 +559,39 @@ mod tests {
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn forward_until_matching_find_match() {
+        let vector = vec![
+            '(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')', ':', ')',
+        ];
+        let mut pos = 0;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert_eq!(pos, 14);
+        assert!(matching);
+        assert_eq!(vector[pos], ')');
+    }    
+
+    #[test]
+    fn forward_until_matching_issue_33() {
+        let vector = vec![
+            '`', 'b', 'u', 'g', '`', ' ', '[', 'c', 'o', 'd', 'e', ']'
+        ];
+        let mut pos = 0;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert_eq!(pos, 4);
+        assert!(matching);
+        assert_eq!(vector[pos], '`');
+    }
+
+    #[test]
+    fn forward_until_matching_no_match() {
+        let vector = vec![
+            '`', 'b', 'u', 'g', '`', ' ', '[', 'c', 'o', 'd', 'e', ']'
+        ];
+        let mut pos = 4;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert!(!matching);
     }
 }
