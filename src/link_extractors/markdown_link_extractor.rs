@@ -31,7 +31,7 @@ fn forward_until_matching(vector: &Vec<char>, pos: &mut usize) -> bool {
 
         // keep track of any new start_chars we find so we know when we've found
         // a char that matches our first start_char
-        if vector.get(*pos) == start_char {
+        if vector.get(*pos) == start_char && matching_char != start_char{
             num_unmatched_start_chars += 1;
         }
         if vector.get(*pos) == matching_char {
@@ -549,12 +549,34 @@ mod tests {
     #[test]
     fn forward_until_matching_find_match() {
         let vector = vec![
-            '(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')',
+            '(', 'h', 'e', 'l', 'l', 'o', ' ', '(', 'w', ')', 'o', 'r', 'l', 'd', ')', ':', ')',
         ];
         let mut pos = 0;
         let matching = forward_until_matching(&vector, &mut pos);
         assert_eq!(pos, 14);
         assert!(matching);
         assert_eq!(vector[pos], ')');
+    }    
+
+    #[test]
+    fn forward_until_matching_issue_33() {
+        let vector = vec![
+            '`', 'b', 'u', 'g', '`', ' ', '[', 'c', 'o', 'd', 'e', ']'
+        ];
+        let mut pos = 0;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert_eq!(pos, 4);
+        assert!(matching);
+        assert_eq!(vector[pos], '`');
+    }
+
+    #[test]
+    fn forward_until_matching_no_match() {
+        let vector = vec![
+            '`', 'b', 'u', 'g', '`', ' ', '[', 'c', 'o', 'd', 'e', ']'
+        ];
+        let mut pos = 4;
+        let matching = forward_until_matching(&vector, &mut pos);
+        assert!(!matching);
     }
 }

@@ -16,6 +16,7 @@ Types for Changes:
 
 * Changed throttle for increased performance
 * Security upgraded external dependencies
+* Fixed #33 link not found near code block
 
 ## [0.14.2] - 2021-03-13
 
