@@ -392,6 +392,20 @@ mod tests {
     }
 
     #[test]
+    fn link_near_inline_code() {
+        let le = MarkdownLinkExtractor();
+        let input = format!(" `bug` [code](http://example.net/), link!.");
+        let result = le.find_links(&input);
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 1,
+            column: 14,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
     fn code_block() {
         let le = MarkdownLinkExtractor();
         let input = format!(" ``` js\n[code](http://example.net/)```, no link!.");
