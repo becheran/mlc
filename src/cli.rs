@@ -32,7 +32,7 @@ pub fn parse_args() -> Config {
         .arg(
             Arg::with_name("match-file-extension")
                 .long("match-file-extension")
-                .help("Do check for the exact file extension when searching for a file.")
+                .help("Do check for the exact file extension when searching for a file")
                 .required(false),
         )
         .arg(
@@ -62,7 +62,7 @@ pub fn parse_args() -> Config {
         .arg(
             Arg::with_name("throttle")
                 .long("throttle")
-                .help("Wait between http request for a defined number of milliseconds.")
+                .help("Wait between http request to the same host for a defined number of milliseconds")
                 .required(false)
                 .takes_value(true),
         )
@@ -83,7 +83,7 @@ pub fn parse_args() -> Config {
     let throttle = match matches.value_of("throttle") {
         Some(v) => v
             .parse()
-            .expect("Integer expected. Throttle time in milliseconds."),
+            .expect("Integer expected. Throttle time in milliseconds"),
         None => 0,
     };
 
