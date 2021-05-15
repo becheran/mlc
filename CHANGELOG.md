@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.14.3] - 2021-05-15
+
 * Changed throttle for increased performance
 * Security upgraded external dependencies
 * Fixed #33 link not found near code block
