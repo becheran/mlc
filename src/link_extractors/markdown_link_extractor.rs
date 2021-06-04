@@ -352,7 +352,7 @@ mod tests {
     #[test]
     fn link_escaped() {
         let le = MarkdownLinkExtractor();
-        let input = format!("This is not a \\[link\\](random_link).");
+        let input = "This is not a \\[link\\](random_link).";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -368,7 +368,7 @@ mod tests {
     #[test]
     fn no_link_colon() {
         let le = MarkdownLinkExtractor();
-        let input = format!("This is not a [link]:bla.");
+        let input = "This is not a [link]:bla.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -376,7 +376,7 @@ mod tests {
     #[test]
     fn inline_code() {
         let le = MarkdownLinkExtractor();
-        let input = format!(" `[code](http://example.net/)`, no link!.");
+        let input = " `[code](http://example.net/)`, no link!.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     fn link_near_inline_code() {
         let le = MarkdownLinkExtractor();
-        let input = format!(" `bug` [code](http://example.net/), link!.");
+        let input = " `bug` [code](http://example.net/), link!.";
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn link_very_near_inline_code() {
         let le = MarkdownLinkExtractor();
-        let input = format!("`bug`[code](http://example.net/)");
+        let input = "`bug`[code](http://example.net/)";
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
@@ -412,7 +412,7 @@ mod tests {
     #[test]
     fn code_block() {
         let le = MarkdownLinkExtractor();
-        let input = format!(" ``` js\n[code](http://example.net/)```, no link!.");
+        let input = " ``` js\n[code](http://example.net/)```, no link!.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -420,7 +420,7 @@ mod tests {
     #[test]
     fn html_code_block() {
         let le = MarkdownLinkExtractor();
-        let input = format!("<script>\n[code](http://example.net/)</script>, no link!.");
+        let input = "<script>\n[code](http://example.net/)</script>, no link!.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -428,7 +428,7 @@ mod tests {
     #[test]
     fn escaped_code_block() {
         let le = MarkdownLinkExtractor();
-        let input = format!("   klsdjf \\`[escape](http://example.net/)\\`, no link!.");
+        let input = "   klsdjf \\`[escape](http://example.net/)\\`, no link!.";
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
@@ -442,7 +442,7 @@ mod tests {
     #[test]
     fn link_in_code_block() {
         let le = MarkdownLinkExtractor();
-        let input = format!("```\n[only code](http://example.net/)\n```.");
+        let input = "```\n[only code](http://example.net/)\n```.";
         let result = le.find_links(&input);
         assert!(result.is_empty());
     }
@@ -502,7 +502,7 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
-            column: column,
+            column,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
