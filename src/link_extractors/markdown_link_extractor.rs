@@ -1,22 +1,30 @@
+use super::html_link_extractor::HtmlLinkExtractor;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
 
 pub struct MarkdownLinkExtractor();
 
 impl LinkExtractor for MarkdownLinkExtractor {
     fn find_links(&self, text: &str) -> Vec<MarkupLink> {
-        // TODO: OPTIONS
-        let mut options = Options::empty();
-        options.insert(Options::ENABLE_STRIKETHROUGH);
-        let parser = Parser::new_ext(text, options); //TODO new_with_broken_link_callback(
+        let html_extractor = HtmlLinkExtractor();
+
+        // Setup callback that sets the URL and title when it encounters
+        // a reference to our home page.
+        let callback = &mut |broken_link: BrokenLink| {
+            warn!("Broken reference link: {:?}", broken_link.reference);
+            //TODO: Return error state
+            None
+        };
+
+        let parser = Parser::new_with_broken_link_callback(text, Options::empty(), Some(callback));
 
         let line_lengths: Vec<usize> = text.lines().map(|line| line.len()).collect();
         let line_column_from_idx = |idx: usize| -> (usize, usize) {
             let mut line = 1;
             let mut column = idx + 1;
             for line_length in &line_lengths {
-                if *line_length > column {
+                if *line_length >= column {
                     return (line, column);
                 }
                 column -= line_length + 1;
@@ -27,21 +35,45 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let mut result: Vec<MarkupLink> = Vec::new();
         for (evt, range) in parser.into_offset_iter() {
-            if let Event::Start(tag) = evt {
-                match tag {
-                    Tag::Link(link_type, destination, _title)
-                    | Tag::Image(link_type, destination, _title) => {
-                        // TODO type
-                        let line_col = line_column_from_idx(range.start);
-                        result.push(MarkupLink {
-                            column: line_col.1,
-                            line: line_col.0,
-                            source: String::new(),
-                            target: destination.to_string(),
+            match evt {
+                Event::End(tag) => {
+                    match tag {
+                        Tag::Link(_link_type, destination, _title)
+                        | Tag::Image(_link_type, destination, _title) => {
+                            let line_col = line_column_from_idx(range.start);
+                            result.push(MarkupLink {
+                                line: line_col.0,
+                                column: line_col.1,
+                                source: String::new(),
+                                target: destination.to_string(),
+                            })
+                        }
+                        _ => (),
+                    };
+                }
+                Event::Html(html) => {
+                    let line_col = line_column_from_idx(range.start);
+                    let mut html_result = html_extractor.find_links(html.as_ref());
+                    html_result = html_result
+                        .iter()
+                        .map(|md_link| {
+                            let line = line_col.0 + md_link.line - 1;
+                            let column = if md_link.line > 1 {
+                                md_link.column
+                            } else {
+                                line_col.1 + md_link.column - 1
+                            };
+                            MarkupLink {
+                                column,
+                                line,
+                                source: md_link.source.clone(),
+                                target: md_link.target.clone(),
+                            }
                         })
-                    }
-                    _ => (),
-                };
+                        .collect();
+                    result.append(&mut html_result);
+                }
+                _ => (),
             };
         }
         result
@@ -87,7 +119,7 @@ mod tests {
             column: 1,
             source: "".to_string(),
         };
-        assert_eq!(vec![link, img], result);
+        assert_eq!(vec![img, link], result);
     }
 
     #[test]
@@ -101,9 +133,9 @@ mod tests {
     #[test]
     fn link_in_headline() {
         let le = MarkdownLinkExtractor();
-        let input = format!("  # This is not a [link](http://example.net/).");
+        let input = "  # This is a [link](http://example.net/).";
         let result = le.find_links(&input);
-        assert!(result.is_empty());
+        assert_eq!(result[0].column, 15);
     }
 
     #[test]
@@ -130,7 +162,7 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
-            column: 14,
+            column: 8,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -144,7 +176,7 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
-            column: 13,
+            column: 6,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -174,7 +206,7 @@ mod tests {
         let expected = MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
-            column: 12,
+            column: 13,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -197,7 +229,7 @@ mod tests {
         let expected = MarkupLink {
             target: link_str.to_string(),
             line: 3,
-            column: 29,
+            column: 5,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -212,7 +244,7 @@ mod tests {
         let expected = MarkupLink {
             target: link_str.to_string(),
             line: 1,
-            column: 12,
+            column: 1,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -233,10 +265,11 @@ mod tests {
         assert_eq!(vec![expected], result);
     }
 
-    #[test_case("<http://example.net/>", 2)]
-    #[test_case("http://example.net/", 1)]
-    #[test_case("This is a short link http://example.net/", 22)]
-    #[test_case("This is a short link <http://example.net/>", 23)]
+    #[test_case("<http://example.net/>", 1)]
+    // TODO GitHub Link style support
+    //#[test_case("This is a short link http://example.net/", 22)]
+    //#[test_case("http://example.net/", 1)]
+    #[test_case("This is a short link <http://example.net/>", 22)]
     fn inline_link(input: &str, column: usize) {
         let le = MarkdownLinkExtractor();
         let result = le.find_links(&input);
@@ -270,15 +303,44 @@ mod tests {
     }
 
     #[test]
+    fn html_link_ident() {
+        let le = MarkdownLinkExtractor();
+        let result = le.find_links(&"123<a href=\"http://example.net/\"> link text</a>");
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 1,
+            column: 4,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn html_link_new_line() {
+        let le = MarkdownLinkExtractor();
+        let result = le.find_links(&"\n123<a href=\"http://example.net/\"> link text</a>");
+        let expected = MarkupLink {
+            target: "http://example.net/".to_string(),
+            line: 2,
+            column: 4,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
     fn referenced_link() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
-        let input = format!("[I'm a reference-style link][Arbitrary case-insensitive reference text].\n[arbitrary case-insensitive reference text]: {}", link_str);
+        let input = format!(
+            "This is [an example][arbitrary case-insensitive reference text] reference-style link.\n\n[Arbitrary CASE-insensitive reference text]: {}",
+            link_str
+        );
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: link_str.to_string(),
-            line: 2,
-            column: 46,
+            line: 1,
+            column: 9,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
@@ -289,16 +351,19 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!(
-            "[arbitrary case-insensitive reference text].\n[arbitrary case-insensitive reference text]: {}",
+            "Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {}",
             link_str
         );
         let result = le.find_links(&input);
-        let expected = MarkupLink {
-            target: link_str.to_string(),
-            line: 2,
-            column: 46,
-            source: "".to_string(),
-        };
-        assert_eq!(vec![expected], result);
+        assert_eq!(0, result.len());
+    }
+
+    #[test]
+    fn referenced_link_no_tag_only() {
+        let le = MarkdownLinkExtractor();
+        let input = "[link][reference]";
+        let result = le.find_links(&input);
+        assert_eq!(0, result.len());
+        // TODO: Check broken links
     }
 }
