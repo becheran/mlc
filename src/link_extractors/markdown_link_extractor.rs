@@ -329,6 +329,19 @@ mod tests {
     }
 
     #[test]
+    fn raw_html_issue_31() {
+        let le = MarkdownLinkExtractor();
+        let result = le.find_links(&"Some text <a href=\"some_url\">link text</a> more text.");
+        let expected = MarkupLink {
+            target: "some_url".to_string(),
+            line: 1,
+            column: 11,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
     fn referenced_link() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
