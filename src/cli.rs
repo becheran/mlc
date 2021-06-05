@@ -98,7 +98,7 @@ pub fn parse_args() -> Config {
         .parse()
         .unwrap();
 
-    let mut markup_types = vec![MarkupType::Markdown, MarkupType::HTML];
+    let mut markup_types = vec![MarkupType::Markdown, MarkupType::Html];
     if let Some(types) = matches.values_of("markup_types") {
         markup_types = types.map(|x| x.parse().unwrap()).collect();
     }

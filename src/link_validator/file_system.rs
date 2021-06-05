@@ -88,7 +88,7 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
     // Remove verbatim path identifier which causes trouble on windows when using ../../ in paths
     return abs_path
         .strip_prefix("\\\\?\\")
-        .unwrap_or_else(|| &abs_path)
+        .unwrap_or(&abs_path)
         .to_string();
 }
 
@@ -96,7 +96,7 @@ async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
     let abs_source = canonicalize(source).await.expect("Expected path to exist.");
     if target.is_relative() {
         let root = format!("{}", MAIN_SEPARATOR);
-        let parent = abs_source.parent().unwrap_or(Path::new(&root));
+        let parent = abs_source.parent().unwrap_or_else(|| Path::new(&root));
         let new_target = match target.strip_prefix(format!(".{}", MAIN_SEPARATOR)) {
             Ok(t) => t,
             Err(_) => target,
@@ -128,6 +128,6 @@ mod test {
 
         let path_str = path.to_str().unwrap().to_string();
         println!("{:?}", path_str);
-        assert_eq!(path_str.matches(".").count(), 1);
+        assert_eq!(path_str.matches('.').count(), 1);
     }
 }

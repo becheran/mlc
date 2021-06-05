@@ -38,7 +38,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
             for l in &mut links {
                 l.source = path.to_string();
             }
-            return links;
+            links
         }
         Err(e) => {
             warn!(
@@ -53,7 +53,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
 fn link_extractor_factory(markup_type: &MarkupType) -> Box<dyn LinkExtractor> {
     match markup_type {
         MarkupType::Markdown => Box::new(MarkdownLinkExtractor()),
-        MarkupType::HTML => Box::new(HtmlLinkExtractor()),
+        MarkupType::Html => Box::new(HtmlLinkExtractor()),
     }
 }
 

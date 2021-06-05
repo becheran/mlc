@@ -49,18 +49,11 @@ struct FinalResult {
     result_code: LinkCheckResult,
 }
 
-#[derive(Hash, Clone, Debug)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
 struct Target {
     target: String,
     link_type: LinkType,
 }
-
-impl PartialEq for Target {
-    fn eq(&self, other: &Self) -> bool {
-        self.target == other.target
-    }
-}
-impl Eq for Target {}
 
 fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     let mut files: Vec<MarkupFile> = Vec::new();
@@ -147,16 +140,16 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         .map(|target| {
             let waits = waits.clone();
             async move {
-                if throttle && target.link_type == LinkType::HTTP {
+                if throttle && target.link_type == LinkType::Http {
                     let parsed = match Url::parse(&target.target) {
                         Ok(parsed) => parsed,
                         Err(error) => {
                             return FinalResult {
                                 target: target.clone(),
-                                result_code: LinkCheckResult::Failed(
-                                    format!("Could not parse URL type. Err: {:?}", error)
-                                        .to_string(),
-                                ),
+                                result_code: LinkCheckResult::Failed(format!(
+                                    "Could not parse URL type. Err: {:?}",
+                                    error
+                                )),
                             }
                         }
                     };
@@ -173,12 +166,12 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     };
                     let mut waits = waits.lock().await;
 
-                    let mut wait_until : Option<Instant> = None;
+                    let mut wait_until: Option<Instant> = None;
                     let next_wait = match waits.get(&host) {
                         Some(old) => {
                             wait_until = Some(*old);
                             *old + Duration::from_millis(config.throttle.into())
-                        },
+                        }
                         None => Instant::now() + Duration::from_millis(config.throttle.into()),
                     };
                     waits.insert(host, next_wait);
@@ -191,10 +184,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
                 let result_code =
                     link_validator::check(&target.target, &target.link_type, &config).await;
-                    
+
                 FinalResult {
                     target: target.clone(),
-                    result_code: result_code,
+                    result_code,
                 }
             }
         })
@@ -240,7 +233,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     println!("Errors   {}", error_sum);
     println!();
 
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         eprintln!();
         eprintln!("The following links could not be resolved:");
         println!();

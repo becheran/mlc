@@ -5,8 +5,8 @@ use regex::Regex;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum LinkType {
-    HTTP,
-    FTP,
+    Http,
+    Ftp,
     Mail,
     FileSystem,
     UnknownUrlSchema,
@@ -30,10 +30,10 @@ pub fn get_link_type(link: &str) -> LinkType {
         let scheme = url.scheme();
         debug!("Link {} is a URL type with scheme {}", link, scheme);
         match scheme {
-            "http" => return LinkType::HTTP,
-            "https" => return LinkType::HTTP,
-            "ftp" => return LinkType::FTP,
-            "ftps" => return LinkType::FTP,
+            "http" => return LinkType::Http,
+            "https" => return LinkType::Http,
+            "ftp" => return LinkType::Ftp,
+            "ftps" => return LinkType::Ftp,
             "mailto" => return LinkType::Mail,
             "file" => return LinkType::FileSystem,
             _ => return LinkType::UnknownUrlSchema,
@@ -55,12 +55,12 @@ mod tests {
     #[test_case("https://doc.rust-lang.org.html")]
     #[test_case("http://www.website.php")]
     fn http_link_types(link: &str) {
-        test_link(link, &LinkType::HTTP);
+        test_link(link, &LinkType::Http);
     }
 
     #[test_case("ftp://mueller:12345@ftp.downloading.ch")]
     fn ftp_link_types(ftp: &str) {
-        test_link(ftp, &LinkType::FTP);
+        test_link(ftp, &LinkType::Ftp);
     }
 
     #[test_case("F:/fake/windows/paths")]

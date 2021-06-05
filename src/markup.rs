@@ -9,7 +9,7 @@ pub struct MarkupFile {
 #[derive(Debug, Clone)]
 pub enum MarkupType {
     Markdown,
-    HTML,
+    Html,
 }
 
 impl FromStr for MarkupType {
@@ -18,7 +18,7 @@ impl FromStr for MarkupType {
     fn from_str(s: &str) -> Result<MarkupType, ()> {
         match s {
             "md" => Ok(MarkupType::Markdown),
-            "html" => Ok(MarkupType::HTML),
+            "html" => Ok(MarkupType::Html),
             _ => Err(()),
         }
     }
@@ -39,7 +39,7 @@ impl MarkupType {
                 "text".to_string(),
                 "rmd".to_string(),
             ],
-            MarkupType::HTML => vec!["html".to_string(), "xhtml".to_string()],
+            MarkupType::Html => vec!["html".to_string(), "xhtml".to_string()],
         }
     }
 }

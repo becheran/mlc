@@ -4,10 +4,10 @@ use regex::Regex;
 pub fn check_mail(target: &str) -> LinkCheckResult {
     debug!("Check mail target {:?}", target);
     let mut mail = target;
-    if target.starts_with("mailto://") {
-        mail = &target[9..];
-    } else if target.starts_with("mailto:") {
-        mail = &target[7..];
+    if let Some(stripped) = target.strip_prefix("mailto://") {
+        mail = stripped;
+    } else if let Some(stripped) = target.strip_prefix("mailto:") {
+        mail = stripped;
     }
     lazy_static! {
         static ref EMAIL_REGEX: Regex = Regex::new(
@@ -18,7 +18,7 @@ pub fn check_mail(target: &str) -> LinkCheckResult {
     if EMAIL_REGEX.is_match(mail) {
         LinkCheckResult::Ok
     } else {
-        LinkCheckResult::Failed(format!("Not a valid mail address."))
+        LinkCheckResult::Failed("Not a valid mail address.".to_string())
     }
 }
 

@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = cli::parse_args();
     logger::init(&config.log_level);
     info!("Config: {:?}", &config);
-    if let Err(_) = mlc::run(&config).await {
+    if mlc::run(&config).await.is_err() {
         process::exit(1);
     } else {
         process::exit(0);

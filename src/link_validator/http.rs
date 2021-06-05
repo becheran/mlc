@@ -22,7 +22,7 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
     let headers = req.headers_mut();
     headers.insert(ACCEPT, "text/html, text/markdown".parse().unwrap());
     headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
-    return req;
+    req
 }
 
 async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
