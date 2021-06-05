@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Changed markdown parser to be CommonMark compatible
+* Changed column of detected link to start of tag instead of actual link
+* Fixed issue #35 detect link in headlines
+
 ## [0.14.3] - 2021-05-15
 
 * Changed throttle for increased performance

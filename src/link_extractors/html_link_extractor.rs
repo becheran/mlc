@@ -15,6 +15,8 @@ impl LinkExtractor for HtmlLinkExtractor {
     fn find_links(&self, text: &str) -> Vec<MarkupLink> {
         let mut result: Vec<MarkupLink> = Vec::new();
         let mut state: ParserState = ParserState::Text;
+        let mut link_column = 0;
+        let mut link_line = 0;
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
@@ -30,6 +32,8 @@ impl LinkExtractor for HtmlLinkExtractor {
                         }
                     }
                     ParserState::Text => {
+                        link_column = column;
+                        link_line = line;
                         if line_chars.get(column) == Some(&'<')
                             && line_chars.get(column + 1) == Some(&'!')
                             && line_chars.get(column + 2) == Some(&'-')
@@ -65,7 +69,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                     ParserState::Link => {
                         match line_chars.get(column) {
                             Some(x) if !x.is_whitespace() && x != &'"' => {
-                                let link_column = column;
+                                let start_col = column;
                                 while line_chars.get(column).is_some()
                                     && !line_chars[column].is_whitespace()
                                     && line_chars[column] != '"'
@@ -78,12 +82,12 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     }
                                     column += 1;
                                 }
-                                let link = (&line_chars[link_column..column])
+                                let link = (&line_chars[start_col..column])
                                     .iter()
                                     .collect::<String>();
                                 result.push(MarkupLink {
                                     column: link_column + 1,
-                                    line: line + 1,
+                                    line: link_line + 1,
                                     target: link.to_string(),
                                     source: "".to_string(),
                                 });
@@ -124,30 +128,30 @@ mod tests {
     #[test_case(
         "<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
         1,
-        10
+        1
     )]
     #[test_case(
         "<a\nhref\n=\n  \"https://www.w3schools.com\">\nVisit W3Schools.com!\n</a>",
-        4,
-        4
+        1,
+        1
     )]
     #[test_case(
         "<a hreflang=\"en\" href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
         1,
-        24
+        1
     )]
     #[test_case(
         "<!--comment--><a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
         1,
-        24
+        15
     )]
     fn links(input: &str, line: usize, column: usize) {
         let le = HtmlLinkExtractor();
         let result = le.find_links(&input);
         let expected = MarkupLink {
             target: "https://www.w3schools.com".to_string(),
-            line: line,
-            column: column,
+            line,
+            column,
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
