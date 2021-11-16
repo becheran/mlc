@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
 use wildmatch::WildMatch;
 
+#[must_use]
 pub fn parse_args() -> Config {
     let matches = App::new(crate_name!())
         .arg(

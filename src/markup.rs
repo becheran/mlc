@@ -25,6 +25,7 @@ impl FromStr for MarkupType {
 }
 
 impl MarkupType {
+    #[must_use]
     pub fn file_extensions(&self) -> Vec<String> {
         match self {
             MarkupType::Markdown => vec![

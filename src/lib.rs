@@ -88,10 +88,7 @@ fn print_result(result: &FinalResult, map: &HashMap<Target, Vec<MarkupLink>>) {
             LinkCheckResult::Ok => {
                 print_helper(link, &"OK".green(), "", false);
             }
-            LinkCheckResult::NotImplemented(msg) => {
-                print_helper(link, &"Warn".yellow(), msg, false);
-            }
-            LinkCheckResult::Warning(msg) => {
+            LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
                 print_helper(link, &"Warn".yellow(), msg, false);
             }
             LinkCheckResult::Ignored(msg) => {

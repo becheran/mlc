@@ -27,9 +27,10 @@ impl fmt::Debug for MarkupLink {
     }
 }
 
+#[must_use]
 pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
     let path = &file.path;
-    let link_extractor = link_extractor_factory(&file.markup_type);
+    let link_extractor = link_extractor_factory(file.markup_type);
 
     info!("Scan file at path '{}' for links.", path);
     match fs::read_to_string(path) {
@@ -50,7 +51,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
     }
 }
 
-fn link_extractor_factory(markup_type: &MarkupType) -> Box<dyn LinkExtractor> {
+fn link_extractor_factory(markup_type: MarkupType) -> Box<dyn LinkExtractor> {
     match markup_type {
         MarkupType::Markdown => Box::new(MarkdownLinkExtractor()),
         MarkupType::Html => Box::new(HtmlLinkExtractor()),

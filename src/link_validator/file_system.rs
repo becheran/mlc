@@ -63,7 +63,7 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
         .replace('\\', &MAIN_SEPARATOR.to_string());
     if let Some(idx) = normalized_link.find('#') {
         warn!(
-            "Strip everything after #. The chapter part ´{}´ is not checked.",
+            "Strip everything after #. The chapter part '{}' is not checked.",
             &normalized_link[idx..]
         );
         normalized_link = normalized_link[..idx].to_string();
@@ -103,7 +103,7 @@ async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
         };
         parent.join(new_target)
     } else {
-        target.to_owned()
+        target.clone()
     }
 }
 
