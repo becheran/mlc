@@ -48,9 +48,9 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
                     }
                 }
             }
-            return LinkCheckResult::Failed("Target not found.".to_string());
+            LinkCheckResult::Failed("Target not found.".to_string())
         } else {
-            return LinkCheckResult::Failed("Target not found.".to_string());
+            LinkCheckResult::Failed("Target not found.".to_string())
         }
     } else {
         LinkCheckResult::Failed("Target filename not found.".to_string())

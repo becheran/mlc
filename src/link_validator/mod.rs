@@ -28,7 +28,7 @@ pub async fn resolve_target_link(
     config: &Config,
 ) -> String {
     if link_type == &LinkType::FileSystem {
-        file_system::resolve_target_link(&link.source, &link.target, &config).await
+        file_system::resolve_target_link(&link.source, &link.target, config).await
     } else {
         link.target.to_string()
     }
@@ -54,6 +54,6 @@ pub async fn check(link_target: &str, link_type: &LinkType, config: &Config) -> 
                 check_http(link_target).await
             }
         }
-        LinkType::FileSystem => check_filesystem(&link_target, &config).await,
+        LinkType::FileSystem => check_filesystem(link_target, config).await,
     }
 }

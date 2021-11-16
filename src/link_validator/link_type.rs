@@ -19,14 +19,14 @@ pub fn get_link_type(link: &str) -> LinkType {
     }
 
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
-        if link.contains('@') {
-            return LinkType::Mail;
+        return if link.contains('@') {
+            LinkType::Mail
         } else {
-            return LinkType::FileSystem;
-        }
+            LinkType::FileSystem
+        };
     }
 
-    if let Ok(url) = Url::parse(&link) {
+    if let Ok(url) = Url::parse(link) {
         let scheme = url.scheme();
         debug!("Link {} is a URL type with scheme {}", link, scheme);
         match scheme {

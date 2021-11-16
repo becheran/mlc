@@ -9,7 +9,7 @@ use reqwest::StatusCode;
 
 pub async fn check_http(target: &str) -> LinkCheckResult {
     debug!("Check http link target {:?}", target);
-    let url = reqwest::Url::parse(&target).expect("URL of unknown type");
+    let url = reqwest::Url::parse(target).expect("URL of unknown type");
 
     match http_request(&url).await {
         Ok(response) => response,
