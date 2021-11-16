@@ -39,11 +39,7 @@ impl MarkupType {
                 "text".to_string(),
                 "rmd".to_string(),
             ],
-            MarkupType::Html => vec![
-                "htm".to_string(),
-                "html".to_string(),
-                "xhtml".to_string(),
-                ],
+            MarkupType::Html => vec!["htm".to_string(), "html".to_string(), "xhtml".to_string()],
         }
     }
 }
