@@ -3,7 +3,7 @@ extern crate simplelog;
 use simplelog::*;
 
 arg_enum! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy)]
     pub enum LogLevel {
         Info,
         Warn,

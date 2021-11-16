@@ -6,7 +6,7 @@ pub struct MarkupFile {
     pub path: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum MarkupType {
     Markdown,
     Html,

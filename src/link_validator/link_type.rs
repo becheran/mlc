@@ -3,7 +3,7 @@ extern crate url;
 use self::url::Url;
 use regex::Regex;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum LinkType {
     Http,
     Ftp,

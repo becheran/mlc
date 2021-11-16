@@ -3,6 +3,7 @@ use crate::link_extractors::link_extractor::MarkupLink;
 
 pub struct HtmlLinkExtractor();
 
+#[derive(Clone, Copy, Debug)]
 enum ParserState {
     Text,
     Comment,
