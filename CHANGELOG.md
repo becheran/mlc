@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.15.0] - 2022-07-07
+
 * Changed markdown parser to be CommonMark compatible
 * Changed column of detected link to start of tag instead of actual link
 * Fixed issue #35 detect link in headlines
