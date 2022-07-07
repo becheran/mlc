@@ -15,24 +15,24 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = {version = "2.33.3", features = ["yaml"]}
-log = "0.4.11"
-simplelog = "0.10"
-walkdir = "2.3.1"
+clap = {version = "2.34.0", features = ["yaml"]}
+log = "0.4.17"
+simplelog = "0.12"
+walkdir = "2.3.2"
 regex = "1"
 lazy_static = "1.4.0"
-url = "2.2.1"
+url = "2.2.2"
 colored = "2"
-async-std = "1.9.0"
-reqwest = {version="0.11.3", features = ["native-tls-vendored"] }
-tokio = {version="1.5", features = ["rt-multi-thread", "macros", "time"] }
+async-std = "1.12.0"
+reqwest = {version="0.11.11", features = ["native-tls-vendored"] }
+tokio = {version="1.19.2", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3"
 wildmatch = "2.1.0"
-pulldown-cmark = "0.8.0"
+pulldown-cmark = "0.9.1"
 
 [dev-dependencies]
-ntest = "0.7.3"
-criterion = "0.3.4"
+ntest = "0.8.1"
+criterion = "0.3.6"
 
 [[bench]]
 name = "benchmarks"
