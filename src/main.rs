@@ -17,7 +17,7 @@ fn print_header() {
     print!("{: <1$}", "", width - 2);
     println!("+");
     print!("+");
-    print!("{}", format!("{: ^1$}", header, width - 2));
+    print!("{: ^1$}", header, width - 2);
     println!("+");
     print!("+");
     print!("{: <1$}", "", width - 2);

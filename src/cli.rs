@@ -111,7 +111,7 @@ pub fn parse_args() -> Config {
     let ignore_links: Vec<WildMatch> = matches
         .values_of("ignore_links")
         .unwrap_or_default()
-        .map(|x| WildMatch::new(x))
+        .map(WildMatch::new)
         .collect();
 
     let ignore_path: Vec<PathBuf> = matches

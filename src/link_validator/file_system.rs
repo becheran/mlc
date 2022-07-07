@@ -124,7 +124,7 @@ mod test {
             .join("benchmark");
         let target = Path::new("./script_and_comments.md").to_path_buf();
 
-        let path = absolute_target_path(&source.to_str().unwrap(), &target).await;
+        let path = absolute_target_path(source.to_str().unwrap(), &target).await;
 
         let path_str = path.to_str().unwrap().to_string();
         println!("{:?}", path_str);

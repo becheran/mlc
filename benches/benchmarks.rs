@@ -24,9 +24,7 @@ fn end_to_end_benchmark() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("End to end benchmark", |b| {
-        b.iter(|| end_to_end_benchmark())
-    });
+    c.bench_function("End to end benchmark", |b| b.iter(end_to_end_benchmark));
 }
 
 criterion_group! {

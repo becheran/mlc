@@ -113,7 +113,7 @@ mod tests {
     fn no_link() {
         let le = HtmlLinkExtractor();
         let input = "]This is not a <has> no link <h1>Bla</h1> attribute.";
-        let result = le.find_links(&input);
+        let result = le.find_links(input);
         assert!(result.is_empty());
     }
 
@@ -121,7 +121,7 @@ mod tests {
     fn commented() {
         let le = HtmlLinkExtractor();
         let input = "df <!-- <a href=\"http://wiki.selfhtml.org\"> haha</a> -->";
-        let result = le.find_links(&input);
+        let result = le.find_links(input);
         assert!(result.is_empty());
     }
 
@@ -143,7 +143,7 @@ mod tests {
     )]
     fn links(input: &str, line: usize, column: usize) {
         let le = HtmlLinkExtractor();
-        let result = le.find_links(&input);
+        let result = le.find_links(input);
         let expected = MarkupLink {
             target: "https://www.w3schools.com".to_string(),
             line,
