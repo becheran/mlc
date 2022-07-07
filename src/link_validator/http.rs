@@ -76,13 +76,7 @@ mod test {
         let result = check_http("http://gitlab.com/becheran/mlc").await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
-
-    #[tokio::test]
-    async fn check_link_available_issue_28() {
-        let result = check_http("https://deps.rs/repo/github/stanislav-tkach/os_info").await;
-        assert_eq!(result, LinkCheckResult::Ok);
-    }
-
+    
     #[tokio::test]
     async fn check_https_crates_io_available() {
         let result = check_http("https://crates.io").await;
