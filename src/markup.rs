@@ -6,7 +6,7 @@ pub struct MarkupFile {
     pub path: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum MarkupType {
     Markdown,
     Html,
@@ -25,6 +25,7 @@ impl FromStr for MarkupType {
 }
 
 impl MarkupType {
+    #[must_use]
     pub fn file_extensions(&self) -> Vec<String> {
         match self {
             MarkupType::Markdown => vec![
@@ -39,7 +40,7 @@ impl MarkupType {
                 "text".to_string(),
                 "rmd".to_string(),
             ],
-            MarkupType::Html => vec!["html".to_string(), "xhtml".to_string()],
+            MarkupType::Html => vec!["htm".to_string(), "html".to_string(), "xhtml".to_string()],
         }
     }
 }

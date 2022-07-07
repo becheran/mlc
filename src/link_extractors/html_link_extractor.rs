@@ -3,6 +3,7 @@ use crate::link_extractors::link_extractor::MarkupLink;
 
 pub struct HtmlLinkExtractor();
 
+#[derive(Clone, Copy, Debug)]
 enum ParserState {
     Text,
     Comment,
@@ -82,9 +83,8 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     }
                                     column += 1;
                                 }
-                                let link = (&line_chars[start_col..column])
-                                    .iter()
-                                    .collect::<String>();
+                                let link =
+                                    (&line_chars[start_col..column]).iter().collect::<String>();
                                 result.push(MarkupLink {
                                     column: link_column + 1,
                                     line: link_line + 1,
@@ -125,11 +125,7 @@ mod tests {
         assert!(result.is_empty());
     }
 
-    #[test_case(
-        "<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
-        1,
-        1
-    )]
+    #[test_case("<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>", 1, 1)]
     #[test_case(
         "<a\nhref\n=\n  \"https://www.w3schools.com\">\nVisit W3Schools.com!\n</a>",
         1,

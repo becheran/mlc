@@ -57,7 +57,7 @@ struct Target {
 
 fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     let mut files: Vec<MarkupFile> = Vec::new();
-    file_traversal::find(&config, &mut files);
+    file_traversal::find(config, &mut files);
     let mut links = vec![];
     for file in files {
         links.append(&mut link_extractors::link_extractor::find_links(&file));
@@ -72,7 +72,7 @@ fn print_helper(
     error_channel: bool,
 ) {
     let link_str = format!(
-        "[{:^4}] {} ({}, {}) => {}. {}",
+        "[{:^4}] {} ({}, {}) => {} - {}",
         status_code, link.source, link.line, link.column, link.target, msg
     );
     if error_channel {
@@ -86,26 +86,23 @@ fn print_result(result: &FinalResult, map: &HashMap<Target, Vec<MarkupLink>>) {
     for link in &map[&result.target] {
         match &result.result_code {
             LinkCheckResult::Ok => {
-                print_helper(&link, &"OK".green(), "", false);
+                print_helper(link, &"OK".green(), "", false);
             }
-            LinkCheckResult::NotImplemented(msg) => {
-                print_helper(&link, &"Warn".yellow(), msg, false);
-            }
-            LinkCheckResult::Warning(msg) => {
-                print_helper(&link, &"Warn".yellow(), msg, false);
+            LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
+                print_helper(link, &"Warn".yellow(), msg, false);
             }
             LinkCheckResult::Ignored(msg) => {
-                print_helper(&link, &"Skip".green(), msg, false);
+                print_helper(link, &"Skip".green(), msg, false);
             }
             LinkCheckResult::Failed(msg) => {
-                print_helper(&link, &"Err".red(), msg, true);
+                print_helper(link, &"Err".red(), msg, true);
             }
         }
     }
 }
 
 pub async fn run(config: &Config) -> Result<(), ()> {
-    let links = find_all_links(&config);
+    let links = find_all_links(config);
     let mut link_target_groups: HashMap<Target, Vec<MarkupLink>> = HashMap::new();
 
     let mut skipped = 0;
@@ -113,7 +110,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     for link in &links {
         if config.ignore_links.iter().any(|m| m.matches(&link.target)) {
             print_helper(
-                &link,
+                link,
                 &"Skip".green(),
                 "Ignore link because of ignore-links option.",
                 false,
@@ -122,7 +119,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             continue;
         }
         let link_type = get_link_type(&link.target);
-        let target = resolve_target_link(&link, &link_type, config).await;
+        let target = resolve_target_link(link, &link_type, config).await;
         let t = Target { target, link_type };
         match link_target_groups.get_mut(&t) {
             Some(v) => v.push(link.clone()),
@@ -183,7 +180,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
 
                 let result_code =
-                    link_validator::check(&target.target, &target.link_type, &config).await;
+                    link_validator::check(&target.target, &target.link_type, config).await;
 
                 FinalResult {
                     target: target.clone(),
@@ -233,7 +230,9 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     println!("Errors   {}", error_sum);
     println!();
 
-    if !errors.is_empty() {
+    if errors.is_empty() {
+        Ok(())
+    } else {
         eprintln!();
         eprintln!("The following links could not be resolved:");
         println!();
@@ -247,7 +246,5 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
         println!();
         Err(())
-    } else {
-        Ok(())
     }
 }

@@ -2,7 +2,6 @@
 use mlc::link_extractors::link_extractor::find_links;
 use mlc::markup::{MarkupFile, MarkupType};
 
-
 #[test]
 fn no_links() {
     let path = "./benches/benchmark/markdown/no_links/no_links.md".to_string();

@@ -3,7 +3,7 @@ extern crate url;
 use self::url::Url;
 use regex::Regex;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum LinkType {
     Http,
     Ftp,
@@ -12,6 +12,7 @@ pub enum LinkType {
     UnknownUrlSchema,
 }
 
+#[must_use]
 pub fn get_link_type(link: &str) -> LinkType {
     lazy_static! {
         static ref FILE_SYSTEM_REGEX: Regex =
@@ -19,25 +20,23 @@ pub fn get_link_type(link: &str) -> LinkType {
     }
 
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
-        if link.contains('@') {
-            return LinkType::Mail;
+        return if link.contains('@') {
+            LinkType::Mail
         } else {
-            return LinkType::FileSystem;
-        }
+            LinkType::FileSystem
+        };
     }
 
-    if let Ok(url) = Url::parse(&link) {
+    if let Ok(url) = Url::parse(link) {
         let scheme = url.scheme();
         debug!("Link {} is a URL type with scheme {}", link, scheme);
-        match scheme {
-            "http" => return LinkType::Http,
-            "https" => return LinkType::Http,
-            "ftp" => return LinkType::Ftp,
-            "ftps" => return LinkType::Ftp,
-            "mailto" => return LinkType::Mail,
-            "file" => return LinkType::FileSystem,
-            _ => return LinkType::UnknownUrlSchema,
-        }
+        return match scheme {
+            "http" | "https" => LinkType::Http,
+            "ftp" | "ftps" => LinkType::Ftp,
+            "mailto" => LinkType::Mail,
+            "file" => LinkType::FileSystem,
+            _ => LinkType::UnknownUrlSchema,
+        };
     }
     LinkType::UnknownUrlSchema
 }

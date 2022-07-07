@@ -23,7 +23,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     {
         let f_name = entry.file_name().to_string_lossy();
 
-        if let Some(markup_type) = markup_type(&f_name, &markup_types) {
+        if let Some(markup_type) = markup_type(&f_name, markup_types) {
             let path = entry.path();
             let abs_path = fs::canonicalize(path).expect("Expected path to exist.");
             if ignore_paths.iter().any(|ignore_path| {
@@ -59,7 +59,7 @@ fn markup_type(file: &str, markup_types: &[MarkupType]) -> Option<MarkupType> {
             let mut ext_low = String::from(".");
             ext_low.push_str(&ext.to_lowercase());
             if file_low.ends_with(&ext_low) {
-                return Some(markup_type.clone());
+                return Some(*markup_type);
             }
         }
     }

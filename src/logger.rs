@@ -3,7 +3,7 @@ extern crate simplelog;
 use simplelog::*;
 
 arg_enum! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy)]
     pub enum LogLevel {
         Info,
         Warn,
@@ -31,7 +31,7 @@ pub fn init(log_level: &LogLevel) {
         ColorChoice::Auto,
     )]);
     if err.is_err() {
-        panic!("Failied to init logger! Error: {:?}", err)
+        panic!("Failied to init logger! Error: {:?}", err);
     }
-    debug!("Initialized logging")
+    debug!("Initialized logging");
 }

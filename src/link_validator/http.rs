@@ -9,7 +9,7 @@ use reqwest::StatusCode;
 
 pub async fn check_http(target: &str) -> LinkCheckResult {
     debug!("Check http link target {:?}", target);
-    let url = reqwest::Url::parse(&target).expect("URL of unknown type");
+    let url = reqwest::Url::parse(target).expect("URL of unknown type");
 
     match http_request(&url).await {
         Ok(response) => response,
@@ -30,7 +30,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         static ref CLIENT: Client = Client::new();
     }
 
-    fn status_to_string(status: &StatusCode) -> String {
+    fn status_to_string(status: StatusCode) -> String {
         format!(
             "{} - {}",
             status.as_str(),
@@ -53,7 +53,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     if status.is_success() {
         Ok(LinkCheckResult::Ok)
     } else if status.is_redirection() {
-        Ok(LinkCheckResult::Warning(status_to_string(&status)))
+        Ok(LinkCheckResult::Warning(status_to_string(status)))
     } else {
         debug!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
@@ -62,7 +62,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         if status.is_success() {
             Ok(LinkCheckResult::Ok)
         } else {
-            Ok(LinkCheckResult::Failed(status_to_string(&status)))
+            Ok(LinkCheckResult::Failed(status_to_string(status)))
         }
     }
 }
