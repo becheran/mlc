@@ -15,7 +15,7 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = {version = "2.34.0", features = ["yaml"]}
+clap = {version = "3.2.14", features = ["yaml", "cargo"]}
 log = "0.4.17"
 simplelog = "0.12"
 walkdir = "2.3.2"

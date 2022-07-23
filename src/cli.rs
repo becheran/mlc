@@ -20,7 +20,7 @@ pub fn parse_args() -> Config {
         .arg(
             Arg::with_name("debug")
                 .long("debug")
-                .short("d")
+                .short('d')
                 .help("Print debug information to console")
                 .required(false),
         )
@@ -40,23 +40,23 @@ pub fn parse_args() -> Config {
             Arg::with_name("ignore_path")
                 .long("ignore-path")
                 .help("List of files and directories which will not be checked")
-                .min_values(1)
+                .takes_value(true)
                 .required(false),
         )
         .arg(
             Arg::with_name("ignore_links")
                 .long("ignore-links")
-                .short("i")
+                .short('i')
                 .help("List of links which will not be checked")
-                .min_values(1)
+                .takes_value(true)
                 .required(false),
         )
         .arg(
             Arg::with_name("markup_types")
                 .long("markup-types")
-                .short("t")
+                .short('t')
                 .help("List of markup types which shall be checked")
-                .min_values(1)
+                .takes_value(true)
                 .possible_values(&["md", "html"])
                 .required(false),
         )
@@ -71,7 +71,7 @@ pub fn parse_args() -> Config {
             Arg::with_name("root_dir")
                 .long("root-dir")
                 .takes_value(true)
-                .short("r")
+                .short('r')
                 .help("Path to the root folder used to resolve all relative paths")
                 .required(false),
         )
