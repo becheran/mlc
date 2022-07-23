@@ -11,6 +11,7 @@ use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
 use std::collections::HashMap;
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -41,6 +42,30 @@ pub struct Config {
     pub ignore_path: Vec<PathBuf>,
     pub root_dir: Option<PathBuf>,
     pub throttle: u32,
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let ignore_str : Vec<String>= self.ignore_links.iter().map(|w| w.to_string()).collect();
+        write!(
+            f,
+            "
+Log: {}
+Dir: {} 
+Types: {:?} 
+NoWeb: {}
+MatchExt: {}
+IgnoreLinks: {} 
+IgnorePath, {:?})",
+            self.log_level,
+            self.folder.to_str().unwrap_or_default(),
+            self.markup_types,
+            self.no_web_links,
+            self.match_file_extension,
+            ignore_str.join(","),
+            self.ignore_path
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
