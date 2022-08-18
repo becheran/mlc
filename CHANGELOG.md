@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.15.3] - 2022-08-18
+
 * Fix #53 broken docker container
 
 ## [0.15.2] - 2022-07-11
