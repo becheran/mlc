@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Fix #54 column line index for files with CR + LF endings
+
 ## [0.15.3] - 2022-08-18
 
 * Fix #53 broken docker container

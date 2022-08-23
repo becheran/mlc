@@ -19,7 +19,16 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let parser = Parser::new_with_broken_link_callback(text, Options::empty(), Some(callback));
 
-        let line_lengths: Vec<usize> = text.lines().map(str::len).collect();
+        let mut line_lengths: Vec<usize> = Vec::new();
+        let mut current_line_len = 0;
+        for c in text.chars() {
+            current_line_len += c.len_utf8();
+            if c == '\n' {
+                line_lengths.push(current_line_len);
+                current_line_len = 0;
+            }
+        }
+
         let line_column_from_idx = |idx: usize| -> (usize, usize) {
             let mut line = 1;
             let mut column = idx + 1;
@@ -27,7 +36,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 if *line_length >= column {
                     return (line, column);
                 }
-                column -= line_length + 1;
+                column -= line_length;
                 line += 1;
             }
             (line, column)
