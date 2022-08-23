@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.15.4] - 2022-08-23
+
 * Fix #54 column line index for files with CR + LF endings
 * Update external dependencies
 

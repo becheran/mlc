@@ -45,14 +45,14 @@ Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://git
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.15.3
+  uses: becheran/mlc@v0.15.4
 ```
 
 Use *mlc* [command line arguments](./docs/reference.md) using the `with` argument:
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.15.3
+  uses: becheran/mlc@v0.15.4
   with:
     args: ./README.md
 ```
@@ -62,7 +62,7 @@ Use *mlc* [command line arguments](./docs/reference.md) using the `with` argumen
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v0.15.3/mlc -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v0.15.4/mlc -o mlc
 chmod +x mlc
 ```
 
