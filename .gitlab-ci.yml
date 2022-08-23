@@ -45,6 +45,8 @@ release_github_artifact:
   script:
     - go get github.com/aktau/github-release
     - github-release release --user becheran --repo mlc --tag $CI_COMMIT_TAG
+    - echo "delayed upload after release"
+    - sleep 5
     - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-linux" --file target/release/mlc
     - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file apple-darwin.zip
   only:
