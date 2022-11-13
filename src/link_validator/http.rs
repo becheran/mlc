@@ -77,10 +77,16 @@ mod test {
 
     #[tokio::test]
     async fn check_http_is_available() {
-        let result = check_http("http://gitlab.com/becheran/mlc").await;
+        let result = check_http("https://gitlab.com/becheran/mlc").await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
-    
+
+    #[tokio::test]
+    async fn check_http_is_redirection() {
+        let result = check_http("http://gitlab.com/becheran/mlc").await;
+        assert_eq!(result, LinkCheckResult::Warning("301 - Moved Permanently".to_string()));
+    }
+
     #[tokio::test]
     async fn check_https_crates_io_available() {
         let result = check_http("https://crates.io").await;
@@ -89,8 +95,14 @@ mod test {
 
     #[tokio::test]
     async fn check_http_request_with_hash() {
-        let result = check_http("http://gitlab.com/becheran/mlc#bla").await;
+        let result = check_http("https://gitlab.com/becheran/mlc#bla").await;
         assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
+    async fn check_http_request_redirection_with_hash() {
+        let result = check_http("http://gitlab.com/becheran/mlc#bla").await;
+        assert_eq!(result, LinkCheckResult::Warning("301 - Moved Permanently".to_string()));
     }
 
     #[tokio::test]
