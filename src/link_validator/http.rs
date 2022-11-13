@@ -4,6 +4,7 @@ use reqwest::header::ACCEPT;
 use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use reqwest::Method;
+use reqwest::redirect::Policy;
 use reqwest::Request;
 use reqwest::StatusCode;
 
@@ -27,7 +28,10 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
 
 async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
-        static ref CLIENT: Client = Client::new();
+        static ref CLIENT: Client = Client::builder()
+            .redirect(Policy::none())
+            .build()
+            .unwrap();
     }
 
     fn status_to_string(status: StatusCode) -> String {
