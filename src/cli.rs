@@ -25,8 +25,9 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
-            Arg::with_name("no_web_links")
-                .long("no-web-links")
+            Arg::with_name("offline")
+                .alias("no-web-links")
+                .long("offline")
                 .help("Do not check web links")
                 .required(false),
         )

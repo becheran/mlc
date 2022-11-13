@@ -6,7 +6,7 @@
 |------------------|-------|-------------|
 | `--help`         | `-h`  | Print help |
 | `--debug`        | `-d`  | Show verbose debug information |
-| `--no-web-links` |       | Do not check any web links |
+| `--offline`      |       | Do not check any web links. Renamed from `--no-web-links` which is still an alias for downwards compatibility |
 | `--match-file-extension`|| Set the flag, if the file extension shall be checked as well. For example the following markup link `[link](dir/file)` matches if for example a file called `file.md` exists in `dir`, but would fail when the `--match-file-extension` flag is set. |
 | `--version`      | `-V`  | Print current version of mlc |
 | `--ignore-path`  |       | List of directories or files which shall be ignored. |
