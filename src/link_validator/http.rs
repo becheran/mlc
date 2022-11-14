@@ -1,11 +1,13 @@
 use crate::link_validator::LinkCheckResult;
 
+use futures::Future;
 use reqwest::header::ACCEPT;
 use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::redirect::Policy;
 use reqwest::Request;
+use reqwest::Response;
 use reqwest::StatusCode;
 
 pub async fn check_http(target: &str) -> LinkCheckResult {
@@ -26,12 +28,30 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
     req
 }
 
-async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
+async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {   
+    async fn verify_redirection_status(url: &reqwest::Url, warning_message: String) -> reqwest::Result<LinkCheckResult> {
+        let r = http_request_impl(url, true).await;
+        match r {
+            Ok(LinkCheckResult::Ok) => Ok(LinkCheckResult::Warning(warning_message)),
+            Ok(r) => Ok(r),
+            Err(r) => Err(r)
+        }
+    }
+    
+    match http_request_impl(url, false).await {
+        Ok(LinkCheckResult::Warning(e)) => verify_redirection_status(url, e).await,
+        Ok(r) => Ok(r),
+        Err(e) => Err(e)
+    }
+}
+
+async fn http_request_impl(url: &reqwest::Url, follow_redirections: bool) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = Client::builder()
             .redirect(Policy::none())
             .build()
             .unwrap();
+        static ref REDIRECTIONS_FOLLOWING_CLIENT: Client = Client::new();
     }
 
     fn status_to_string(status: StatusCode) -> String {
@@ -42,14 +62,21 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         )
     }
 
+    fn execute(request: Request, follow_redirections: bool) -> impl Future<Output = Result<Response, reqwest::Error>> {
+        if follow_redirections {
+            return REDIRECTIONS_FOLLOWING_CLIENT.execute(request);
+        }
+        return CLIENT.execute(request);
+    }
+
     let head_request = new_request(Method::HEAD, url);
     let get_request = new_request(Method::GET, url);
 
-    let response = match CLIENT.execute(head_request).await {
+    let response = match execute(head_request, follow_redirections).await {
         Ok(r) => r,
         Err(e) => {
             println!("Head request error: {}. Retry with get-request.", e);
-            CLIENT.execute(get_request).await?
+            execute(get_request, follow_redirections).await?
         }
     };
 
@@ -61,7 +88,7 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     } else {
         debug!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
-        let response = CLIENT.execute(get_request).await?;
+        let response = execute(get_request, follow_redirections).await?;
         let status = response.status();
         if status.is_success() {
             Ok(LinkCheckResult::Ok)
@@ -85,6 +112,12 @@ mod test {
     async fn check_http_is_redirection() {
         let result = check_http("http://gitlab.com/becheran/mlc").await;
         assert_eq!(result, LinkCheckResult::Warning("301 - Moved Permanently".to_string()));
+    }
+
+    #[tokio::test]
+    async fn check_http_is_redirection_failure() {
+        let result = check_http("http://github.com/fake-page").await;
+        assert_eq!(result, LinkCheckResult::Warning("404 - Not Found".to_string()));
     }
 
     #[tokio::test]
