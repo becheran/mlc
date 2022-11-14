@@ -48,7 +48,7 @@ pub async fn check(link_target: &str, link_type: &LinkType, config: &Config) -> 
         LinkType::Http => {
             if config.no_web_links {
                 LinkCheckResult::Ignored(
-                    "Ignore web link because of the no-web-link flag.".to_string(),
+                    "Ignore web link because of the offline flag.".to_string(),
                 )
             } else {
                 check_http(link_target).await
