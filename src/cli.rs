@@ -105,7 +105,7 @@ pub fn parse_args() -> Config {
         markup_types = types.map(|x| x.parse().unwrap()).collect();
     }
 
-    let no_web_links = matches.is_present("no_web_links");
+    let no_web_links = matches.is_present("offline");
 
     let match_file_extension = matches.is_present("match-file-extension");
 
