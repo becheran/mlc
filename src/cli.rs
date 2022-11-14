@@ -42,7 +42,8 @@ pub fn parse_args() -> Config {
                 .long("ignore-path")
                 .help("List of files and directories which will not be checked")
                 .takes_value(true)
-                .required(false),
+                .required(false)
+                .multiple_values(true),
         )
         .arg(
             Arg::with_name("ignore_links")
@@ -50,7 +51,8 @@ pub fn parse_args() -> Config {
                 .short('i')
                 .help("List of links which will not be checked")
                 .takes_value(true)
-                .required(false),
+                .required(false)
+                .multiple_values(true),
         )
         .arg(
             Arg::with_name("markup_types")
