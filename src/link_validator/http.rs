@@ -51,8 +51,13 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
 
     let status = response.status();
     if status.is_success() {
-        Ok(LinkCheckResult::Ok)
+        if response.url() == url {
+            Ok(LinkCheckResult::Ok)
+        } else {
+            Ok(LinkCheckResult::Warning("Request was redirected to ".to_string() + response.url().as_ref()))
+        }
     } else if status.is_redirection() {
+        // Only if > 10 redirects
         Ok(LinkCheckResult::Warning(status_to_string(status)))
     } else {
         debug!("Got the status code {:?}. Retry with get-request.", status);
@@ -60,7 +65,11 @@ async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
         if status.is_success() {
-            Ok(LinkCheckResult::Ok)
+            if response.url() == url {
+                Ok(LinkCheckResult::Ok)
+            } else {
+                Ok(LinkCheckResult::Warning(status_to_string(status)))
+            }
         } else {
             Ok(LinkCheckResult::Failed(status_to_string(status)))
         }
@@ -73,10 +82,22 @@ mod test {
 
     #[tokio::test]
     async fn check_http_is_available() {
-        let result = check_http("http://gitlab.com/becheran/mlc").await;
+        let result = check_http("https://gitlab.com/becheran/mlc").await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
-    
+
+    #[tokio::test]
+    async fn check_http_is_redirection() {
+        let result = check_http("http://gitlab.com/becheran/mlc").await;
+        assert_eq!(result, LinkCheckResult::Warning("Request was redirected to https://gitlab.com/becheran/mlc".to_string()));
+    }
+
+    #[tokio::test]
+    async fn check_http_is_redirection_failure() {
+        let result = check_http("http://github.com/fake-page").await;
+        assert_eq!(result, LinkCheckResult::Failed("404 - Not Found".to_string()));
+    }
+
     #[tokio::test]
     async fn check_https_crates_io_available() {
         let result = check_http("https://crates.io").await;
@@ -85,8 +106,14 @@ mod test {
 
     #[tokio::test]
     async fn check_http_request_with_hash() {
-        let result = check_http("http://gitlab.com/becheran/mlc#bla").await;
+        let result = check_http("https://gitlab.com/becheran/mlc#bla").await;
         assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
+    async fn check_http_request_redirection_with_hash() {
+        let result = check_http("http://gitlab.com/becheran/mlc#bla").await;
+        assert_eq!(result, LinkCheckResult::Warning("Request was redirected to https://gitlab.com/becheran/mlc".to_string()));
     }
 
     #[tokio::test]
