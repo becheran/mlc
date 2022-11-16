@@ -19,6 +19,10 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build
         run: cargo build --verbose --release
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linux
+          path: ./target/release/mlc
       - name: Run tests
         run: cargo test --verbose
 
@@ -28,40 +32,69 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build
         run: cargo build --verbose --release
+      - uses: actions/upload-artifact@v3
+        with:
+          name: windows
+          path: ./target/release/mlc.exe
       - name: Run tests
         run: cargo test --verbose
 
   build_osx:
     runs-on: ubuntu-latest
-    container: joseluisq/rust-linux-darwin-builder:latest
+    container: joseluisq/rust-linux-darwin-builder:1.65.0
     steps:
       - run: apt-get update
       - run: apt-get install zip -y
       - run: cargo build --release --target x86_64-apple-darwin
       - run: zip -r apple-darwin.zip /builds/becheran/mlc_ci/target/x86_64-apple-darwin/release/
-#release_github_artifact:
-#  stage: release
-#  image: golang:1.16
-#  script:
-#    - go get github.com/aktau/github-release
-#    - github-release release --user becheran --repo mlc --tag $CI_COMMIT_TAG
-#    - echo "delayed upload after release"
-#    - sleep 5
-#    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-linux" --file target/release/mlc
-#    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file apple-darwin.zip
-#  only:
-#    - tags
+      - uses: actions/upload-artifact@v3
+        with:
+          name: apple-darwin
+          path: apple-darwin.zip
 
-#release_docker:
-#  stage: release
-#  image: docker:stable
-#  services:
-#    - docker:dind
-# script:
-#   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-#  - docker build -t becheran/mlc .
-#   - version="${CI_COMMIT_TAG:1}"
-#   - docker tag becheran/mlc becheran/mlc:$version
-#  - docker push becheran/mlc
-# only:
-#   - tags
+  release:
+    runs-on: ubuntu-latest
+    needs: [build_osx, build_windows, build_linux]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: linux
+          path: mlc-x86_64-linux
+      - uses: actions/download-artifact@v3
+        with:
+          name: windows
+          path: mlc-x86_64-windows
+      - uses: actions/download-artifact@v3
+        with:
+          name: apple-darwin
+          path: mlc-x86_64-apple-darwin
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            mlc-x86_64-linux
+            mlc-x86_64-windows
+            mlc-x86_64-apple-darwin
+
+  release_docker:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - run: echo Push docker image $RELEASE_VERSION
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PW }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: becheran/mlc:latest,becheran/mlc:${{ env.RELEASE_VERSION }}
