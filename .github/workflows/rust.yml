@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master", "remove-gitlab"]
     tags:
       - "v*"
   pull_request:
