@@ -17,6 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build
         run: cargo build --verbose --release
       - uses: actions/upload-artifact@v3
@@ -30,6 +38,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
         run: cargo build --verbose --release
       - uses: actions/upload-artifact@v3
@@ -45,6 +62,14 @@ jobs:
       BINARY_NAME: mlc
     steps:
       - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build-musl macOS x86
         uses: Shogan/rust-musl-action@v1.0.2
         with:
