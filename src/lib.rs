@@ -97,8 +97,8 @@ fn print_helper(
     error_channel: bool,
 ) {
     let link_str = format!(
-        "[{:^4}] {} ({}, {}) => {} - {}",
-        status_code, link.source, link.line, link.column, link.target, msg
+        "[{:^4}] {} - {}",
+        status_code, link.source_str(), msg
     );
     if error_channel {
         eprintln!("{}", link_str);
@@ -263,10 +263,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         println!();
         for res in errors {
             for link in &link_target_groups[&res.target] {
-                eprintln!(
-                    "{} ({}, {}) => {}.",
-                    link.source, link.line, link.column, link.target
-                );
+                println!("{}", link.source_str());
             }
         }
         println!();

@@ -1,6 +1,7 @@
 use super::html_link_extractor::HtmlLinkExtractor;
 use super::markdown_link_extractor::MarkdownLinkExtractor;
 use crate::markup::{MarkupFile, MarkupType};
+use std::env;
 use std::fmt;
 use std::fs;
 
@@ -24,6 +25,19 @@ impl fmt::Debug for MarkupLink {
             "{} => {} (line {}, column {})",
             self.source, self.target, self.line, self.column
         )
+    }
+}
+
+impl MarkupLink {
+    pub fn source_str(&self) -> String{
+        lazy_static! {
+            static ref IS_VS_CODE_TERMINAL: bool = env::var("TERM_PROGRAM") == Ok("vscode".to_string());
+        }
+        if *IS_VS_CODE_TERMINAL {
+            format!{"{}:{}:{} => {}", self.source, self.line, self.column, self.target}
+        } else {
+            format!{"{} ({}, {}) => {}", self.source, self.line, self.column, self.target}
+        }
     }
 }
 
