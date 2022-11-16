@@ -66,7 +66,7 @@ curl -L https://github.com/becheran/mlc/releases/download/v0.15.4/mlc -o mlc
 chmod +x mlc
 ```
 
-For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.gitlab-ci.yml) which uses *mlc* in the CI pipeline.
+For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.github/workflows/ci.yml) which uses *mlc* in the CI pipeline.
 
 ### Docker
 
