@@ -2,21 +2,66 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
+    tags:
+      - "v*"
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  build_linux:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose --release
+      - name: Run tests
+        run: cargo test --verbose
+
+  build_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --verbose --release
+      - name: Run tests
+        run: cargo test --verbose
+
+  build_osx:
+    runs-on: ubuntu-latest
+    container: joseluisq/rust-linux-darwin-builder:latest
+    steps:
+      - run: apt-get update
+      - run: apt-get install zip -y
+      - run: cargo build --release --target x86_64-apple-darwin
+      - run: zip -r apple-darwin.zip /builds/becheran/mlc_ci/target/x86_64-apple-darwin/release/
+#release_github_artifact:
+#  stage: release
+#  image: golang:1.16
+#  script:
+#    - go get github.com/aktau/github-release
+#    - github-release release --user becheran --repo mlc --tag $CI_COMMIT_TAG
+#    - echo "delayed upload after release"
+#    - sleep 5
+#    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-linux" --file target/release/mlc
+#    - github-release upload --user becheran --repo mlc --tag $CI_COMMIT_TAG --name "mlc-x86_64-apple-darwin" --file apple-darwin.zip
+#  only:
+#    - tags
+
+#release_docker:
+#  stage: release
+#  image: docker:stable
+#  services:
+#    - docker:dind
+# script:
+#   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+#  - docker build -t becheran/mlc .
+#   - version="${CI_COMMIT_TAG:1}"
+#   - docker tag becheran/mlc becheran/mlc:$version
+#  - docker push becheran/mlc
+# only:
+#   - tags
