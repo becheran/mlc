@@ -58,7 +58,7 @@ tmp.*.rs
 version.md
 version.ml
 version.texi
-.cargo
+#.cargo
 !src/vendor/**
 /src/target/
 
