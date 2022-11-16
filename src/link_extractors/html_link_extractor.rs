@@ -84,7 +84,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     column += 1;
                                 }
                                 let link =
-                                    (&line_chars[start_col..column]).iter().collect::<String>();
+                                    (line_chars[start_col..column]).iter().collect::<String>();
                                 result.push(MarkupLink {
                                     column: link_column + 1,
                                     line: link_line + 1,

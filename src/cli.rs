@@ -58,7 +58,7 @@ pub fn parse_args() -> Config {
                 .short('t')
                 .help("List of markup types which shall be checked")
                 .takes_value(true)
-                .possible_values(&["md", "html"])
+                .possible_values(["md", "html"])
                 .required(false),
         )
         .arg(

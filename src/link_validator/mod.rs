@@ -13,7 +13,7 @@ use mail::check_mail;
 pub use link_type::get_link_type;
 pub use link_type::LinkType;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum LinkCheckResult {
     Ok,
     Failed(String),
