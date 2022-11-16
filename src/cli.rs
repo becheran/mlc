@@ -96,9 +96,11 @@ pub fn parse_args() -> Config {
     } else {
         logger::LogLevel::Warn
     };
-    let directory = matches
+    let directory :PathBuf = matches
         .value_of("directory")
-        .unwrap_or("./")
+        .unwrap_or(&format!(".{}",&MAIN_SEPARATOR))
+        .replace('/', &MAIN_SEPARATOR.to_string())
+        .replace('\\', &MAIN_SEPARATOR.to_string())
         .parse()
         .unwrap();
 
