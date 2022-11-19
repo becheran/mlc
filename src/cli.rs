@@ -1,7 +1,8 @@
 use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
-use clap::{App, Arg};
+use clap::Arg;
+use clap::ArgAction;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -9,118 +10,96 @@ use std::path::MAIN_SEPARATOR;
 use wildmatch::WildMatch;
 
 #[must_use]
-pub fn parse_args() -> Config {
-    let matches = App::new(crate_name!())
-        .arg(
-            Arg::with_name("directory")
-                .help("Check all links in given directory and subdirectory")
-                .required(false)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("debug")
-                .long("debug")
-                .short('d')
-                .help("Print debug information to console")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("offline")
-                .alias("no-web-links")
-                .long("offline")
-                .help("Do not check web links")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("match-file-extension")
-                .long("match-file-extension")
-                .help("Do check for the exact file extension when searching for a file")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("ignore_path")
-                .long("ignore-path")
-                .help("List of files and directories which will not be checked")
-                .takes_value(true)
-                .required(false)
-                .multiple_values(true),
-        )
-        .arg(
-            Arg::with_name("ignore_links")
-                .long("ignore-links")
-                .short('i')
-                .help("List of links which will not be checked")
-                .takes_value(true)
-                .required(false)
-                .multiple_values(true),
-        )
-        .arg(
-            Arg::with_name("markup_types")
-                .long("markup-types")
-                .short('t')
-                .help("List of markup types which shall be checked")
-                .takes_value(true)
-                .possible_values(["md", "html"])
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("throttle")
-                .long("throttle")
-                .help("Wait between http request to the same host for a defined number of milliseconds")
-                .required(false)
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("root_dir")
-                .long("root-dir")
-                .takes_value(true)
-                .short('r')
-                .help("Path to the root folder used to resolve all relative paths")
-                .required(false),
-        )
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
+pub fn parse_args() -> Config {    
+    let matches = command!()
+        .arg(Arg::new("directory")
+            .help("Check all links in given directory and subdirectory")
+            .required(false)
+            .index(1))
+        .arg(arg!(-d --debug "Print debug information to console")
+            .required(false))
+        .arg(arg!(-o --offline "Do not check web links")
+            .alias("no-web-links")
+            .required(false))
+        .arg(Arg::new("match-file-extension")
+            .long("match-file-extension")
+            .short('e')
+            .action(ArgAction::SetTrue)
+            .help("Check the exact file extension when searching for a file")
+            .required(false))
+        .arg(Arg::new("ignore-path")
+            .long("ignore-path")
+            .short('p')
+            .help("List of files and directories which will not be checked")
+            .value_name("PATHS")
+            .value_delimiter(',')
+            .action(ArgAction::Append)
+            .required(false))
+        .arg(Arg::new("ignore-links")
+            .long("ignore-links")
+            .short('i')
+            .value_name("LINKS")
+            .value_delimiter(',')
+            .action(ArgAction::Append)
+            .help("List of links which will not be checked")
+            .required(false))
+        .arg(Arg::new("markup-types")
+            .long("markup-types")
+            .short('t')
+            .value_name("TYPES")
+            .help("List of markup types which shall be checked")
+            .action(ArgAction::Append)
+            .value_delimiter(',')
+            .required(false))
+        .arg(arg!(-s --throttle <DELAY_MS> "Wait between http request to the same host for a defined number of milliseconds")
+            .required(false))
+        .arg(Arg::new("root-dir")
+            .long("root-dir")
+            .short('r')
+            .value_name("DIR")
+            .help("Path to the root folder used to resolve all relative paths")
+            .required(false))
         .get_matches();
-    let debug = matches.is_present("debug");
 
-    let throttle = match matches.value_of("throttle") {
-        Some(v) => v
-            .parse()
-            .expect("Integer expected. Throttle time in milliseconds"),
-        None => 0,
-    };
-
-    let log_level = if debug {
+    let log_level = if matches.get_flag("debug") {
         logger::LogLevel::Debug
     } else {
         logger::LogLevel::Warn
     };
-    let directory :PathBuf = matches
-        .value_of("directory")
-        .unwrap_or(&format!(".{}",&MAIN_SEPARATOR))
+
+    let throttle: u32 = *matches.get_one::<u32>("throttle").unwrap_or(&0);
+
+    let default_dir = format!(".{}",&MAIN_SEPARATOR);
+    let dir_string = matches.get_one::<String>("directory").unwrap_or(&default_dir);
+    let directory = dir_string
         .replace('/', &MAIN_SEPARATOR.to_string())
         .replace('\\', &MAIN_SEPARATOR.to_string())
         .parse()
-        .unwrap();
+        .expect("failed to parse path");
 
-    let mut markup_types = vec![MarkupType::Markdown, MarkupType::Html];
-    if let Some(types) = matches.values_of("markup_types") {
-        markup_types = types.map(|x| x.parse().unwrap()).collect();
+    let markup_types_str = matches
+        .get_many::<String>("markup-types")
+        .unwrap_or_default()
+        .map(|v| v.as_str());
+    let mut markup_types: Vec<MarkupType> = markup_types_str.map(|x| x.parse().expect("invalid markup type")).collect();
+    if markup_types.is_empty(){
+        markup_types = vec![MarkupType::Markdown, MarkupType::Html]
     }
 
-    let no_web_links = matches.is_present("offline");
+    let no_web_links = matches.get_flag("offline");
 
-    let match_file_extension = matches.is_present("match-file-extension");
+    let match_file_extension = matches.get_flag("match-file-extension");
 
     let ignore_links: Vec<WildMatch> = matches
-        .values_of("ignore_links")
+        .get_many::<String>("ignore-links")
         .unwrap_or_default()
-        .map(WildMatch::new)
+        .map(|x|{
+            WildMatch::new(x)
+        })
         .collect();
 
     let ignore_path: Vec<PathBuf> = matches
-        .values_of("ignore_path")
+        .get_many::<String>("ignore-path")
         .unwrap_or_default()
         .map(|x| {
             let path = Path::new(x).to_path_buf();
@@ -131,7 +110,7 @@ pub fn parse_args() -> Config {
         })
         .collect();
 
-    let root_dir = if let Some(root_path) = matches.value_of("root_dir") {
+    let root_dir = if let Some(root_path) = matches.get_one::<String>("root-dir") {
         let root_path = Path::new(
             &root_path
                 .replace('/', &MAIN_SEPARATOR.to_string())
