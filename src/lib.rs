@@ -46,15 +46,20 @@ pub struct Config {
 
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ignore_str : Vec<String>= self.ignore_links.iter().map(|w| w.to_string()).collect();
+        let ignore_str: Vec<String> = self.ignore_links.iter().map(|w| w.to_string()).collect();
+        let root_dir_str = match &self.root_dir{
+            Some(p) => p.to_str().unwrap_or(""),
+            None => ""
+        };
         write!(
             f,
             "
-Log: {}
+Log: {:?}
 Dir: {} 
 Types: {:?} 
-NoWeb: {}
+Offline: {}
 MatchExt: {}
+RootDir: {}
 IgnoreLinks: {} 
 IgnorePath, {:?})",
             self.log_level,
@@ -62,6 +67,7 @@ IgnorePath, {:?})",
             self.markup_types,
             self.no_web_links,
             self.match_file_extension,
+            root_dir_str,
             ignore_str.join(","),
             self.ignore_path
         )
@@ -96,10 +102,7 @@ fn print_helper(
     msg: &str,
     error_channel: bool,
 ) {
-    let link_str = format!(
-        "[{:^4}] {} - {}",
-        status_code, link.source_str(), msg
-    );
+    let link_str = format!("[{:^4}] {} - {}", status_code, link.source_str(), msg);
     if error_channel {
         eprintln!("{}", link_str);
     } else {
