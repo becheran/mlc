@@ -11,7 +11,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
     debug!("Absolute target path {:?}", target);
     if target.exists().await {
         LinkCheckResult::Ok
-    } else if !config.match_file_extension && target.extension().is_none() {
+    } else if !config.optional.match_file_extension.unwrap_or_default() && target.extension().is_none() {
         // Check if file exists ignoring the file extension
         let target_file_name = match target.file_name() {
             Some(s) => s,
@@ -69,8 +69,8 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
         normalized_link = normalized_link[..idx].to_string();
     }
     let mut fs_link_target = Path::new(&normalized_link).to_path_buf();
-    if normalized_link.starts_with(MAIN_SEPARATOR) && config.root_dir.is_some() {
-        match canonicalize(&config.root_dir.as_ref().unwrap()).await {
+    if normalized_link.starts_with(MAIN_SEPARATOR) && config.optional.root_dir.is_some() {
+        match canonicalize(&config.optional.root_dir.as_ref().unwrap()).await {
             Ok(new_root) => fs_link_target = new_root.join(Path::new(&normalized_link[1..])),
             Err(e) => panic!(
                 "Root path could not be converted to an absolute path. Does the directory exit? {}",

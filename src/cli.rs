@@ -1,16 +1,24 @@
-use crate::logger;
 use crate::markup::MarkupType;
 use crate::Config;
+use crate::OptionalConfig;
 use clap::Arg;
 use clap::ArgAction;
 use std::fs;
 use std::path::Path;
-use std::path::PathBuf;
 use std::path::MAIN_SEPARATOR;
-use wildmatch::WildMatch;
+
+const CONFIG_FILE_PATH: &str = "./.mlc.toml";
 
 #[must_use]
-pub fn parse_args() -> Config {    
+pub fn parse_args() -> Config {
+    let mut opt: OptionalConfig = match fs::read_to_string(CONFIG_FILE_PATH) {
+        Ok(content) => match toml::from_str(&content) {
+            Ok(o) => o,
+            Err(err) => panic!("Invalid TOML file {:?}", err),
+        },
+        Err(_) => OptionalConfig::default(),
+    };
+
     let matches = command!()
         .arg(Arg::new("directory")
             .help("Check all links in given directory and subdirectory")
@@ -61,58 +69,64 @@ pub fn parse_args() -> Config {
             .required(false))
         .get_matches();
 
-    let log_level = if matches.get_flag("debug") {
-        logger::LogLevel::Debug
-    } else {
-        logger::LogLevel::Warn
-    };
-
-    let throttle: u32 = *matches.get_one::<u32>("throttle").unwrap_or(&0);
-
-    let default_dir = format!(".{}",&MAIN_SEPARATOR);
-    let dir_string = matches.get_one::<String>("directory").unwrap_or(&default_dir);
+    let default_dir = format!(".{}", &MAIN_SEPARATOR);
+    let dir_string = matches
+        .get_one::<String>("directory")
+        .unwrap_or(&default_dir);
     let directory = dir_string
         .replace('/', &MAIN_SEPARATOR.to_string())
         .replace('\\', &MAIN_SEPARATOR.to_string())
         .parse()
         .expect("failed to parse path");
 
-    let markup_types_str = matches
-        .get_many::<String>("markup-types")
-        .unwrap_or_default()
-        .map(|v| v.as_str());
-    let mut markup_types: Vec<MarkupType> = markup_types_str.map(|x| x.parse().expect("invalid markup type")).collect();
-    if markup_types.is_empty(){
-        markup_types = vec![MarkupType::Markdown, MarkupType::Html]
+    if matches.get_flag("debug") {
+        opt.debug = Some(true);
     }
 
-    let no_web_links = matches.get_flag("offline");
+    if let Some(throttle) = matches.get_one::<u32>("throttle") {
+        opt.throttle = Some(*throttle);
+    }
 
-    let match_file_extension = matches.get_flag("match-file-extension");
+    if let Some(markup_types) = matches.get_many::<String>("markup-types") {
+        opt.markup_types = Some(
+            markup_types
+                .map(|v| v.as_str().parse().expect("invalid markup type"))
+                .collect(),
+        );
+    }
+    if opt.markup_types.is_none() {
+        opt.markup_types = Some(vec![MarkupType::Markdown, MarkupType::Html]);
+    }
 
-    let ignore_links: Vec<WildMatch> = matches
-        .get_many::<String>("ignore-links")
-        .unwrap_or_default()
-        .map(|x|{
-            WildMatch::new(x)
-        })
-        .collect();
+    if matches.get_flag("offline") {
+        opt.offline = Some(true);
+    }
 
-    let ignore_path: Vec<PathBuf> = matches
-        .get_many::<String>("ignore-path")
-        .unwrap_or_default()
-        .map(|x| {
-            let path = Path::new(x).to_path_buf();
-            match fs::canonicalize(&path) {
-                Ok(p) => p,
-                Err(e) => panic!("Ignore path {:?} not found. {:?}.", &path, e),
-            }
-        })
-        .collect();
+    if matches.get_flag("match-file-extension") {
+        opt.match_file_extension = Some(true)
+    }
 
-    let root_dir = if let Some(root_path) = matches.get_one::<String>("root-dir") {
+    if let Some(ignore_links) = matches.get_many::<String>("ignore-links") {
+        opt.ignore_links = Some(ignore_links.map(|x| x.to_string()).collect());
+    }
+
+    if let Some(ignore_path) = matches.get_many::<String>("ignore-path") {
+        opt.ignore_path = Some(
+            ignore_path
+                .map(|x| {
+                    let path = Path::new(x).to_path_buf();
+                    match fs::canonicalize(&path) {
+                        Ok(p) => p,
+                        Err(e) => panic!("Ignore path {:?} not found. {:?}.", &path, e),
+                    }
+                })
+                .collect(),
+        );
+    }
+
+    if let Some(root_dir) = matches.get_one::<String>("root-dir") {
         let root_path = Path::new(
-            &root_path
+            &root_dir
                 .replace('/', &MAIN_SEPARATOR.to_string())
                 .replace('\\', &MAIN_SEPARATOR.to_string()),
         )
@@ -121,20 +135,11 @@ pub fn parse_args() -> Config {
             eprintln!("Root path {:?} must be a directory!", root_path);
             std::process::exit(1);
         }
-        Some(root_path)
-    } else {
-        None
-    };
+        opt.root_dir = Some(root_path)
+    }
 
     Config {
-        log_level,
-        folder: directory,
-        markup_types,
-        no_web_links,
-        match_file_extension,
-        ignore_links,
-        ignore_path,
-        root_dir,
-        throttle,
+        directory,
+        optional: opt,
     }
 }

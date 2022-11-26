@@ -10,6 +10,7 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
@@ -31,45 +32,68 @@ use url::Url;
 
 const PARALLEL_REQUESTS: usize = 20;
 
-#[derive(Default, Debug)]
-pub struct Config {
-    pub log_level: logger::LogLevel,
-    pub folder: PathBuf,
-    pub markup_types: Vec<markup::MarkupType>,
-    pub no_web_links: bool,
-    pub match_file_extension: bool,
-    pub ignore_links: Vec<WildMatch>,
-    pub ignore_path: Vec<PathBuf>,
+#[derive(Default, Debug, Deserialize)]
+pub struct OptionalConfig {
+    pub debug: Option<bool>,
+    #[serde(rename(deserialize = "markup-types"))]
+    pub markup_types: Option<Vec<markup::MarkupType>>,
+    pub offline: Option<bool>,
+    #[serde(rename(deserialize = "match-file-extension"))]
+    pub match_file_extension: Option<bool>,
+    #[serde(rename(deserialize = "ignore-links"))]
+    pub ignore_links: Option<Vec<String>>,
+    #[serde(rename(deserialize = "ignore-path"))]
+    pub ignore_path: Option<Vec<PathBuf>>,
+    #[serde(rename(deserialize = "root-dir"))]
     pub root_dir: Option<PathBuf>,
-    pub throttle: u32,
+    pub throttle: Option<u32>,
+}
+
+#[derive(Default, Debug, Deserialize)]
+pub struct Config {
+    pub directory: PathBuf,
+    pub optional: OptionalConfig,
 }
 
 impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ignore_str: Vec<String> = self.ignore_links.iter().map(|w| w.to_string()).collect();
-        let root_dir_str = match &self.root_dir{
+        let ignore_str: Vec<String> = match &self.optional.ignore_links {
+            Some(s) => s.iter().map(|m| m.to_string()).collect(),
+            None => vec![],
+        };
+        let root_dir_str = match &self.optional.root_dir {
             Some(p) => p.to_str().unwrap_or(""),
-            None => ""
+            None => "",
+        };
+        let ignore_path_str: Vec<String> = match &self.optional.ignore_path {
+            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
+            None => vec![],
+        };
+        let markup_types_str: Vec<String> = match &self.optional.markup_types {
+            Some(p) => p.iter().map(|m| format!["{:?}", m]).collect(),
+            None => vec![],
         };
         write!(
             f,
             "
-Log: {:?}
+Debug: {:?}
 Dir: {} 
 Types: {:?} 
 Offline: {}
 MatchExt: {}
 RootDir: {}
 IgnoreLinks: {} 
-IgnorePath, {:?})",
-            self.log_level,
-            self.folder.to_str().unwrap_or_default(),
-            self.markup_types,
-            self.no_web_links,
-            self.match_file_extension,
+IgnorePath: {:?}
+Throttle: {} ms",
+            self.optional.debug.unwrap_or(false),
+            self.directory.to_str().unwrap_or_default(),
+            markup_types_str,
+            self.optional.offline.unwrap_or_default(),
+            self.optional.match_file_extension.unwrap_or_default(),
             root_dir_str,
             ignore_str.join(","),
-            self.ignore_path
+            ignore_path_str,
+            self.optional.throttle.unwrap_or(0)
         )
     }
 }
@@ -135,8 +159,12 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let mut skipped = 0;
 
+    let ignore_links: Vec<WildMatch> = match &config.optional.ignore_links {
+        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
+        None => vec![],
+    };
     for link in &links {
-        if config.ignore_links.iter().any(|m| m.matches(&link.target)) {
+        if ignore_links.iter().any(|m| m.matches(&link.target)) {
             print_helper(
                 link,
                 &"Skip".green(),
@@ -157,7 +185,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let throttle = config.throttle > 0;
+    let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);
     let waits = Arc::new(Mutex::new(HashMap::new()));
     // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
@@ -195,9 +223,16 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     let next_wait = match waits.get(&host) {
                         Some(old) => {
                             wait_until = Some(*old);
-                            *old + Duration::from_millis(config.throttle.into())
+                            *old + Duration::from_millis(
+                                config.optional.throttle.unwrap_or_default().into(),
+                            )
                         }
-                        None => Instant::now() + Duration::from_millis(config.throttle.into()),
+                        None => {
+                            Instant::now()
+                                + Duration::from_millis(
+                                    config.optional.throttle.unwrap_or_default().into(),
+                                )
+                        }
                     };
                     waits.insert(host, next_wait);
                     drop(waits);

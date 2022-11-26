@@ -46,7 +46,7 @@ pub async fn check(link_target: &str, link_type: &LinkType, config: &Config) -> 
         ),
         LinkType::Mail => check_mail(link_target),
         LinkType::Http => {
-            if config.no_web_links {
+            if config.optional.offline.unwrap_or_default() {
                 LinkCheckResult::Ignored(
                     "Ignore web link because of the offline flag.".to_string(),
                 )
