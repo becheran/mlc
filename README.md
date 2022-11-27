@@ -21,6 +21,7 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 * Efficient link resolving strategy which tries with minimized network load
 * Throttle option to prevent *429 Too Many Requests* errors
 * Configure via config file
+* Report broken links via GitHub workflow commands
 
 ## Install Locally
 
@@ -57,6 +58,10 @@ Use *mlc* command line arguments using the `with` argument:
   with:
     args: ./README.md
 ```
+
+The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions) to highlight broken links:
+
+![annotation](./docs/FailingAnnotation.PNG)
 
 ### Binary
 
