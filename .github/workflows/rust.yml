@@ -13,6 +13,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  test_own_readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Run
+        run: cargo run -- ./README.md -d
+
   build_linux:
     runs-on: ubuntu-latest
     steps:
