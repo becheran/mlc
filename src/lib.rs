@@ -259,7 +259,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut errors = vec![];
 
     let is_github_runner_env = env::var("GITHUB_ENV").is_ok();
-    if is_github_runner_env{
+    if is_github_runner_env {
         info!("Running in github environment. Print errors and warnings as workflow commands");
     }
 
@@ -269,17 +269,28 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             LinkCheckResult::Ok => {
                 oks += link_target_groups[&result.target].len();
             }
-            LinkCheckResult::NotImplemented(_) | LinkCheckResult::Warning(_) => {
+            LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
                 warnings += link_target_groups[&result.target].len();
+                if is_github_runner_env {
+                    for link in &link_target_groups[&result.target] {
+                        println!(
+                            "::warning file={},line={},col={},title=link checker warning::{}. {}",
+                            link.source, link.line, link.column, result.target.target, msg
+                        );
+                    }
+                }
             }
             LinkCheckResult::Ignored(_) => {
                 skipped += link_target_groups[&result.target].len();
             }
-            LinkCheckResult::Failed(err) => {
-                errors.push(result.clone());     
-                if is_github_runner_env{       
+            LinkCheckResult::Failed(msg) => {
+                errors.push(result.clone());
+                if is_github_runner_env {
                     for link in &link_target_groups[&result.target] {
-                        println!("::error file={},line={},col={},title=broken link::Target {}. {}", link.source, link.line, link.column, result.target.target, err);    
+                        println!(
+                            "::error file={},line={},col={},title=broken link::{}. {}",
+                            link.source, link.line, link.column, result.target.target, msg
+                        );
                     }
                 }
             }
