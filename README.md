@@ -49,7 +49,7 @@ Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://git
   uses: becheran/mlc@v0.15.4
 ```
 
-Use *mlc* [command line arguments](./docs/reference.md) using the `with` argument:
+Use *mlc* command line arguments using the `with` argument:
 
 ``` yaml
 - name: Markup Link Checker (mlc)
