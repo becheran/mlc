@@ -1,8 +1,9 @@
 extern crate simplelog;
 
+use serde::Deserialize;
 use simplelog::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub enum LogLevel {
     Info,
     Warn,

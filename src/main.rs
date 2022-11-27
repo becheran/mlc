@@ -30,7 +30,11 @@ fn print_header() {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_header();
     let config = cli::parse_args();
-    logger::init(&config.log_level);
+    let log_level = match config.optional.debug {
+        Some(true) => logger::LogLevel::Debug,
+        _ =>  logger::LogLevel::Warn,
+    };
+    logger::init(&log_level);
     info!("Config: {}", &config);
     if mlc::run(&config).await.is_err() {
         process::exit(1);

@@ -1,12 +1,14 @@
 use std::str::FromStr;
 
+use serde_derive::Deserialize;
+
 #[derive(Debug)]
 pub struct MarkupFile {
     pub markup_type: MarkupType,
     pub path: String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub enum MarkupType {
     Markdown,
     Html,

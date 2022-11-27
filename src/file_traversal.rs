@@ -6,9 +6,11 @@ use std::fs;
 use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
-    let root = &config.folder;
-    let markup_types = &config.markup_types;
-    let ignore_paths = &config.ignore_path;
+    let root = &config.directory;
+    let markup_types = match &config.optional.markup_types {
+        Some(t) => t,
+        None => panic!("Bug! markup_types must be set"),
+    };
 
     info!(
         "Search for files of markup types '{:?}' in directory '{:?}'",
@@ -23,18 +25,22 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     {
         let f_name = entry.file_name().to_string_lossy();
 
-        if let Some(markup_type) = markup_type(&f_name, markup_types) {
+        if let Some(markup_type) = markup_type(&f_name, &markup_types) {
             let path = entry.path();
             let abs_path = fs::canonicalize(path).expect("Expected path to exist.");
-            if ignore_paths.iter().any(|ignore_path| {
-                if ignore_path.is_file() {
-                    ignore_path == &abs_path
-                } else if ignore_path.is_dir() {
-                    abs_path.starts_with(ignore_path)
-                } else {
-                    false
-                }
-            }) {
+            let ignore = match &config.optional.ignore_path {
+                Some(p) => p.iter().any(|ignore_path| {
+                    if ignore_path.is_file() {
+                        ignore_path == &abs_path
+                    } else if ignore_path.is_dir() {
+                        abs_path.starts_with(ignore_path)
+                    } else {
+                        false
+                    }
+                }),
+                None => false,
+            };
+            if ignore {
                 debug!(
                     "Ignore file {:?}, because it is in the ignore path list.",
                     path

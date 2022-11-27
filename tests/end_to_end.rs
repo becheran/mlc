@@ -2,26 +2,28 @@
 mod helper;
 
 use helper::benches_dir;
-use mlc::logger;
 use mlc::markup::MarkupType;
 use mlc::Config;
+use mlc::OptionalConfig;
 use std::fs;
 
 #[tokio::test]
 async fn end_to_end() {
     let config = Config {
-        folder: benches_dir().join("benchmark"),
-        log_level: logger::LogLevel::Debug,
-        markup_types: vec![MarkupType::Markdown],
-        no_web_links: false,
-        match_file_extension: false,
-        throttle: 0,
-        ignore_links: vec![wildmatch::WildMatch::new("./doc/broken-local-link.doc")],
-        ignore_path: vec![
-            fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
-            fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
-        ],
-        root_dir: None,
+        directory: benches_dir().join("benchmark"),
+        optional: OptionalConfig {
+            debug: None,
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: None,
+            match_file_extension: None,
+            throttle: None,
+            ignore_links: Some(vec!["./doc/broken-local-link.doc".to_string()]),
+            ignore_path: Some(vec![
+                fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
+                fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
+            ]),
+            root_dir: None,
+        },
     };
     if let Err(e) = mlc::run(&config).await {
         panic!("Test with custom root failed. {:?}", e);
@@ -32,15 +34,17 @@ async fn end_to_end() {
 async fn end_to_end_different_root() {
     let test_files = benches_dir().join("different_root");
     let config = Config {
-        folder: test_files.clone(),
-        log_level: logger::LogLevel::Debug,
-        markup_types: vec![MarkupType::Markdown],
-        no_web_links: false,
-        match_file_extension: false,
-        ignore_links: vec![],
-        ignore_path: vec![],
-        throttle: 0,
-        root_dir: Some(test_files),
+        directory: test_files.clone(),
+        optional: OptionalConfig {
+            debug: Some(true),
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: None,
+            match_file_extension: None,
+            ignore_links: None,
+            ignore_path: None,
+            throttle: None,
+            root_dir: Some(test_files),
+        },
     };
     if let Err(e) = mlc::run(&config).await {
         panic!("Test with custom root failed. {:?}", e);
