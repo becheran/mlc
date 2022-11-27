@@ -12,6 +12,7 @@ use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::env;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -257,6 +258,11 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut warnings = 0;
     let mut errors = vec![];
 
+    let is_github_runner_env = env::var("GITHUB_ENV").is_ok();
+    if is_github_runner_env{
+        info!("Running in github environment. Print errors and warnings as workflow commands");
+    }
+
     let mut process_result = |result| {
         print_result(&result, &link_target_groups);
         match &result.result_code {
@@ -269,8 +275,13 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             LinkCheckResult::Ignored(_) => {
                 skipped += link_target_groups[&result.target].len();
             }
-            LinkCheckResult::Failed(_) => {
-                errors.push(result.clone());
+            LinkCheckResult::Failed(err) => {
+                errors.push(result.clone());     
+                if is_github_runner_env{       
+                    for link in &link_target_groups[&result.target] {
+                        println!("::error file={},line={},col={},title=broken link::Target {}. {}", link.source, link.line, link.column, result.target.target, err);    
+                    }
+                }
             }
         }
     };
