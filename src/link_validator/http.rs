@@ -27,7 +27,11 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
 
 async fn http_request(url: &reqwest::Url) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
-        static ref CLIENT: Client = Client::new();
+        static ref CLIENT: Client = reqwest::Client::builder()
+            .brotli(true)
+            .gzip(true)
+            .deflate(true)
+            .build().expect("Bug! failed to build client");        
     }
 
     fn status_to_string(status: StatusCode) -> String {
