@@ -14,6 +14,13 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Added config file
+* Added workflow command output for github actions #63
+* Added format links in vs code console so that ctrl + left click opens the file at right location #60
+* Changed report redirects as warnings, unless their destination errors #55
+* Fixed wrong first line separator on windows #61
+* Fixed set accept encoding headers #52
+
 ## [0.15.4] - 2022-08-23
 
 * Fix #54 column line index for files with CR + LF endings
