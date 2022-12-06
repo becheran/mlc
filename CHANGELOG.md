@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.16.0] - 2022-12-06
+
 * Added config file
 * Added workflow command output for github actions #63
 * Added format links in vs code console so that ctrl + left click opens the file at right location #60
