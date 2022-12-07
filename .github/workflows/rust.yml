@@ -111,13 +111,23 @@ jobs:
         with:
           name: apple-darwin
           path: mlc-x86_64-apple-darwin
+      - name: Rename files
+        run: |
+          ls
+          ls mlc-x86_64-linux
+          ls mlc-x86_64-apple-darwin
+          ls mlc-x86_64-windows
+          mv ./mlc-x86_64-linux/mlc mlc-x86_64-linux
+          mv ./mlc-x86_64-apple-darwin/mlc mlc-x86_64-apple-darwin
+          mv ./mlc-x86_64-windows/mlc.exe mlc-x86_64-windows.exe
+          ls
       - name: GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             mlc-x86_64-linux
-            mlc-x86_64-windows
             mlc-x86_64-apple-darwin
+            mlc-x86_64-windows.exe
 
   release_docker:
     runs-on: ubuntu-latest
