@@ -139,7 +139,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: linux
-          path: ./target/release/mlc
+          path: ./target/release
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
