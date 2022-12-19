@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.16.1] - 2022-12-19
+
 * Fixed Installation via `cargo install` failed #67
 
 ## [0.16.0] - 2022-12-06
