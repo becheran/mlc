@@ -1,6 +1,5 @@
+use serde::Deserialize;
 use std::str::FromStr;
-
-use serde_derive::Deserialize;
 
 #[derive(Debug)]
 pub struct MarkupFile {

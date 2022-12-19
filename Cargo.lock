@@ -928,7 +928,6 @@ dependencies = [
  "regex",
  "reqwest",
  "serde",
- "serde_derive",
  "simplelog",
  "tokio",
  "toml",
