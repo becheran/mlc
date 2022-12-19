@@ -117,9 +117,14 @@ jobs:
           ls mlc-x86_64-linux
           ls mlc-x86_64-apple-darwin
           ls mlc-x86_64-windows
-          mv ./mlc-x86_64-linux/mlc mlc-x86_64-linux
-          mv ./mlc-x86_64-apple-darwin/mlc mlc-x86_64-apple-darwin
+          mv ./mlc-x86_64-linux/mlc mlc
+          rm -rd ./mlc-x86_64-linux
+          mv ./mlc mlc-x86_64-linux
+          mv ./mlc-x86_64-apple-darwin/mlc mlc
+          rm -rd ./mlc-x86_64-apple-darwin
+          mv ./mlc mlc-x86_64-apple-darwin
           mv ./mlc-x86_64-windows/mlc.exe mlc-x86_64-windows.exe
+          rm -rd ./mlc-x86_64-windows
           ls
       - name: GitHub Release
         uses: softprops/action-gh-release@v1
