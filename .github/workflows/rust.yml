@@ -11,6 +11,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  BINARY_NAME: mlc
 
 jobs:
   test_own_readme:
@@ -54,7 +55,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: linux
-          path: ./target/release/mlc
+          path: ./target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }}
       - name: Run tests
         run: cargo test --verbose
 
@@ -75,14 +76,12 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: windows
-          path: ./target/release/mlc.exe
+          path: ./target/release/${{ env.BINARY_NAME }}.exe
       - name: Run tests
         run: cargo test --verbose
 
   build_osx:
     runs-on: ubuntu-latest
-    env:
-      BINARY_NAME: mlc
     steps:
       - uses: actions/checkout@v3
       - name: Cache
