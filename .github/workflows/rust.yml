@@ -51,7 +51,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build
-        run: cargo build --release --verbose --target=x86_64-unknown-linux-musl
+        run: cargo rustc --release --verbose --target=x86_64-unknown-linux-musl --bin mlc -- -C prefer-dynamic=no -C strip=symbols
       - uses: actions/upload-artifact@v3
         with:
           name: linux
@@ -72,7 +72,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build
-        run: cargo build --verbose --release
+        run: cargo rustc --verbose --release --bin mlc -- -C prefer-dynamic=no -C strip=symbols
       - uses: actions/upload-artifact@v3
         with:
           name: windows
