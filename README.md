@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/mlc.svg?color=orange)](https://crates.io/crates/mlc)
 [![downloads](https://badgen.net/crates/d/mlc?color=blue)](https://crates.io/crates/mlc)
 [![build status](https://github.com/becheran/mlc/actions/workflows/rust.yml/badge.svg)](https://github.com/becheran/mlc/actions/workflows/rust.yml)
-[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/mit)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/master/CONTRIBUTING.md)
 
 [![asciicast](https://asciinema.org/a/299100.svg)](https://asciinema.org/a/299100)
