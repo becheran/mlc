@@ -29,14 +29,15 @@ impl fmt::Debug for MarkupLink {
 }
 
 impl MarkupLink {
-    pub fn source_str(&self) -> String{
+    pub fn source_str(&self) -> String {
         lazy_static! {
-            static ref IS_VS_CODE_TERMINAL: bool = env::var("TERM_PROGRAM") == Ok("vscode".to_string());
+            static ref IS_VS_CODE_TERMINAL: bool =
+                env::var("TERM_PROGRAM") == Ok("vscode".to_string());
         }
         if *IS_VS_CODE_TERMINAL {
-            format!{"{}:{}:{} => {}", self.source, self.line, self.column, self.target}
+            format! {"{}:{}:{} => {}", self.source, self.line, self.column, self.target}
         } else {
-            format!{"{} ({}, {}) => {}", self.source, self.line, self.column, self.target}
+            format! {"{} ({}, {}) => {}", self.source, self.line, self.column, self.target}
         }
     }
 }

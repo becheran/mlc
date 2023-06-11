@@ -78,7 +78,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     column += 1;
                                 }
                                 while let Some(c) = line_chars.get(column) {
-                                    if c.is_whitespace() || c == &'"' {
+                                    if c == &'"' {
                                         break;
                                     }
                                     column += 1;
@@ -123,6 +123,19 @@ mod tests {
         let input = "df <!-- <a href=\"http://wiki.selfhtml.org\"> haha</a> -->";
         let result = le.find_links(input);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn space() {
+        let le = HtmlLinkExtractor();
+        let result = le.find_links("blah <a href=\"some file.html\">foo</a>.");
+        let expected = MarkupLink {
+            target: "some file.html".to_string(),
+            line: 1,
+            column: 6,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
     }
 
     #[test_case("<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>", 1, 1)]
