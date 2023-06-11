@@ -1,6 +1,7 @@
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
-
+use crate::link_validator::link_type::get_link_type;
+use crate::link_validator::link_type::LinkType;
 pub struct HtmlLinkExtractor();
 
 #[derive(Clone, Copy, Debug)]
@@ -83,8 +84,11 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     }
                                     column += 1;
                                 }
-                                let link =
+                                let mut link =
                                     (line_chars[start_col..column]).iter().collect::<String>();
+                                if get_link_type(&link) == LinkType::FileSystem {
+                                    link = url_escape::decode(link.as_str()).to_string();
+                                };
                                 result.push(MarkupLink {
                                     column: link_column + 1,
                                     line: link_line + 1,
@@ -129,6 +133,19 @@ mod tests {
     fn space() {
         let le = HtmlLinkExtractor();
         let result = le.find_links("blah <a href=\"some file.html\">foo</a>.");
+        let expected = MarkupLink {
+            target: "some file.html".to_string(),
+            line: 1,
+            column: 6,
+            source: "".to_string(),
+        };
+        assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn url_encoded_path() {
+        let le = HtmlLinkExtractor();
+        let result = le.find_links("blah <a href=\"some%20file.html\">foo</a>.");
         let expected = MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
