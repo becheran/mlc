@@ -11,6 +11,7 @@ enum ParserState {
     Anchor,
     EqualSign,
     Link,
+    Ignore,
 }
 
 impl LinkExtractor for HtmlLinkExtractor {
@@ -22,12 +23,20 @@ impl LinkExtractor for HtmlLinkExtractor {
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
+            if matches!(state, ParserState::Ignore) {
+                info!("Ignore line {}", line);
+                state = ParserState::Text;
+                continue;
+            }
             while line_chars.get(column).is_some() {
                 match state {
+                    ParserState::Ignore => {}
                     ParserState::Comment => {
-                        if line_chars.get(column) == Some(&'-')
-                            && line_chars.get(column + 1) == Some(&'-')
-                            && line_chars.get(column + 2) == Some(&'>')
+                        if line_str.contains("mlc-ignore") {
+                            state = ParserState::Ignore;
+                            break;
+                        } else if line_chars.len() >= column + 3
+                            && line_chars[column..column + 3] == ['-', '-', '>']
                         {
                             column += 2;
                             state = ParserState::Text;
@@ -155,6 +164,15 @@ mod tests {
         assert_eq!(vec![expected], result);
     }
 
+    #[test]
+    fn ignore_next_line() {
+        let le = HtmlLinkExtractor();
+        let result =
+            le.find_links("blah <!-- mlc-ignore -->\n<a href=\"some%20file.html\">foo</a>.");
+        assert!(result.is_empty());
+    }
+
+    #[test_case("<!-- mlc-ignore -->\n<a href=\"https://foo.com\">Bar</a>\n<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>", 3, 1)]
     #[test_case("<a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>", 1, 1)]
     #[test_case(
         "<a\nhref\n=\n  \"https://www.w3schools.com\">\nVisit W3Schools.com!\n</a>",
@@ -167,7 +185,7 @@ mod tests {
         1
     )]
     #[test_case(
-        "<!--comment--><a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a>",
+        "<!--comment--><a href=\"https://www.w3schools.com\">Visit W3Schools.com!</a><!--inf comment",
         1,
         15
     )]
