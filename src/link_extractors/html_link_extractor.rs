@@ -14,8 +14,8 @@ enum ParserState {
     Ignore,
 }
 
-impl LinkExtractor for HtmlLinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<MarkupLink> {
+impl HtmlLinkExtractor {
+    pub fn find_links_with_ignore_info(&self, text: &str) -> (Vec<MarkupLink>, bool) {
         let mut result: Vec<MarkupLink> = Vec::new();
         let mut state: ParserState = ParserState::Text;
         let mut link_column = 0;
@@ -33,6 +33,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                     ParserState::Ignore => {}
                     ParserState::Comment => {
                         if line_str.contains("mlc-ignore") {
+                            info!("Ignore next link from line {}", line);
                             state = ParserState::Ignore;
                             break;
                         } else if line_chars.len() >= column + 3
@@ -113,7 +114,13 @@ impl LinkExtractor for HtmlLinkExtractor {
                 column += 1;
             }
         }
-        result
+        return (result, matches!(state, ParserState::Ignore));
+    }
+}
+
+impl LinkExtractor for HtmlLinkExtractor {
+    fn find_links(&self, text: &str) -> Vec<MarkupLink> {
+        return self.find_links_with_ignore_info(text).0;
     }
 }
 
