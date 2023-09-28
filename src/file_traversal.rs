@@ -14,8 +14,8 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
             .canonicalize()
             .map_err(|e| {
                 eprintln!(
-                    "Relative path from privided root is malformed: {:?} --- {}",
-                    relative_root, e
+                    "Relative path from privided root {:?} is malformed: {:?} --- {}",
+                    root, relative_root, e
                 );
                 std::process::exit(1);
             })
