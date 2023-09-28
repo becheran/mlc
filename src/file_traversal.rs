@@ -28,11 +28,11 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     };
 
     info!(
-        "Search for files of markup types '{:?}' in directory '{:?}'",
-        markup_types, root
+        "Search for files of markup types {:?} in directory {:?}",
+        markup_types, relative_root 
     );
 
-    for entry in WalkDir::new(root)
+    for entry in WalkDir::new(relative_root)
         .follow_links(false)
         .into_iter()
         .filter_map(Result::ok)
