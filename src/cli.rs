@@ -11,14 +11,6 @@ const CONFIG_FILE_PATH: &str = "./.mlc.toml";
 
 #[must_use]
 pub fn parse_args() -> Config {
-    let mut opt: OptionalConfig = match fs::read_to_string(CONFIG_FILE_PATH) {
-        Ok(content) => match toml::from_str(&content) {
-            Ok(o) => o,
-            Err(err) => panic!("Invalid TOML file {:?}", err),
-        },
-        Err(_) => OptionalConfig::default(),
-    };
-
     let matches = command!()
         .arg(Arg::new("directory")
             .help("Check all links in given directory and subdirectory")
@@ -73,11 +65,49 @@ pub fn parse_args() -> Config {
     let dir_string = matches
         .get_one::<String>("directory")
         .unwrap_or(&default_dir);
-    let directory = dir_string
+    let mut directory = dir_string
         .replace('/', &MAIN_SEPARATOR.to_string())
         .replace('\\', &MAIN_SEPARATOR.to_string())
         .parse()
         .expect("failed to parse path");
+
+    let mut root_path = std::env::current_dir().unwrap_or_else(|e| {
+        eprintln!("Cannot find the current working directory: {}", e);
+        std::process::exit(1);
+    });
+
+    if let Some(root_dir) = matches.get_one::<String>("root-dir") {
+        let path = Path::new(
+            &root_dir
+                .replace('/', &MAIN_SEPARATOR.to_string())
+                .replace('\\', &MAIN_SEPARATOR.to_string()),
+        )
+        .to_path_buf();
+        if !path.is_dir() {
+            eprintln!("Root path {:?} must be a directory!", path);
+            std::process::exit(1);
+        }
+        root_path = path.canonicalize().unwrap();
+    }
+
+    directory = root_path
+        .join(&directory)
+        .canonicalize()
+        .unwrap_or_else(|e| {
+            eprintln!(
+                "Relative path from privided root {:?} is malformed: {:?} --- {}",
+                root_path, directory, e
+            );
+            std::process::exit(1);
+        });
+
+    let mut opt: OptionalConfig = match fs::read_to_string(root_path.join(CONFIG_FILE_PATH)) {
+        Ok(content) => match toml::from_str(&content) {
+            Ok(o) => o,
+            Err(err) => panic!("Invalid TOML file {:?}", err),
+        },
+        Err(_) => OptionalConfig::default(),
+    };
 
     if matches.get_flag("debug") {
         opt.debug = Some(true);
@@ -122,20 +152,6 @@ pub fn parse_args() -> Config {
                 })
                 .collect(),
         );
-    }
-
-    if let Some(root_dir) = matches.get_one::<String>("root-dir") {
-        let root_path = Path::new(
-            &root_dir
-                .replace('/', &MAIN_SEPARATOR.to_string())
-                .replace('\\', &MAIN_SEPARATOR.to_string()),
-        )
-        .to_path_buf();
-        if !root_path.is_dir() {
-            eprintln!("Root path {:?} must be a directory!", root_path);
-            std::process::exit(1);
-        }
-        opt.root_dir = Some(root_path)
     }
 
     Config {
