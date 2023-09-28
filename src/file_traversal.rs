@@ -6,7 +6,22 @@ use std::fs;
 use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
-    let root = &config.directory;
+    let mut relative_root = config.directory.to_owned();
+
+    if let Some(root) = &config.optional.root_dir {
+        relative_root = root
+            .join(&relative_root)
+            .canonicalize()
+            .map_err(|e| {
+                eprintln!(
+                    "Relative path from privided root is malformed: {:?} --- {}",
+                    relative_root, e
+                );
+                std::process::exit(1);
+            })
+            .unwrap();
+    }
+
     let markup_types = match &config.optional.markup_types {
         Some(t) => t,
         None => panic!("Bug! markup_types must be set"),
