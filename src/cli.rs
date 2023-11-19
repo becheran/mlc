@@ -59,7 +59,12 @@ pub fn parse_args() -> Config {
             .action(ArgAction::Append)
             .value_delimiter(',')
             .required(false))
-        .arg(arg!(-T --throttle <DELAY_MS> "Wait time in milliseconds between http request to the same host")
+        .arg(Arg::new("throttle")
+            .long("throttle")
+            .short('T')
+            .value_name("DELAY-MS")
+            .help("Wait time in milliseconds between http request to the same host")
+            .action(ArgAction::Append)
             .required(false))
         .arg(Arg::new("root-dir")
             .long("root-dir")
@@ -83,8 +88,9 @@ pub fn parse_args() -> Config {
         opt.debug = Some(true);
     }
 
-    if let Some(throttle) = matches.get_one::<u32>("throttle") {
-        opt.throttle = Some(*throttle);
+    if let Some(throttle_str) = matches.get_one::<String>("throttle") {
+        let throttle = throttle_str.parse::<u32>().unwrap();
+        opt.throttle = Some(throttle);
     }
 
     if let Some(markup_types) = matches.get_many::<String>("markup-types") {
