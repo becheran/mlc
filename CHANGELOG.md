@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.16.3] - 2023-11-20
+
 * Fixes issue with throttle parameter
 
 ## [0.16.2] - 2023-06-15
