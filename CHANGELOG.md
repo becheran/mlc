@@ -14,8 +14,6 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
-## [0.16.3] - 2023-11-07
-
 * Fixes issue with throttle parameter
 
 ## [0.16.2] - 2023-06-15
@@ -66,7 +64,7 @@ Types for Changes:
 
 ## [0.14.0] - 2020-11-11
 
-* Fallback to GET requests if HEAD fails. See https://github.com/becheran/mlc/issues/28
+* Fallback to GET requests if HEAD fails. See <https://github.com/becheran/mlc/issues/28>
 
 ## [0.13.12] - 2020-10-26
 
