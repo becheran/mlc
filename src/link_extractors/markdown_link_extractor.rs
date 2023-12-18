@@ -43,9 +43,14 @@ impl LinkExtractor for MarkdownLinkExtractor {
         };
 
         let mut result: Vec<MarkupLink> = Vec::new();
+        let mut ignore_next: bool = false;
         for (evt, range) in parser.into_offset_iter() {
             match evt {
                 Event::End(tag) => {
+                    if ignore_next {
+                        ignore_next = false;
+                        continue;
+                    }
                     match tag {
                         Tag::Link(_link_type, destination, _title)
                         | Tag::Image(_link_type, destination, _title) => {
@@ -62,7 +67,12 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 }
                 Event::Html(html) => {
                     let line_col = line_column_from_idx(range.start);
-                    let mut html_result = html_extractor.find_links(html.as_ref());
+                    let (mut html_result, ignore) =
+                        html_extractor.find_links_with_ignore_info(html.as_ref());
+                    if ignore {
+                        ignore_next = true;
+                        continue;
+                    }
                     html_result = html_result
                         .iter()
                         .map(|md_link| {
@@ -257,6 +267,18 @@ mod tests {
             source: "".to_string(),
         };
         assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn link_ignored() {
+        let le = MarkdownLinkExtractor();
+        let link_str = "http://example.net/";
+        let input = format!(
+            "<!-- mlc-ignore -->\n[This link]({}) is ignore no title attribute.",
+            link_str
+        );
+        let result = le.find_links(&input);
+        assert!(result.is_empty());
     }
 
     #[test]
