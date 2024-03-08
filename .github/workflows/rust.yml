@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Run tests
+        run: cargo test --verbose
       - uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: musl-tools # provides musl-gcc
@@ -56,44 +58,27 @@ jobs:
         with:
           name: linux
           path: ./target/x86_64-unknown-linux-musl/release/${{ env.BINARY_NAME }}
-      - name: Run tests
-        run: cargo test --verbose
 
   build_windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Run tests
+        run: cargo test --verbose
       - name: Build
         run: cargo build --verbose --release
       - uses: actions/upload-artifact@v3
         with:
           name: windows
           path: ./target/release/${{ env.BINARY_NAME }}.exe
-      - name: Run tests
-        run: cargo test --verbose
 
   build_osx:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Build-musl macOS x86
-        uses: Shogan/rust-musl-action@v1.0.2
+        uses: Shogan/rust-musl-action@v1.1.2
         with:
           args: cargo build --target x86_64-apple-darwin --release
       - uses: actions/upload-artifact@v3
