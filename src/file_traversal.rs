@@ -24,10 +24,19 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
         .filter(|e| !e.file_type().is_dir())
     {
         let f_name = entry.file_name().to_string_lossy();
+        debug!("Check file: '{f_name}'");
 
         if let Some(markup_type) = markup_type(&f_name, &markup_types) {
             let path = entry.path();
-            let abs_path = fs::canonicalize(path).expect("Expected path to exist.");
+
+            let abs_path = match fs::canonicalize(path) {
+                Ok(abs_path) => abs_path,
+                Err(e) => {
+                    warn!("Path '{:?}' not able to canonicalize path. '{e}'", path);
+                    continue;
+                }
+            };
+
             let ignore = match &config.optional.ignore_path {
                 Some(p) => p.iter().any(|ignore_path| {
                     if ignore_path.is_file() {
@@ -41,10 +50,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                 None => false,
             };
             if ignore {
-                debug!(
-                    "Ignore file {:?}, because it is in the ignore path list.",
-                    path
-                );
+                debug!("Ignore file {f_name}, because it is in the ignore path list.");
             } else {
                 let file = MarkupFile {
                     markup_type,
