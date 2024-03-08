@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Changed enhanced logging and do not crash if path can not be canonicalized
+
 ## [0.16.3] - 2023-11-20
 
 * Fixes issue with throttle parameter
