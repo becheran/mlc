@@ -84,7 +84,7 @@ jobs:
         run: cargo test --verbose
       - name: Build
         run: |
-          cargo build --verbose --release
+          cargo build --verbose --release --target x86_64-apple-darwin
           ls ./target
       - uses: actions/upload-artifact@v3
         with:
