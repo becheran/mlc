@@ -15,27 +15,27 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = { version = "4.0.26", features = ["cargo"] }
-log = "0.4.17"
-simplelog = "0.12"
-walkdir = "2.3.2"
-regex = "1"
+clap = { version = "4.5.2", features = ["cargo"] }
+log = "0.4.21"
+simplelog = "0.12.2"
+walkdir = "2.5.0"
+regex = "1.10.3"
 lazy_static = "1.4.0"
-url = "2.2.2"
-colored = "2"
+url = "2.5.0"
+colored = "2.1.0"
 async-std = "1.12.0"
-reqwest = {version="0.11.13", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
-tokio = {version="1.21.2", features = ["rt-multi-thread", "macros", "time"] }
-futures = "0.3"
-wildmatch = "2.1.1"
-pulldown-cmark = "0.9.2"
-toml = "0.5.9"
-serde = { version = "1.0.147", features = ["derive"] }
+reqwest = {version="0.11.24", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
+tokio = {version="1.36.0", features = ["rt-multi-thread", "macros", "time"] }
+futures = "0.3.30"
+wildmatch = "2.3.0"
+pulldown-cmark = "0.9.6"
+toml = "0.8.10"
+serde = { version = "1.0.197", features = ["derive"] }
 url-escape = "0.1.1"
 
 [dev-dependencies]
-ntest = "0.9.0"
-criterion = "0.4.0"
+ntest = "0.9.2"
+criterion = "0.5.1"
 
 [[bench]]
 name = "benchmarks"
