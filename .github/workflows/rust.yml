@@ -17,7 +17,7 @@ jobs:
   test_own_readme:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -32,7 +32,7 @@ jobs:
   build_linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: musl-tools # provides musl-gcc
@@ -40,8 +40,8 @@ jobs:
       - name: "Get the Rust toolchain"
         uses: dtolnay/rust-toolchain@stable
         with:
-            targets: x86_64-unknown-linux-musl
-            components: rustfmt, clippy
+          targets: x86_64-unknown-linux-musl
+          components: rustfmt, clippy
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -62,7 +62,7 @@ jobs:
   build_windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -83,7 +83,7 @@ jobs:
   build_osx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -146,7 +146,7 @@ jobs:
     needs: [build_osx, build_windows, build_linux]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
