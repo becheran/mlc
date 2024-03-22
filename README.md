@@ -39,6 +39,10 @@ cargo install mlc
 
 To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu` and `x86_64-apple-darwin`.
 
+### Linux distributions
+
+It is available on the Arch User Repository as [`markuplinkchecker`](https://aur.archlinux.org/packages/markuplinkchecker).
+
 ## CI Pipeline Integration
 
 ### GitHub Actions
