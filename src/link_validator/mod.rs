@@ -12,6 +12,7 @@ use mail::check_mail;
 
 pub use link_type::get_link_type;
 pub use link_type::LinkType;
+use wildmatch::WildMatch;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum LinkCheckResult {
@@ -34,7 +35,7 @@ pub async fn resolve_target_link(
     }
 }
 
-pub async fn check(link_target: &str, link_type: &LinkType, config: &Config) -> LinkCheckResult {
+pub async fn check(link_target: &str, link_type: &LinkType, config: &Config, do_not_warn_for_redirect_to: &Vec<WildMatch>) -> LinkCheckResult {
     info!("Check link {}.", &link_target);
     match link_type {
         LinkType::Ftp => LinkCheckResult::NotImplemented(format!(
@@ -51,7 +52,7 @@ pub async fn check(link_target: &str, link_type: &LinkType, config: &Config) -> 
                     "Ignore web link because of the offline flag.".to_string(),
                 )
             } else {
-                check_http(link_target).await
+                check_http(link_target, do_not_warn_for_redirect_to).await
             }
         }
         LinkType::FileSystem => check_filesystem(link_target, config).await,

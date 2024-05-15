@@ -13,6 +13,7 @@ async fn end_to_end() {
         directory: benches_dir().join("benchmark"),
         optional: OptionalConfig {
             debug: None,
+            do_not_warn_for_redirect_to: None,
             markup_types: Some(vec![MarkupType::Markdown]),
             offline: None,
             match_file_extension: None,
@@ -37,6 +38,7 @@ async fn end_to_end_different_root() {
         directory: test_files.clone(),
         optional: OptionalConfig {
             debug: Some(true),
+            do_not_warn_for_redirect_to: None,
             markup_types: Some(vec![MarkupType::Markdown]),
             offline: None,
             match_file_extension: None,

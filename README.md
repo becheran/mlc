@@ -109,6 +109,7 @@ The following arguments are available:
 | `<directory>`    |       | Only positional argument. Path to directory which shall be checked with all sub-dirs. Can also be a specific filename which shall be checked. |
 | `--help`         | `-h`  | Print help |
 | `--debug`        | `-d`  | Show verbose debug information |
+| `--do-not-warn-for-redirect-to` | | Do not warn for links which redirect to the given URL. Allows the same link format as `--ignore-links`. For example, `--do-not-warn-for-redirect-to "http*://crates.io*"` will not warn for links which redirect to the `crates.io` website. |
 | `--offline`      | `-o`  | Do not check any web links. Renamed from `--no-web-links` which is still an alias for downwards compatibility |
 | `--match-file-extension` | `-e`  | Set the flag, if the file extension shall be checked as well. For example the following markup link `[link](dir/file)` matches if for example a file called `file.md` exists in `dir`, but would fail when the `--match-file-extension` flag is set. |
 | `--version`      | `-V` | Print current version of mlc |
