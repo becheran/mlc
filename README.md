@@ -124,6 +124,8 @@ All optional arguments which can be passed via the command line can also be conf
 ``` toml
 # Print debug information to console
 debug = true
+# Do not warn for links which redirect to the given URL
+do-not-warn-for-redirect-to=["http*://crates.io*"]
 # Do not check web links
 offline = true
 # Check the exact file extension when searching for a file
