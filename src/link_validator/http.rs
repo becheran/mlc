@@ -152,7 +152,7 @@ mod test {
         let result = check_http("http://gitlab.com/fake-page/does/not/exist/ever", &vec![]).await;
         assert_eq!(
             result,
-            LinkCheckResult::Failed("403 - Not Found".to_string())
+            LinkCheckResult::Failed("403 - Forbidden".to_string())
         );
     }
 
