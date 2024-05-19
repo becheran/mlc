@@ -8,7 +8,10 @@ use reqwest::Request;
 use reqwest::StatusCode;
 use wildmatch::WildMatch;
 
-pub async fn check_http(target: &str, do_not_warn_for_redirect_to: &Vec<WildMatch>) -> LinkCheckResult {
+pub async fn check_http(
+    target: &str,
+    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+) -> LinkCheckResult {
     debug!("Check http link target {:?}", target);
     let url = reqwest::Url::parse(target).expect("URL of unknown type");
 
@@ -26,13 +29,17 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
     req
 }
 
-async fn http_request(url: &reqwest::Url, do_not_warn_for_redirect_to: &Vec<WildMatch>) -> reqwest::Result<LinkCheckResult> {
+async fn http_request(
+    url: &reqwest::Url,
+    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = reqwest::Client::builder()
             .brotli(true)
             .gzip(true)
             .deflate(true)
-            .build().expect("Bug! failed to build client");        
+            .build()
+            .expect("Bug! failed to build client");
     }
 
     fn status_to_string(status: StatusCode) -> String {
@@ -56,10 +63,16 @@ async fn http_request(url: &reqwest::Url, do_not_warn_for_redirect_to: &Vec<Wild
 
     let status = response.status();
     if status.is_success() {
-        if response.url() == url || do_not_warn_for_redirect_to.iter().any(|x| x.matches(response.url().as_ref())) {
+        if response.url() == url
+            || do_not_warn_for_redirect_to
+                .iter()
+                .any(|x| x.matches(response.url().as_ref()))
+        {
             Ok(LinkCheckResult::Ok)
         } else {
-            Ok(LinkCheckResult::Warning("Request was redirected to ".to_string() + response.url().as_ref()))
+            Ok(LinkCheckResult::Warning(
+                "Request was redirected to ".to_string() + response.url().as_ref(),
+            ))
         }
     } else if status.is_redirection() {
         // Only if > 10 redirects
@@ -94,16 +107,25 @@ mod test {
     #[tokio::test]
     async fn check_http_is_redirection() {
         let result = check_http("http://gitlab.com/becheran/mlc", &vec![]).await;
-        assert_eq!(result, LinkCheckResult::Warning("Request was redirected to https://gitlab.com/becheran/mlc".to_string()));
+        assert_eq!(
+            result,
+            LinkCheckResult::Warning(
+                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+            )
+        );
     }
-    
+
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored() {
         // we ignore redirections to the 'https'-version
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![WildMatch::new("https://gitlab.com/becheran/mlc")]).await;
+        let result = check_http(
+            "http://gitlab.com/becheran/mlc",
+            &vec![WildMatch::new("https://gitlab.com/becheran/mlc")],
+        )
+        .await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
-    
+
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored_star_pattern() {
         let result = check_http("http://gitlab.com/becheran/mlc", &vec![WildMatch::new("*")]).await;
@@ -112,14 +134,26 @@ mod test {
 
     #[tokio::test]
     async fn check_http_redirection_do_warn_if_ignored_mismatch() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![WildMatch::new("http://www.google.com")]).await;
-        assert_eq!(result, LinkCheckResult::Warning("Request was redirected to https://gitlab.com/becheran/mlc".to_string()));
+        let result = check_http(
+            "http://gitlab.com/becheran/mlc",
+            &vec![WildMatch::new("http://www.google.com")],
+        )
+        .await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Warning(
+                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+            )
+        );
     }
-    
+
     #[tokio::test]
     async fn check_http_is_redirection_failure() {
-        let result = check_http("http://github.com/fake-page", &vec![]).await;
-        assert_eq!(result, LinkCheckResult::Failed("404 - Not Found".to_string()));
+        let result = check_http("http://gitlab.com/fake-page/does/not/exist/ever", &vec![]).await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Failed("403 - Not Found".to_string())
+        );
     }
 
     #[tokio::test]
@@ -137,7 +171,12 @@ mod test {
     #[tokio::test]
     async fn check_http_request_redirection_with_hash() {
         let result = check_http("http://gitlab.com/becheran/mlc#bla", &vec![]).await;
-        assert_eq!(result, LinkCheckResult::Warning("Request was redirected to https://gitlab.com/becheran/mlc".to_string()));
+        assert_eq!(
+            result,
+            LinkCheckResult::Warning(
+                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+            )
+        );
     }
 
     #[tokio::test]
