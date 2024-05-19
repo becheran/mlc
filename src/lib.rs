@@ -36,6 +36,8 @@ const PARALLEL_REQUESTS: usize = 20;
 #[derive(Default, Debug, Deserialize)]
 pub struct OptionalConfig {
     pub debug: Option<bool>,
+    #[serde(rename(deserialize = "do-not-warn-for-redirect-to"))]
+    pub do_not_warn_for_redirect_to: Option<Vec<String>>,
     #[serde(rename(deserialize = "markup-types"))]
     pub markup_types: Option<Vec<markup::MarkupType>>,
     pub offline: Option<bool>,
@@ -79,6 +81,7 @@ impl fmt::Display for Config {
             "
 Debug: {:?}
 Dir: {} 
+DoNotWarnForRedirectTo: {:?}
 Types: {:?} 
 Offline: {}
 MatchExt: {}
@@ -88,6 +91,7 @@ IgnorePath: {:?}
 Throttle: {} ms",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
+            self.optional.do_not_warn_for_redirect_to,
             markup_types_str,
             self.optional.offline.unwrap_or_default(),
             self.optional.match_file_extension.unwrap_or_default(),
@@ -186,6 +190,12 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
+    
+    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> = Arc::new(match &config.optional.do_not_warn_for_redirect_to {
+        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
+        None => vec![],
+    });
+
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);
     let waits = Arc::new(Mutex::new(HashMap::new()));
@@ -193,6 +203,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut buffered_stream = stream::iter(link_target_groups.keys())
         .map(|target| {
             let waits = waits.clone();
+            let do_not_warn_for_redirect_to = Arc::clone(&do_not_warn_for_redirect_to);
             async move {
                 if throttle && target.link_type == LinkType::Http {
                     let parsed = match Url::parse(&target.target) {
@@ -244,7 +255,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
 
                 let result_code =
-                    link_validator::check(&target.target, &target.link_type, config).await;
+                    link_validator::check(&target.target, &target.link_type, config, &do_not_warn_for_redirect_to).await;
 
                 FinalResult {
                     target: target.clone(),

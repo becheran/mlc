@@ -29,6 +29,13 @@ pub fn parse_args() -> Config {
         .arg(arg!(-o --offline "Do not check web links")
             .alias("no-web-links")
             .required(false))
+        .arg(Arg::new("do-not-warn-for-redirect-to")
+            .long("do-not-warn-for-redirect-to")
+            .value_name("LINKS")
+            .value_delimiter(',')
+            .action(ArgAction::Append)
+            .help("Comma separated list of links which will be ignored")
+            .required(false))
         .arg(Arg::new("match-file-extension")
             .long("match-file-extension")
             .short('e')
@@ -86,6 +93,10 @@ pub fn parse_args() -> Config {
 
     if matches.get_flag("debug") {
         opt.debug = Some(true);
+    }
+    
+    if let Some(do_not_warn_for_redirect_to) = matches.get_many::<String>("do-not-warn-for-redirect-to") {
+        opt.do_not_warn_for_redirect_to = Some(do_not_warn_for_redirect_to.map(|x| x.to_string()).collect());
     }
 
     if let Some(throttle_str) = matches.get_one::<String>("throttle") {
