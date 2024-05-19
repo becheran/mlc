@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.17.0] - 2024-05-19
+
 * Changed enhanced logging and do not crash if path can not be canonicalized
 * Added option to hide redirects #84
 * Changed use ARM64 Mac OS
