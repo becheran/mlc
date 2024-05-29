@@ -329,8 +329,8 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     if errors.is_empty() {
         Ok(())
     } else {
-        eprintln!();
-        eprintln!("The following links could not be resolved:");
+        println!();
+        println!("The following links could not be resolved:");
         println!();
         for res in errors {
             for link in &link_target_groups[&res.target] {
