@@ -41,7 +41,13 @@ To download a compiled binary version of *mlc* go to [github releases](https://g
 
 ### Linux distributions
 
-It is available on the Arch User Repository as [`markuplinkchecker`](https://aur.archlinux.org/packages/markuplinkchecker).
+#### Arch Linux
+
+You can install from the [official repositories](https://archlinux.org/packages/extra/x86_64/markuplinkchecker/) using [pacman](https://wiki.archlinux.org/title/pacman):
+
+```bash
+pacman -S markuplinkchecker
+```
 
 ## CI Pipeline Integration
 
