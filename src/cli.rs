@@ -3,9 +3,11 @@ use crate::Config;
 use crate::OptionalConfig;
 use clap::Arg;
 use clap::ArgAction;
+use glob::glob_with;
+use glob::MatchOptions;
 use std::fs;
-use std::path::Path;
 use std::path::MAIN_SEPARATOR;
+use std::path::{Path, PathBuf};
 
 const CONFIG_FILE_PATH: &str = "./.mlc.toml";
 
@@ -146,6 +148,11 @@ pub fn parse_args() -> Config {
     if let Some(ignore_links) = matches.get_many::<String>("ignore-links") {
         opt.ignore_links = Some(ignore_links.map(|x| x.to_string()).collect());
     }
+    let options = MatchOptions {
+        case_sensitive: true,
+        require_literal_separator: false,
+        require_literal_leading_dot: false,
+    };
 
     if let Some(ignore_path) = matches.get_many::<String>("ignore-path") {
         opt.ignore_path = Some(ignore_path.map(|x| Path::new(x).to_path_buf()).collect());
@@ -176,5 +183,46 @@ pub fn parse_args() -> Config {
     Config {
         directory,
         optional: opt,
+    }
+}
+
+pub fn collect_ignore_paths<'a, I>(ignore_paths: I, options: MatchOptions) -> Vec<PathBuf>
+where
+    I: Iterator<Item = &'a String>,
+{
+    let mut collected_paths = Vec::new();
+
+    for x in ignore_paths {
+        if x.contains('*') {
+            collected_paths.extend(handle_glob_path(x, options));
+        } else {
+            collected_paths.push(handle_literal_path(x));
+        }
+    }
+
+    collected_paths
+}
+
+fn handle_glob_path(pattern: &str, options: MatchOptions) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+
+    for entry in glob_with(pattern, options).unwrap() {
+        match entry {
+            Ok(p) => match fs::canonicalize(&p) {
+                Ok(pa) => paths.push(pa),
+                Err(e) => panic!("Ignore path {:?} not found. {:?}.", &p, e),
+            },
+            Err(e) => panic!("Ignore path not found. {:?}.", e),
+        }
+    }
+
+    paths
+}
+
+fn handle_literal_path(path_str: &str) -> PathBuf {
+    let path = Path::new(path_str).to_path_buf();
+    match fs::canonicalize(&path) {
+        Ok(p) => p,
+        Err(e) => panic!("Ignore path {:?} not found. {:?}.", &path, e),
     }
 }

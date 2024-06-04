@@ -119,7 +119,7 @@ The following arguments are available:
 | `--offline`      | `-o`  | Do not check any web links. Renamed from `--no-web-links` which is still an alias for downwards compatibility |
 | `--match-file-extension` | `-e`  | Set the flag, if the file extension shall be checked as well. For example the following markup link `[link](dir/file)` matches if for example a file called `file.md` exists in `dir`, but would fail when the `--match-file-extension` flag is set. |
 | `--version`      | `-V` | Print current version of mlc |
-| `--ignore-path`  | `-p` | Comma separated list of directories or files which shall be ignored. For example  |
+| `--ignore-path`  | `-p` | Comma separated list of directories or files which shall be ignored. Can use globbing. For example: `--ignore-path "./ignore-me","./src","./build-*"`  |
 | `--ignore-links` | `-i` | Comma separated list of links which shall be ignored. Use simple `?` and `*` wildcards. For example `--ignore-links "http*://crates.io*"` will skip all links to the crates.io website. See the [used lib](https://github.com/becheran/wildmatch) for more information.  |
 | `--markup-types` | `-t` | Comma separated list list of markup types which shall be checked [possible values: md, html] |
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
@@ -137,7 +137,7 @@ offline = true
 # Check the exact file extension when searching for a file
 match-file-extension= true
 # List of files and directories which will be ignored
-ignore-path=["./ignore-me","./src"]
+ignore-path=["./ignore-me","./src","./build-*"]
 # List of links which will be ignored
 ignore-links=["http://ignore-me.de/*","http://*.ignoresub-domain/*"]
 # List of markup types which shall be checked

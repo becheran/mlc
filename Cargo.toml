@@ -32,6 +32,7 @@ pulldown-cmark = "0.9.6"
 toml = "0.8.13"
 serde = { version = "1.0.202", features = ["derive"] }
 url-escape = "0.1.1"
+glob = "0.3.1"
 
 [dev-dependencies]
 ntest = "0.9.2"
