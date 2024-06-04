@@ -14,7 +14,10 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
+use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep_until, Duration, Instant};
@@ -49,6 +52,8 @@ pub struct OptionalConfig {
     pub ignore_path: Option<Vec<PathBuf>>,
     #[serde(rename(deserialize = "root-dir"))]
     pub root_dir: Option<PathBuf>,
+    #[serde(rename(deserialize = "gitignore"))]
+    pub gitignore: Option<bool>,
     pub throttle: Option<u32>,
 }
 
@@ -80,13 +85,14 @@ impl fmt::Display for Config {
             f,
             "
 Debug: {:?}
-Dir: {} 
+Dir: {}
 DoNotWarnForRedirectTo: {:?}
-Types: {:?} 
+Types: {:?}
 Offline: {}
 MatchExt: {}
 RootDir: {}
-IgnoreLinks: {} 
+Gitignore: {}
+IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms",
             self.optional.debug.unwrap_or(false),
@@ -96,6 +102,7 @@ Throttle: {} ms",
             self.optional.offline.unwrap_or_default(),
             self.optional.match_file_extension.unwrap_or_default(),
             root_dir_str,
+            self.optional.gitignore.unwrap_or_default(),
             ignore_str.join(","),
             ignore_path_str,
             self.optional.throttle.unwrap_or(0)
@@ -124,6 +131,33 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     }
     links
 }
+
+fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
+    let output = Command::new("git")
+    .arg("ls-files")
+    .arg("--ignored")
+    .arg("--others")
+    .arg("--exclude-standard")
+    .output()
+    .expect("Failed to execute 'git' command");
+
+    if output.status.success() {
+        let ignored_files = String::from_utf8(output.stdout)
+            .expect("Invalid UTF-8 sequence")
+            .lines()
+            .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
+            .filter_map(|line| fs::canonicalize(Path::new(line.trim())).ok())
+            .collect::<Vec<_>>();
+        Some(ignored_files)
+    } else {
+        eprintln!(
+            "git ls-files command failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        None
+    }
+}
+
 
 fn print_helper(
     link: &MarkupLink,
@@ -168,7 +202,41 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
         None => vec![],
     };
+
+    let gitignored_files: Option<Vec<PathBuf>> = if config.optional.gitignore.is_some() {
+        let files = find_git_ignored_files();
+        debug!("Found gitignored files: {:?}", files);
+        files
+    } else {
+        None
+    };
+
+    let is_gitignore_enabled = gitignored_files.is_some();
+
     for link in &links {
+        let canonical_link_source = match fs::canonicalize(&link.source) {
+            Ok(path) => path,
+            Err(e) => {
+                warn!("Failed to canonicalize link source: {}. Error: {:?}", link.source, e);
+                continue;
+            }
+        };
+
+        if is_gitignore_enabled {
+            if let Some(ref gif) = gitignored_files {
+                if gif.iter().any(|path| path == &canonical_link_source) {
+                    print_helper(
+                        link,
+                        &"Skip".green(),
+                        "Ignore link because it is ignored by git.",
+                        false,
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            }
+        }
+
         if ignore_links.iter().any(|m| m.matches(&link.target)) {
             print_helper(
                 link,
@@ -179,6 +247,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             skipped += 1;
             continue;
         }
+
         let link_type = get_link_type(&link.target);
         let target = resolve_target_link(link, &link_type, config).await;
         let t = Target { target, link_type };
@@ -190,11 +259,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> =
-        Arc::new(match &config.optional.do_not_warn_for_redirect_to {
-            Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
-            None => vec![],
-        });
+    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> = Arc::new(match &config.optional.do_not_warn_for_redirect_to {
+        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
+        None => vec![],
+    });
 
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);

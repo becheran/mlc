@@ -96,6 +96,16 @@ pub fn parse_args() -> Config {
                 .help("Path to the root folder used to resolve all relative paths")
                 .required(false),
         )
+
+        .arg(
+            Arg::new("gitignore")
+                .long("gitignore")
+                .short('g')
+                .value_name("GIT")
+                .help("Ignore all files ignored by git")
+                .action(ArgAction::SetTrue)
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -148,18 +158,23 @@ pub fn parse_args() -> Config {
     }
 
     if let Some(ignore_path) = matches.get_many::<String>("ignore-path") {
-        opt.ignore_path = Some(ignore_path.map(|x| Path::new(x).to_path_buf()).collect());
-    }
-    if opt.ignore_path.is_some() {
-        opt.ignore_path.as_mut().unwrap().iter_mut().for_each(|p| {
+        let mut paths: Vec<_> = ignore_path.map(|x| Path::new(x).to_path_buf()).collect();
+        for p in paths.iter_mut() {
             match fs::canonicalize(&p) {
-                Ok(p) => &p,
+                Ok(canonical_path) => {
+                    *p = canonical_path;
+                }
                 Err(e) => {
                     println!("⚠ Warn: Ignore path {:?} not found. {:?}.", p, e);
-                    &p
+                    panic!("Exiting due to invalid ignore path.");
                 }
             };
-        });
+        }
+        opt.ignore_path = Some(paths);
+    }
+
+    if matches.get_flag("gitignore") {
+        opt.gitignore = Some(true);
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
