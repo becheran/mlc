@@ -20,6 +20,22 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     for entry in WalkDir::new(root)
         .follow_links(false)
         .into_iter()
+        .filter_entry(|e| {
+            !(e.file_type().is_dir()
+                && config.optional.ignore_path.as_ref().is_some_and(|x| {
+                    x.iter().any(|f| {
+                        let ignore = f.is_dir()
+                            && e.path()
+                                .canonicalize()
+                                .unwrap_or_default()
+                                .starts_with(fs::canonicalize(f).unwrap_or_default());
+                        if ignore {
+                            info!("Ignore directory: '{:?}'", f);
+                        }
+                        ignore
+                    })
+                }))
+        })
         .filter_map(Result::ok)
         .filter(|e| !e.file_type().is_dir())
     {
@@ -38,15 +54,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
             };
 
             let ignore = match &config.optional.ignore_path {
-                Some(p) => p.iter().any(|ignore_path| {
-                    if ignore_path.is_file() {
-                        ignore_path == &abs_path
-                    } else if ignore_path.is_dir() {
-                        abs_path.starts_with(ignore_path)
-                    } else {
-                        false
-                    }
-                }),
+                Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                 None => false,
             };
             if ignore {

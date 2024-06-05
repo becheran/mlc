@@ -20,65 +20,82 @@ pub fn parse_args() -> Config {
     };
 
     let matches = command!()
-        .arg(Arg::new("directory")
-            .help("Check all links in given directory and subdirectory")
-            .required(false)
-            .index(1))
-        .arg(arg!(-d --debug "Print debug information to console")
-            .required(false))
-        .arg(arg!(-o --offline "Do not check web links")
-            .alias("no-web-links")
-            .required(false))
-        .arg(Arg::new("do-not-warn-for-redirect-to")
-            .long("do-not-warn-for-redirect-to")
-            .value_name("LINKS")
-            .value_delimiter(',')
-            .action(ArgAction::Append)
-            .help("Comma separated list of links which will be ignored")
-            .required(false))
-        .arg(Arg::new("match-file-extension")
-            .long("match-file-extension")
-            .short('e')
-            .action(ArgAction::SetTrue)
-            .help("Check the exact file extension when searching for a file")
-            .required(false))
-        .arg(Arg::new("ignore-path")
-            .long("ignore-path")
-            .short('p')
-            .help("Comma separated list of files and directories which will be ignored")
-            .value_name("PATHS")
-            .value_delimiter(',')
-            .action(ArgAction::Append)
-            .required(false))
-        .arg(Arg::new("ignore-links")
-            .long("ignore-links")
-            .short('i')
-            .value_name("LINKS")
-            .value_delimiter(',')
-            .action(ArgAction::Append)
-            .help("Comma separated list of links which will be ignored")
-            .required(false))
-        .arg(Arg::new("markup-types")
-            .long("markup-types")
-            .short('t')
-            .value_name("TYPES")
-            .help("Comma separated list of markup types which shall be checked")
-            .action(ArgAction::Append)
-            .value_delimiter(',')
-            .required(false))
-        .arg(Arg::new("throttle")
-            .long("throttle")
-            .short('T')
-            .value_name("DELAY-MS")
-            .help("Wait time in milliseconds between http request to the same host")
-            .action(ArgAction::Append)
-            .required(false))
-        .arg(Arg::new("root-dir")
-            .long("root-dir")
-            .short('r')
-            .value_name("DIR")
-            .help("Path to the root folder used to resolve all relative paths")
-            .required(false))
+        .arg(
+            Arg::new("directory")
+                .help("Check all links in given directory and subdirectory")
+                .required(false)
+                .index(1),
+        )
+        .arg(arg!(-d --debug "Print debug information to console").required(false))
+        .arg(
+            arg!(-o --offline "Do not check web links")
+                .alias("no-web-links")
+                .required(false),
+        )
+        .arg(
+            Arg::new("do-not-warn-for-redirect-to")
+                .long("do-not-warn-for-redirect-to")
+                .value_name("LINKS")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .help("Comma separated list of links which will be ignored")
+                .required(false),
+        )
+        .arg(
+            Arg::new("match-file-extension")
+                .long("match-file-extension")
+                .short('e')
+                .action(ArgAction::SetTrue)
+                .help("Check the exact file extension when searching for a file")
+                .required(false),
+        )
+        .arg(
+            Arg::new("ignore-path")
+                .long("ignore-path")
+                .short('p')
+                .help("Comma separated list of files and directories which will be ignored")
+                .value_name("PATHS")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .required(false),
+        )
+        .arg(
+            Arg::new("ignore-links")
+                .long("ignore-links")
+                .short('i')
+                .value_name("LINKS")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .help("Comma separated list of links which will be ignored")
+                .required(false),
+        )
+        .arg(
+            Arg::new("markup-types")
+                .long("markup-types")
+                .short('t')
+                .value_name("TYPES")
+                .help("Comma separated list of markup types which shall be checked")
+                .action(ArgAction::Append)
+                .value_delimiter(',')
+                .required(false),
+        )
+        .arg(
+            Arg::new("throttle")
+                .long("throttle")
+                .short('T')
+                .value_name("DELAY-MS")
+                .help("Wait time in milliseconds between http request to the same host")
+                .action(ArgAction::Append)
+                .required(false),
+        )
+        .arg(
+            Arg::new("root-dir")
+                .long("root-dir")
+                .short('r')
+                .value_name("DIR")
+                .help("Path to the root folder used to resolve all relative paths")
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -94,9 +111,12 @@ pub fn parse_args() -> Config {
     if matches.get_flag("debug") {
         opt.debug = Some(true);
     }
-    
-    if let Some(do_not_warn_for_redirect_to) = matches.get_many::<String>("do-not-warn-for-redirect-to") {
-        opt.do_not_warn_for_redirect_to = Some(do_not_warn_for_redirect_to.map(|x| x.to_string()).collect());
+
+    if let Some(do_not_warn_for_redirect_to) =
+        matches.get_many::<String>("do-not-warn-for-redirect-to")
+    {
+        opt.do_not_warn_for_redirect_to =
+            Some(do_not_warn_for_redirect_to.map(|x| x.to_string()).collect());
     }
 
     if let Some(throttle_str) = matches.get_one::<String>("throttle") {
@@ -128,17 +148,15 @@ pub fn parse_args() -> Config {
     }
 
     if let Some(ignore_path) = matches.get_many::<String>("ignore-path") {
-        opt.ignore_path = Some(
-            ignore_path
-                .map(|x| {
-                    let path = Path::new(x).to_path_buf();
-                    match fs::canonicalize(&path) {
-                        Ok(p) => p,
-                        Err(e) => panic!("Ignore path {:?} not found. {:?}.", &path, e),
-                    }
-                })
-                .collect(),
-        );
+        opt.ignore_path = Some(ignore_path.map(|x| Path::new(x).to_path_buf()).collect());
+    }
+    if opt.ignore_path.is_some() {
+        opt.ignore_path.as_mut().unwrap().iter_mut().for_each(|p| {
+            match fs::canonicalize(&p) {
+                Ok(p) => p,
+                Err(e) => panic!("Ignore path {:?} not found. {:?}.", p, e),
+            };
+        });
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
