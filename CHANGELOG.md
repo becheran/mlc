@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.17.1] - 2024-06-05
+
 * Fix config ignore path from config toml interpreted correctly #78
 * Changed make ignore directory much faster when traversing
 

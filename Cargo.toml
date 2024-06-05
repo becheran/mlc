@@ -1,6 +1,6 @@
 [package]
 name = "mlc"
-version = "0.17.0"
+version = "0.17.1"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"
 description = "The markup link checker (mlc) checks for broken links in markup files."
