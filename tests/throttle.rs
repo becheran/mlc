@@ -2,7 +2,7 @@
 mod helper;
 
 use helper::benches_dir;
-use mlc::{Config, OptionalConfig, markup::MarkupType};
+use mlc::{markup::MarkupType, Config, OptionalConfig};
 use std::time::{Duration, Instant};
 
 const TEST_THROTTLE_MS: u32 = 100;

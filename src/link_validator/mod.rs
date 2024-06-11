@@ -35,7 +35,12 @@ pub async fn resolve_target_link(
     }
 }
 
-pub async fn check(link_target: &str, link_type: &LinkType, config: &Config, do_not_warn_for_redirect_to: &Vec<WildMatch>) -> LinkCheckResult {
+pub async fn check(
+    link_target: &str,
+    link_type: &LinkType,
+    config: &Config,
+    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+) -> LinkCheckResult {
     info!("Check link {}.", &link_target);
     match link_type {
         LinkType::Ftp => LinkCheckResult::NotImplemented(format!(
@@ -48,9 +53,7 @@ pub async fn check(link_target: &str, link_type: &LinkType, config: &Config, do_
         LinkType::Mail => check_mail(link_target),
         LinkType::Http => {
             if config.optional.offline.unwrap_or_default() {
-                LinkCheckResult::Ignored(
-                    "Ignore web link because of the offline flag.".to_string(),
-                )
+                LinkCheckResult::Ignored("Ignore web link because of the offline flag.".to_string())
             } else {
                 check_http(link_target, do_not_warn_for_redirect_to).await
             }

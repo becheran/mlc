@@ -10,10 +10,10 @@ use std::fs;
 fn end_to_end_benchmark() {
     let config = Config {
         directory: fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
-        optional: OptionalConfig { 
-            markup_types: Some(vec![MarkupType::Markdown]),            
+        optional: OptionalConfig {
+            markup_types: Some(vec![MarkupType::Markdown]),
             ..Default::default()
-         },
+        },
     };
     let _ = mlc::run(&config);
 }

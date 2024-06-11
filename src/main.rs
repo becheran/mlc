@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = cli::parse_args();
     let log_level = match config.optional.debug {
         Some(true) => logger::LogLevel::Debug,
-        _ =>  logger::LogLevel::Warn,
+        _ => logger::LogLevel::Warn,
     };
     logger::init(&log_level);
     info!("Config: {}", &config);

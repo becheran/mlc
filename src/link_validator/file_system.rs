@@ -11,7 +11,9 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
     debug!("Absolute target path {:?}", target);
     if target.exists().await {
         LinkCheckResult::Ok
-    } else if !config.optional.match_file_extension.unwrap_or_default() && target.extension().is_none() {
+    } else if !config.optional.match_file_extension.unwrap_or_default()
+        && target.extension().is_none()
+    {
         // Check if file exists ignoring the file extension
         let target_file_name = match target.file_name() {
             Some(s) => s,

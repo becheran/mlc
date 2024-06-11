@@ -27,7 +27,7 @@ fn empty_folder() {
     let config: Config = Config {
         directory: path,
         optional: OptionalConfig {
-        markup_types: Some(vec![MarkupType::Markdown]),
+            markup_types: Some(vec![MarkupType::Markdown]),
             ..Default::default()
         },
     };

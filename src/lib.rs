@@ -190,11 +190,11 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    
-    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> = Arc::new(match &config.optional.do_not_warn_for_redirect_to {
-        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
-        None => vec![],
-    });
+    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> =
+        Arc::new(match &config.optional.do_not_warn_for_redirect_to {
+            Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
+            None => vec![],
+        });
 
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);
@@ -254,8 +254,13 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     }
                 }
 
-                let result_code =
-                    link_validator::check(&target.target, &target.link_type, config, &do_not_warn_for_redirect_to).await;
+                let result_code = link_validator::check(
+                    &target.target,
+                    &target.link_type,
+                    config,
+                    &do_not_warn_for_redirect_to,
+                )
+                .await;
 
                 FinalResult {
                     target: target.clone(),
