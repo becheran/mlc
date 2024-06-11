@@ -153,8 +153,11 @@ pub fn parse_args() -> Config {
     if opt.ignore_path.is_some() {
         opt.ignore_path.as_mut().unwrap().iter_mut().for_each(|p| {
             match fs::canonicalize(&p) {
-                Ok(p) => p,
-                Err(e) => panic!("Ignore path {:?} not found. {:?}.", p, e),
+                Ok(p) => &p,
+                Err(e) => {
+                    println!("⚠ Warn: Ignore path {:?} not found. {:?}.", p, e);
+                    &p
+                }
             };
         });
     }
