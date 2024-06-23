@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.17.2] - 2024-06-23
+
 * Do not panic if ignore paths are not found #92
 
 ## [0.17.1] - 2024-06-05
