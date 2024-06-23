@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+* Do not panic if ignore paths are not found #92
+
 ## [0.17.1] - 2024-06-05
 
 * Fix config ignore path from config toml interpreted correctly #78
