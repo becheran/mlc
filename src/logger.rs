@@ -7,7 +7,7 @@ use simplelog::*;
 pub enum LogLevel {
     Info,
     Warn,
-    Debug
+    Debug,
 }
 
 impl Default for LogLevel {
