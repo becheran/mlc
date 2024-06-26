@@ -24,6 +24,7 @@ async fn end_to_end() {
                 fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
             ]),
             root_dir: None,
+            gitignore: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -46,6 +47,7 @@ async fn end_to_end_different_root() {
             ignore_path: None,
             throttle: None,
             root_dir: Some(test_files),
+            gitignore: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {

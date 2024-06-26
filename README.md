@@ -102,6 +102,12 @@ Another example is to call *mlc* on a certain directory or file:
 mlc ./docs
 ```
 
+Alternatively you may want to ignore all files currently ignored by `git` (requires `git` binary to be found on $PATH) and set a root-dir for relative links:
+
+```bash
+mlc --gitignore --root-dir .
+```
+
 Call *mlc* with the `--help` flag to display all available cli arguments:
 
 ``` bash
@@ -120,6 +126,7 @@ The following arguments are available:
 | `--match-file-extension` | `-e`  | Set the flag, if the file extension shall be checked as well. For example the following markup link `[link](dir/file)` matches if for example a file called `file.md` exists in `dir`, but would fail when the `--match-file-extension` flag is set. |
 | `--version`      | `-V` | Print current version of mlc |
 | `--ignore-path`  | `-p` | Comma separated list of directories or files which shall be ignored. For example  |
+| `--gitignore`    | `-g` | Ignore all files currently ignored by git (requires `git` binary to be available on $PATH). |
 | `--ignore-links` | `-i` | Comma separated list of links which shall be ignored. Use simple `?` and `*` wildcards. For example `--ignore-links "http*://crates.io*"` will skip all links to the crates.io website. See the [used lib](https://github.com/becheran/wildmatch) for more information.  |
 | `--markup-types` | `-t` | Comma separated list list of markup types which shall be checked [possible values: md, html] |
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
@@ -138,6 +145,8 @@ offline = true
 match-file-extension= true
 # List of files and directories which will be ignored
 ignore-path=["./ignore-me","./src"]
+# Ignore all files ignored by git
+gitignore = true
 # List of links which will be ignored
 ignore-links=["http://ignore-me.de/*","http://*.ignoresub-domain/*"]
 # List of markup types which shall be checked
