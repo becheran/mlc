@@ -96,7 +96,6 @@ pub fn parse_args() -> Config {
                 .help("Path to the root folder used to resolve all relative paths")
                 .required(false),
         )
-
         .arg(
             Arg::new("gitignore")
                 .long("gitignore")
@@ -166,7 +165,6 @@ pub fn parse_args() -> Config {
                 }
                 Err(e) => {
                     println!("⚠ Warn: Ignore path {:?} not found. {:?}.", p, e);
-                    panic!("Exiting due to invalid ignore path.");
                 }
             };
         }
