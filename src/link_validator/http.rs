@@ -2,6 +2,7 @@ use crate::link_validator::LinkCheckResult;
 
 use reqwest::header::ACCEPT;
 use reqwest::header::USER_AGENT;
+use reqwest::redirect;
 use reqwest::Client;
 use reqwest::Method;
 use reqwest::Request;
@@ -38,6 +39,18 @@ async fn http_request(
             .brotli(true)
             .gzip(true)
             .deflate(true)
+            .redirect(redirect::Policy::custom(|attempt| {
+                if attempt.previous().len() > 10 {
+                    attempt.error("too many redirects")
+                } else if do_not_warn_for_redirect_to
+                    .iter()
+                    .any(|x| x.matches(attempt.url().as_ref()))
+                {
+                    attempt.stop()
+                } else {
+                    attempt.follow()
+                }
+            }))
             .build()
             .expect("Bug! failed to build client");
     }
@@ -83,7 +96,11 @@ async fn http_request(
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
         if status.is_success() {
-            if response.url() == url {
+            if response.url() == url
+                || do_not_warn_for_redirect_to
+                    .iter()
+                    .any(|x| x.matches(response.url().as_ref()))
+            {
                 Ok(LinkCheckResult::Ok)
             } else {
                 Ok(LinkCheckResult::Warning(status_to_string(status)))
@@ -96,21 +113,23 @@ async fn http_request(
 
 #[cfg(test)]
 mod test {
+    use crate::logger;
+
     use super::*;
 
     #[tokio::test]
     async fn check_http_is_available() {
-        let result = check_http("https://gitlab.com/becheran/mlc", &vec![]).await;
+        let result = check_http("https://www.google.com/", &vec![]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_is_redirection() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![]).await;
+        let result = check_http("http://google.com", &vec![]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+                "Request was redirected to http://www.google.com/".to_string()
             )
         );
     }
@@ -128,21 +147,22 @@ mod test {
 
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored_star_pattern() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![WildMatch::new("*")]).await;
+        let result = check_http("http://www.google.com", &vec![WildMatch::new("*")]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_redirection_do_warn_if_ignored_mismatch() {
+        logger::init(&logger::LogLevel::Debug);
         let result = check_http(
-            "http://gitlab.com/becheran/mlc",
-            &vec![WildMatch::new("http://www.google.com")],
+            "http://amazon.com",
+            &vec![WildMatch::new("http://google.com")],
         )
         .await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+                "Request was redirected to https://www.amazon.de/".to_string()
             )
         );
     }
@@ -164,17 +184,17 @@ mod test {
 
     #[tokio::test]
     async fn check_http_request_with_hash() {
-        let result = check_http("https://gitlab.com/becheran/mlc#bla", &vec![]).await;
+        let result = check_http("https://www.google.com/#bla", &vec![]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_request_redirection_with_hash() {
-        let result = check_http("http://gitlab.com/becheran/mlc#bla", &vec![]).await;
+        let result = check_http("https://google.com#bla", &vec![]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
+                "Request was redirected to https://www.google.com/".to_string()
             )
         );
     }
