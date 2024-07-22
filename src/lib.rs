@@ -12,6 +12,7 @@ use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -132,23 +133,20 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
     links
 }
 
-fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
+fn get_git_files(args: &[&str]) -> Option<Vec<PathBuf>> {
     let output = Command::new("git")
-    .arg("ls-files")
-    .arg("--ignored")
-    .arg("--others")
-    .arg("--exclude-standard")
-    .output()
-    .expect("Failed to execute 'git' command");
+        .arg("ls-files")
+        .args(args)
+        .output()
+        .expect("Failed to execute 'git' command");
 
     if output.status.success() {
-        let ignored_files = String::from_utf8(output.stdout)
+        let files = String::from_utf8(output.stdout)
             .expect("Invalid UTF-8 sequence")
             .lines()
-            .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
             .filter_map(|line| fs::canonicalize(Path::new(line.trim())).ok())
-            .collect::<Vec<_>>();
-        Some(ignored_files)
+            .collect();
+        Some(files)
     } else {
         eprintln!(
             "git ls-files command failed: {}",
@@ -158,6 +156,24 @@ fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
     }
 }
 
+fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
+    let ignored_files = get_git_files(&["--ignored", "--others", "--exclude-standard"])?;
+    let untracked_files = get_git_files(&["--others", "--exclude-standard"])?;
+
+    let mut combined_files: HashSet<PathBuf> = HashSet::new();
+    combined_files.extend(ignored_files);
+    combined_files.extend(untracked_files);
+
+    let result = combined_files
+        .into_iter()
+        .filter(|path| {
+            path.extension()
+                .map_or(false, |ext| ext == "md" || ext == "html")
+        })
+        .collect();
+
+    Some(result)
+}
 
 fn print_helper(
     link: &MarkupLink,
