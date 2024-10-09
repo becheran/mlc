@@ -105,6 +105,15 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::SetTrue)
                 .required(false),
         )
+        .arg(
+            Arg::new("gituntracked")
+                .long("gituntracked")
+                .short('u')
+                .value_name("GITUNTRACKED")
+                .help("Ignore all files untracked by git")
+                .action(ArgAction::SetTrue)
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -173,6 +182,10 @@ pub fn parse_args() -> Config {
 
     if matches.get_flag("gitignore") {
         opt.gitignore = Some(true);
+    }
+
+    if matches.get_flag("gituntracked") {
+        opt.gituntracked = Some(true);
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {

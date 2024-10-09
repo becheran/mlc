@@ -25,6 +25,7 @@ async fn end_to_end() {
             ]),
             root_dir: None,
             gitignore: None,
+            gituntracked: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -48,6 +49,7 @@ async fn end_to_end_different_root() {
             throttle: None,
             root_dir: Some(test_files),
             gitignore: None,
+            gituntracked: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {

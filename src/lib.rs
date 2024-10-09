@@ -54,6 +54,8 @@ pub struct OptionalConfig {
     pub root_dir: Option<PathBuf>,
     #[serde(rename(deserialize = "gitignore"))]
     pub gitignore: Option<bool>,
+    #[serde(rename(deserialize = "gituntracked"))]
+    pub gituntracked: Option<bool>,
     pub throttle: Option<u32>,
 }
 
@@ -92,6 +94,7 @@ Offline: {}
 MatchExt: {}
 RootDir: {}
 Gitignore: {}
+Gituntracked: {}
 IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms",
@@ -103,6 +106,7 @@ Throttle: {} ms",
             self.optional.match_file_extension.unwrap_or_default(),
             root_dir_str,
             self.optional.gitignore.unwrap_or_default(),
+            self.optional.gituntracked.unwrap_or_default(),
             ignore_str.join(","),
             ignore_path_str,
             self.optional.throttle.unwrap_or(0)
@@ -157,7 +161,30 @@ fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
         None
     }
 }
+fn find_git_untracked_files() -> Option<Vec<PathBuf>> {
+    let output = Command::new("git")
+        .arg("ls-files")
+        .arg("--others")
+        .arg("--exclude-standard")
+        .output()
+        .expect("Failed to execute 'git' command");
 
+    if output.status.success() {
+        let ignored_files = String::from_utf8(output.stdout)
+            .expect("Invalid UTF-8 sequence")
+            .lines()
+            .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
+            .filter_map(|line| fs::canonicalize(Path::new(line.trim())).ok())
+            .collect::<Vec<_>>();
+        Some(ignored_files)
+    } else {
+        eprintln!(
+            "git ls-files command failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        None
+    }
+}
 
 fn print_helper(
     link: &MarkupLink,
@@ -213,6 +240,16 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let is_gitignore_enabled = gitignored_files.is_some();
 
+    let gituntracked_files: Option<Vec<PathBuf>> = if config.optional.gituntracked.is_some() {
+        let files = find_git_untracked_files();
+        debug!("Found gituntracked files: {:?}", files);
+        files
+    } else {
+        None
+    };
+
+    let is_gituntracked_enabled = gituntracked_files.is_some();
+
     for link in &links {
         let canonical_link_source = match fs::canonicalize(&link.source) {
             Ok(path) => path,
@@ -229,6 +266,21 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                         link,
                         &"Skip".green(),
                         "Ignore link because it is ignored by git.",
+                        false,
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            }
+        }
+
+        if is_gituntracked_enabled {
+            if let Some(ref gif) = gituntracked_files {
+                if gif.iter().any(|path| path == &canonical_link_source) {
+                    print_helper(
+                        link,
+                        &"Skip".green(),
+                        "Ignore link because it is untracked by git.",
                         false,
                     );
                     skipped += 1;
