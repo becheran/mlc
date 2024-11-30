@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.19.0] - 2024-11-30
+
 ## [0.18.0] - 2024-06-30
 
 - Add `--gitignore` option #94
