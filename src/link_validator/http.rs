@@ -50,44 +50,32 @@ async fn http_request(
         )
     }
 
-    let head_request = new_request(Method::HEAD, url);
-    let get_request = new_request(Method::GET, url);
-
-    let response = match CLIENT.execute(head_request).await {
-        Ok(r) => r,
-        Err(e) => {
-            println!("Head request error: {}. Retry with get-request.", e);
-            CLIENT.execute(get_request).await?
-        }
-    };
-
-    let status = response.status();
-    if status.is_success() {
-        if response.url() == url
+    let response = CLIENT.execute(new_request(Method::HEAD, url)).await?;
+    let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
+        if response_url == url
             || do_not_warn_for_redirect_to
                 .iter()
-                .any(|x| x.matches(response.url().as_ref()))
+                .any(|x| x.matches(response_url.as_ref()))
         {
             Ok(LinkCheckResult::Ok)
         } else {
             Ok(LinkCheckResult::Warning(
-                "Request was redirected to ".to_string() + response.url().as_ref(),
+                "Request was redirected to ".to_string() + response_url.as_ref(),
             ))
         }
-    } else if status.is_redirection() {
-        // Only if > 10 redirects
-        Ok(LinkCheckResult::Warning(status_to_string(status)))
+    };
+
+    let status = response.status();
+    if status.is_success() || status.is_redirection() {
+        check_redirect(response.url())
     } else {
         debug!("Got the status code {:?}. Retry with get-request.", status);
         let get_request = Request::new(Method::GET, url.clone());
+
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
-        if status.is_success() {
-            if response.url() == url {
-                Ok(LinkCheckResult::Ok)
-            } else {
-                Ok(LinkCheckResult::Warning(status_to_string(status)))
-            }
+        if status.is_success() || status.is_redirection() {
+            check_redirect(response.url())
         } else {
             Ok(LinkCheckResult::Failed(status_to_string(status)))
         }
