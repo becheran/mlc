@@ -43,7 +43,7 @@ To download a compiled binary version of *mlc* go to [github releases](https://g
 
 #### Arch Linux
 
-You can install from the [official repositories](https://archlinux.org/packages/extra/x86_64/markuplinkchecker/) using [pacman](https://wiki.archlinux.org/title/pacman):
+You can install from the [official repositories](https://archlinux.org/packages/extra/x86_64/markuplinkchecker/) using [pacman](https://wiki.archlinux.org/title/Pacman):
 
 ```bash
 pacman -S markuplinkchecker
@@ -69,7 +69,7 @@ Use *mlc* command line arguments using the `with` argument:
     args: ./README.md
 ```
 
-The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions) to highlight broken links:
+The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions) to highlight broken links:
 
 ![annotation](./docs/FailingAnnotation.PNG)
 
@@ -86,7 +86,7 @@ For example take a look at the [ntest repo](https://github.com/becheran/ntest/bl
 
 ### Docker
 
-Use the *mlc* docker image from the [docker hub](https://hub.docker.com/repository/docker/becheran/mlc) which includes *mlc*.
+Use the *mlc* docker image from the [docker hub](https://hub.docker.com/r/becheran/mlc) which includes *mlc*.
 
 ## Usage
 
