@@ -59,7 +59,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         _ => (),
                     };
                 }
-                Event::Html(html) => {
+                Event::Html(html) | Event::InlineHtml(html) => {
                     let line_col = line_column_from_idx(range.start);
                     let mut html_result = html_extractor.find_links(html.as_ref());
                     html_result = html_result
@@ -127,7 +127,7 @@ mod tests {
             column: 1,
             source: "".to_string(),
         };
-        assert_eq!(vec![img, link], result);
+        assert_eq!(vec![link, img], result);
     }
 
     #[test]
