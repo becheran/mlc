@@ -138,12 +138,12 @@ fn find_all_links(config: &Config) -> Vec<MarkupLink> {
 
 fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
     let output = Command::new("git")
-    .arg("ls-files")
-    .arg("--ignored")
-    .arg("--others")
-    .arg("--exclude-standard")
-    .output()
-    .expect("Failed to execute 'git' command");
+        .arg("ls-files")
+        .arg("--ignored")
+        .arg("--others")
+        .arg("--exclude-standard")
+        .output()
+        .expect("Failed to execute 'git' command");
 
     if output.status.success() {
         let ignored_files = String::from_utf8(output.stdout)
@@ -254,7 +254,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         let canonical_link_source = match fs::canonicalize(&link.source) {
             Ok(path) => path,
             Err(e) => {
-                warn!("Failed to canonicalize link source: {}. Error: {:?}", link.source, e);
+                warn!(
+                    "Failed to canonicalize link source: {}. Error: {:?}",
+                    link.source, e
+                );
                 continue;
             }
         };
@@ -311,10 +314,11 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
     }
 
-    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> = Arc::new(match &config.optional.do_not_warn_for_redirect_to {
-        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
-        None => vec![],
-    });
+    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> =
+        Arc::new(match &config.optional.do_not_warn_for_redirect_to {
+            Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
+            None => vec![],
+        });
 
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {:?}", throttle);
