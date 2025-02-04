@@ -38,11 +38,6 @@ jobs:
         with:
           components: rustfmt
       - uses: actions-rust-lang/rustfmt@v1
-
-  clippy_check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - run: cargo clippy --all-targets --all-features
 
   test:
