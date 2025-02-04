@@ -188,11 +188,8 @@ pub fn parse_args() -> Config {
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
-        let root_path = Path::new(
-            &root_dir
-                .replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR),
-        )
-        .to_path_buf();
+        let root_path =
+            Path::new(&root_dir.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf();
         if !root_path.is_dir() {
             eprintln!("Root path {:?} must be a directory!", root_path);
             std::process::exit(1);

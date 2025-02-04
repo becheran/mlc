@@ -3,15 +3,13 @@ extern crate simplelog;
 use serde::Deserialize;
 use simplelog::*;
 
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, Deserialize, Default)]
 pub enum LogLevel {
     Info,
     #[default]
     Warn,
     Debug,
 }
-
 
 pub fn init(log_level: &LogLevel) {
     let level_filter = match log_level {
