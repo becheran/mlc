@@ -4,17 +4,14 @@ use serde::Deserialize;
 use simplelog::*;
 
 #[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Default)]
 pub enum LogLevel {
     Info,
+    #[default]
     Warn,
     Debug,
 }
 
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Warn
-    }
-}
 
 pub fn init(log_level: &LogLevel) {
     let level_filter = match log_level {

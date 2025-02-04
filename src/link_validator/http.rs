@@ -10,7 +10,7 @@ use wildmatch::WildMatch;
 
 pub async fn check_http(
     target: &str,
-    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+    do_not_warn_for_redirect_to: &[WildMatch],
 ) -> LinkCheckResult {
     debug!("Check http link target {:?}", target);
     let url = reqwest::Url::parse(target).expect("URL of unknown type");
@@ -31,7 +31,7 @@ fn new_request(method: Method, url: &reqwest::Url) -> Request {
 
 async fn http_request(
     url: &reqwest::Url,
-    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+    do_not_warn_for_redirect_to: &[WildMatch],
 ) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = reqwest::Client::builder()
@@ -88,13 +88,13 @@ mod test {
 
     #[tokio::test]
     async fn check_http_is_available() {
-        let result = check_http("https://gitlab.com/becheran/mlc", &vec![]).await;
+        let result = check_http("https://gitlab.com/becheran/mlc", &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_is_redirection() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![]).await;
+        let result = check_http("http://gitlab.com/becheran/mlc", &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(
@@ -108,7 +108,7 @@ mod test {
         // we ignore redirections to the 'https'-version
         let result = check_http(
             "http://gitlab.com/becheran/mlc",
-            &vec![WildMatch::new("https://gitlab.com/becheran/mlc")],
+            &[WildMatch::new("https://gitlab.com/becheran/mlc")],
         )
         .await;
         assert_eq!(result, LinkCheckResult::Ok);
@@ -116,7 +116,7 @@ mod test {
 
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored_star_pattern() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &vec![WildMatch::new("*")]).await;
+        let result = check_http("http://gitlab.com/becheran/mlc", &[WildMatch::new("*")]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -124,7 +124,7 @@ mod test {
     async fn check_http_redirection_do_warn_if_ignored_mismatch() {
         let result = check_http(
             "http://gitlab.com/becheran/mlc",
-            &vec![WildMatch::new("http://www.google.com")],
+            &[WildMatch::new("http://www.google.com")],
         )
         .await;
         assert_eq!(
@@ -137,7 +137,7 @@ mod test {
 
     #[tokio::test]
     async fn check_http_is_redirection_failure() {
-        let result = check_http("http://gitlab.com/fake-page/does/not/exist/ever", &vec![]).await;
+        let result = check_http("http://gitlab.com/fake-page/does/not/exist/ever", &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Failed("403 - Forbidden".to_string())
@@ -146,19 +146,19 @@ mod test {
 
     #[tokio::test]
     async fn check_https_crates_io_available() {
-        let result = check_http("https://crates.io", &vec![]).await;
+        let result = check_http("https://crates.io", &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_request_with_hash() {
-        let result = check_http("https://gitlab.com/becheran/mlc#bla", &vec![]).await;
+        let result = check_http("https://gitlab.com/becheran/mlc#bla", &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_request_redirection_with_hash() {
-        let result = check_http("http://gitlab.com/becheran/mlc#bla", &vec![]).await;
+        let result = check_http("http://gitlab.com/becheran/mlc#bla", &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(
@@ -169,7 +169,7 @@ mod test {
 
     #[tokio::test]
     async fn check_wrong_http_request() {
-        let result = check_http("https://doesNotExist.me/even/less/likelly", &vec![]).await;
+        let result = check_http("https://doesNotExist.me/even/less/likelly", &[]).await;
         assert!(result != LinkCheckResult::Ok);
     }
 }

@@ -121,8 +121,7 @@ pub fn parse_args() -> Config {
         .get_one::<String>("directory")
         .unwrap_or(&default_dir);
     let directory = dir_string
-        .replace('/', &MAIN_SEPARATOR.to_string())
-        .replace('\\', &MAIN_SEPARATOR.to_string())
+        .replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)
         .parse()
         .expect("failed to parse path");
 
@@ -191,8 +190,7 @@ pub fn parse_args() -> Config {
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
         let root_path = Path::new(
             &root_dir
-                .replace('/', &MAIN_SEPARATOR.to_string())
-                .replace('\\', &MAIN_SEPARATOR.to_string()),
+                .replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR),
         )
         .to_path_buf();
         if !root_path.is_dir() {

@@ -39,7 +39,7 @@ pub async fn check(
     link_target: &str,
     link_type: &LinkType,
     config: &Config,
-    do_not_warn_for_redirect_to: &Vec<WildMatch>,
+    do_not_warn_for_redirect_to: &[WildMatch],
 ) -> LinkCheckResult {
     info!("Check link {}.", &link_target);
     match link_type {

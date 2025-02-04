@@ -61,8 +61,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
 
 pub async fn resolve_target_link(source: &str, target: &str, config: &Config) -> String {
     let mut normalized_link = target
-        .replace('/', &MAIN_SEPARATOR.to_string())
-        .replace('\\', &MAIN_SEPARATOR.to_string());
+        .replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR);
     if let Some(idx) = normalized_link.find('#') {
         warn!(
             "Strip everything after #. The chapter part '{}' is not checked.",
@@ -88,10 +87,10 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
         .expect("Could not resolve target path")
         .to_string();
     // Remove verbatim path identifier which causes trouble on windows when using ../../ in paths
-    return abs_path
+    abs_path
         .strip_prefix("\\\\?\\")
         .unwrap_or(&abs_path)
-        .to_string();
+        .to_string()
 }
 
 async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {

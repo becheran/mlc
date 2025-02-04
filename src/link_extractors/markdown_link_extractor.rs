@@ -45,19 +45,14 @@ impl LinkExtractor for MarkdownLinkExtractor {
         let mut result: Vec<MarkupLink> = Vec::new();
         for (evt, range) in parser.into_offset_iter() {
             match evt {
-                Event::Start(tag) => {
-                    match tag {
-                        Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. } => {
-                            let line_col = line_column_from_idx(range.start);
-                            result.push(MarkupLink {
-                                line: line_col.0,
-                                column: line_col.1,
-                                source: String::new(),
-                                target: dest_url.to_string(),
-                            });
-                        }
-                        _ => (),
-                    };
+                Event::Start(Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. }) => {
+                    let line_col = line_column_from_idx(range.start);
+                    result.push(MarkupLink {
+                        line: line_col.0,
+                        column: line_col.1,
+                        source: String::new(),
+                        target: dest_url.to_string(),
+                    });
                 }
                 Event::Html(html) | Event::InlineHtml(html) => {
                     let line_col = line_column_from_idx(range.start);

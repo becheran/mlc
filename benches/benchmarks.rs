@@ -7,7 +7,7 @@ use mlc::markup::MarkupType;
 use mlc::{Config, OptionalConfig};
 use std::fs;
 
-fn end_to_end_benchmark() {
+async fn end_to_end_benchmark() {
     let config = Config {
         directory: fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
         optional: OptionalConfig {
@@ -15,7 +15,7 @@ fn end_to_end_benchmark() {
             ..Default::default()
         },
     };
-    let _ = mlc::run(&config);
+    mlc::run(&config).await.unwrap();
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
