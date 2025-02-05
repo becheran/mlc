@@ -36,6 +36,7 @@ url-escape = "0.1.1"
 [dev-dependencies]
 ntest = "0.9.3"
 criterion = "0.5.1"
+mockito = "1.6.1"
 
 [[bench]]
 name = "benchmarks"

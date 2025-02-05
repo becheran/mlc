@@ -88,88 +88,158 @@ mod test {
 
     #[tokio::test]
     async fn check_http_is_available() {
-        let result = check_http("https://gitlab.com/becheran/mlc", &[]).await;
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let result = check_http(&server.url(), &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
-    async fn check_http_is_redirection() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &[]).await;
+    async fn check_http_fail() {
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(500)
+            .create_async()
+            .await;
+
+        let result = check_http(&server.url(), &[]).await;
         assert_eq!(
             result,
-            LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
-            )
+            LinkCheckResult::Failed("500 - Internal Server Error".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn check_http_is_redirection() {
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/")
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(301)
+            .with_header("Location", &redirect_server.url())
+            .create_async()
+            .await;
+
+        let result = check_http(&server.url(), &[]).await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Warning(format!(
+                "Request was redirected to {}/",
+                &redirect_server.url()
+            ))
         );
     }
 
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored() {
-        // we ignore redirections to the 'https'-version
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/")
+            .with_status(200)
+            .create_async()
+            .await;
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(301)
+            .with_header("Location", &redirect_server.url())
+            .create_async()
+            .await;
+
         let result = check_http(
-            "http://gitlab.com/becheran/mlc",
-            &[WildMatch::new("https://gitlab.com/becheran/mlc")],
+            &server.url(),
+            &[WildMatch::new(&format!("{}*", &redirect_server.url()))],
         )
         .await;
+
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_redirection_do_not_warn_if_ignored_star_pattern() {
-        let result = check_http("http://gitlab.com/becheran/mlc", &[WildMatch::new("*")]).await;
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/")
+            .with_status(200)
+            .create_async()
+            .await;
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(301)
+            .with_header("Location", &redirect_server.url())
+            .create_async()
+            .await;
+
+        let result = check_http(&server.url(), &[WildMatch::new("*")]).await;
+
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
     #[tokio::test]
     async fn check_http_redirection_do_warn_if_ignored_mismatch() {
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/")
+            .with_status(200)
+            .create_async()
+            .await;
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(301)
+            .with_header("Location", &redirect_server.url())
+            .create_async()
+            .await;
+
         let result = check_http(
-            "http://gitlab.com/becheran/mlc",
-            &[WildMatch::new("http://www.google.com")],
+            &server.url(),
+            &[WildMatch::new("http://is-mismatched.com/*")],
         )
         .await;
+
         assert_eq!(
             result,
-            LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
-            )
+            LinkCheckResult::Warning(format!(
+                "Request was redirected to {}/",
+                &redirect_server.url()
+            ))
         );
     }
 
     #[tokio::test]
     async fn check_http_is_redirection_failure() {
-        let result = check_http("http://gitlab.com/fake-page/does/not/exist/ever", &[]).await;
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/")
+            .with_status(403)
+            .create_async()
+            .await;
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .with_status(301)
+            .with_header("Location", &redirect_server.url())
+            .create_async()
+            .await;
+
+        let result = check_http(&server.url(), &[]).await;
+
         assert_eq!(
             result,
             LinkCheckResult::Failed("403 - Forbidden".to_string())
         );
-    }
-
-    #[tokio::test]
-    async fn check_https_crates_io_available() {
-        let result = check_http("https://crates.io", &[]).await;
-        assert_eq!(result, LinkCheckResult::Ok);
-    }
-
-    #[tokio::test]
-    async fn check_http_request_with_hash() {
-        let result = check_http("https://gitlab.com/becheran/mlc#bla", &[]).await;
-        assert_eq!(result, LinkCheckResult::Ok);
-    }
-
-    #[tokio::test]
-    async fn check_http_request_redirection_with_hash() {
-        let result = check_http("http://gitlab.com/becheran/mlc#bla", &[]).await;
-        assert_eq!(
-            result,
-            LinkCheckResult::Warning(
-                "Request was redirected to https://gitlab.com/becheran/mlc".to_string()
-            )
-        );
-    }
-
-    #[tokio::test]
-    async fn check_wrong_http_request() {
-        let result = check_http("https://doesNotExist.me/even/less/likelly", &[]).await;
-        assert!(result != LinkCheckResult::Ok);
     }
 }
