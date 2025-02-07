@@ -8,6 +8,9 @@ use reqwest::Request;
 use reqwest::StatusCode;
 use wildmatch::WildMatch;
 
+const BROWSER_ACCEPT_HEADER: &str =
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
 pub async fn check_http(
     target: &str,
     do_not_warn_for_redirect_to: &[WildMatch],
@@ -24,7 +27,7 @@ pub async fn check_http(
 fn new_request(method: Method, url: &reqwest::Url) -> Request {
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
-    headers.insert(ACCEPT, "text/html, text/markdown".parse().unwrap());
+    headers.insert(ACCEPT, BROWSER_ACCEPT_HEADER.parse().unwrap());
     headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
     req
 }
