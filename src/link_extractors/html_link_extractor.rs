@@ -2,6 +2,8 @@ use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
 use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
+
+use super::link_extractor::BrokenExtractedLink;
 pub struct HtmlLinkExtractor();
 
 #[derive(Clone, Copy, Debug)]
@@ -14,8 +16,8 @@ enum ParserState {
 }
 
 impl LinkExtractor for HtmlLinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<MarkupLink> {
-        let mut result: Vec<MarkupLink> = Vec::new();
+    fn find_links(&self, text: &str) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+        let mut result: Vec<Result<MarkupLink, BrokenExtractedLink>> = Vec::new();
         let mut state: ParserState = ParserState::Text;
         let mut link_column = 0;
         let mut link_line = 0;
@@ -89,12 +91,12 @@ impl LinkExtractor for HtmlLinkExtractor {
                                 if get_link_type(&link) == LinkType::FileSystem {
                                     link = url_escape::decode(link.as_str()).to_string();
                                 };
-                                result.push(MarkupLink {
+                                result.push(Ok(MarkupLink {
                                     column: link_column + 1,
                                     line: link_line + 1,
                                     target: link.to_string(),
                                     source: "".to_string(),
-                                });
+                                }));
                                 state = ParserState::Text;
                             }
                             Some(_) | None => {}
@@ -133,12 +135,12 @@ mod tests {
     fn space() {
         let le = HtmlLinkExtractor();
         let result = le.find_links("blah <a href=\"some file.html\">foo</a>.");
-        let expected = MarkupLink {
+        let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
             column: 6,
             source: "".to_string(),
-        };
+        });
         assert_eq!(vec![expected], result);
     }
 
@@ -146,12 +148,12 @@ mod tests {
     fn url_encoded_path() {
         let le = HtmlLinkExtractor();
         let result = le.find_links("blah <a href=\"some%20file.html\">foo</a>.");
-        let expected = MarkupLink {
+        let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
             column: 6,
             source: "".to_string(),
-        };
+        });
         assert_eq!(vec![expected], result);
     }
 
@@ -174,12 +176,12 @@ mod tests {
     fn links(input: &str, line: usize, column: usize) {
         let le = HtmlLinkExtractor();
         let result = le.find_links(input);
-        let expected = MarkupLink {
+        let expected = Ok(MarkupLink {
             target: "https://www.w3schools.com".to_string(),
             line,
             column,
             source: "".to_string(),
-        };
+        });
         assert_eq!(vec![expected], result);
     }
 }

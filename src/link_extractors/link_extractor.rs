@@ -17,6 +17,20 @@ pub struct MarkupLink {
     /// The column number were the link was found
     pub column: usize,
 }
+/// Broken link found in document
+#[derive(Eq, PartialEq, Clone, Debug)]
+pub struct BrokenExtractedLink {
+    /// The error message
+    pub error: String,
+    /// The source
+    pub source: String,
+    /// The target
+    pub reference: String,
+    /// The line number were the link was found
+    pub line: usize,
+    /// The column number were the link was found
+    pub column: usize,
+}
 
 impl fmt::Debug for MarkupLink {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -43,7 +57,7 @@ impl MarkupLink {
 }
 
 #[must_use]
-pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
+pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
     let path = &file.path;
     let link_extractor = link_extractor_factory(file.markup_type);
 
@@ -52,7 +66,14 @@ pub fn find_links(file: &MarkupFile) -> Vec<MarkupLink> {
         Ok(text) => {
             let mut links = link_extractor.find_links(&text);
             for l in &mut links {
-                l.source = path.to_string();
+                match l {
+                    Ok(link) => {
+                        link.source = path.to_string();
+                    }
+                    Err(broken_link) => {
+                        broken_link.source = path.to_string();
+                    }
+                }
             }
             links
         }
@@ -74,5 +95,5 @@ fn link_extractor_factory(markup_type: MarkupType) -> Box<dyn LinkExtractor> {
 }
 
 pub trait LinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<MarkupLink>;
+    fn find_links(&self, text: &str) -> Vec<Result<MarkupLink, BrokenExtractedLink>>;
 }

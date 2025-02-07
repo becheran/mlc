@@ -10,6 +10,7 @@ pub enum LinkType {
     Mail,
     FileSystem,
     UnknownUrlSchema,
+    Unknown,
 }
 
 #[must_use]

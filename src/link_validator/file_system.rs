@@ -62,7 +62,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
 pub async fn resolve_target_link(source: &str, target: &str, config: &Config) -> String {
     let mut normalized_link = target.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR);
     if let Some(idx) = normalized_link.find('#') {
-        warn!(
+        info!(
             "Strip everything after #. The chapter part '{}' is not checked.",
             &normalized_link[idx..]
         );

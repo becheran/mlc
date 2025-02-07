@@ -47,7 +47,7 @@ pub async fn check(
             "Link type '{:?}' is not supported yet...",
             &link_target
         )),
-        LinkType::UnknownUrlSchema => LinkCheckResult::NotImplemented(
+        LinkType::UnknownUrlSchema | LinkType::Unknown => LinkCheckResult::NotImplemented(
             "Link type is not implemented yet and cannot be checked.".to_string(),
         ),
         LinkType::Mail => check_mail(link_target),

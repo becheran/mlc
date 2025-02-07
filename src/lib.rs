@@ -10,6 +10,7 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
+use link_extractors::link_extractor::BrokenExtractedLink;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
@@ -19,6 +20,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
+use std::vec;
 use tokio::sync::Mutex;
 use tokio::time::{sleep_until, Duration, Instant};
 pub mod cli;
@@ -126,7 +128,7 @@ struct Target {
     link_type: LinkType,
 }
 
-fn find_all_links(config: &Config) -> Vec<MarkupLink> {
+fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
     let mut files: Vec<MarkupFile> = Vec::new();
     file_traversal::find(config, &mut files);
     let mut links = vec![];
@@ -250,66 +252,74 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let is_gituntracked_enabled = gituntracked_files.is_some();
 
+    let mut broken_references: Vec<BrokenExtractedLink> = vec![];
     for link in &links {
-        let canonical_link_source = match fs::canonicalize(&link.source) {
-            Ok(path) => path,
-            Err(e) => {
-                warn!(
-                    "Failed to canonicalize link source: {}. Error: {:?}",
-                    link.source, e
-                );
-                continue;
-            }
-        };
+        match link {
+            Ok(link) => {
+                let canonical_link_source = match fs::canonicalize(&link.source) {
+                    Ok(path) => path,
+                    Err(e) => {
+                        warn!(
+                            "Failed to canonicalize link source: {}. Error: {:?}",
+                            link.source, e
+                        );
+                        continue;
+                    }
+                };
 
-        if is_gitignore_enabled {
-            if let Some(ref gif) = gitignored_files {
-                if gif.iter().any(|path| path == &canonical_link_source) {
+                if is_gitignore_enabled {
+                    if let Some(ref gif) = gitignored_files {
+                        if gif.iter().any(|path| path == &canonical_link_source) {
+                            print_helper(
+                                &link,
+                                &"Skip".green(),
+                                "Ignore link because it is ignored by git.",
+                                false,
+                            );
+                            skipped += 1;
+                            continue;
+                        }
+                    }
+                }
+
+                if is_gituntracked_enabled {
+                    if let Some(ref gif) = gituntracked_files {
+                        if gif.iter().any(|path| path == &canonical_link_source) {
+                            print_helper(
+                                &link,
+                                &"Skip".green(),
+                                "Ignore link because it is untracked by git.",
+                                false,
+                            );
+                            skipped += 1;
+                            continue;
+                        }
+                    }
+                }
+
+                if ignore_links.iter().any(|m| m.matches(&link.target)) {
                     print_helper(
-                        link,
+                        &link,
                         &"Skip".green(),
-                        "Ignore link because it is ignored by git.",
+                        "Ignore link because of ignore-links option.",
                         false,
                     );
                     skipped += 1;
                     continue;
                 }
-            }
-        }
 
-        if is_gituntracked_enabled {
-            if let Some(ref gif) = gituntracked_files {
-                if gif.iter().any(|path| path == &canonical_link_source) {
-                    print_helper(
-                        link,
-                        &"Skip".green(),
-                        "Ignore link because it is untracked by git.",
-                        false,
-                    );
-                    skipped += 1;
-                    continue;
+                let link_type = get_link_type(&link.target);
+                let target = resolve_target_link(&link, &link_type, config).await;
+                let t = Target { target, link_type };
+                match link_target_groups.get_mut(&t) {
+                    Some(v) => v.push(link.clone()),
+                    None => {
+                        link_target_groups.insert(t, vec![link.clone()]);
+                    }
                 }
             }
-        }
-
-        if ignore_links.iter().any(|m| m.matches(&link.target)) {
-            print_helper(
-                link,
-                &"Skip".green(),
-                "Ignore link because of ignore-links option.",
-                false,
-            );
-            skipped += 1;
-            continue;
-        }
-
-        let link_type = get_link_type(&link.target);
-        let target = resolve_target_link(link, &link_type, config).await;
-        let t = Target { target, link_type };
-        match link_target_groups.get_mut(&t) {
-            Some(v) => v.push(link.clone()),
-            None => {
-                link_target_groups.insert(t, vec![link.clone()]);
+            Err(broken_reference) => {
+                broken_references.push(broken_reference.clone());
             }
         }
     }
@@ -403,42 +413,61 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         info!("Running in github environment. Print errors and warnings as workflow commands");
     }
 
-    let mut process_result = |result| {
-        print_result(&result, &link_target_groups);
-        match &result.result_code {
-            LinkCheckResult::Ok => {
-                oks += link_target_groups[&result.target].len();
-            }
-            LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
-                warnings += link_target_groups[&result.target].len();
-                if is_github_runner_env {
-                    for link in &link_target_groups[&result.target] {
-                        println!(
-                            "::warning file={},line={},col={},title=link checker warning::{}. {}",
-                            link.source, link.line, link.column, result.target.target, msg
-                        );
-                    }
+    let mut process_result = |result: FinalResult| match &result.result_code {
+        LinkCheckResult::Ok => {
+            oks += link_target_groups[&result.target].len();
+        }
+        LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
+            warnings += link_target_groups[&result.target].len();
+            if is_github_runner_env {
+                for link in &link_target_groups[&result.target] {
+                    println!(
+                        "::warning file={},line={},col={},title=link checker warning::{}. {}",
+                        link.source, link.line, link.column, result.target.target, msg
+                    );
                 }
             }
-            LinkCheckResult::Ignored(_) => {
-                skipped += link_target_groups[&result.target].len();
-            }
-            LinkCheckResult::Failed(msg) => {
-                errors.push(result.clone());
-                if is_github_runner_env {
-                    for link in &link_target_groups[&result.target] {
-                        println!(
-                            "::error file={},line={},col={},title=broken link::{}. {}",
-                            link.source, link.line, link.column, result.target.target, msg
-                        );
-                    }
+        }
+        LinkCheckResult::Ignored(_) => {
+            skipped += link_target_groups[&result.target].len();
+        }
+        LinkCheckResult::Failed(msg) => {
+            errors.push(result.clone());
+            if is_github_runner_env {
+                for link in &link_target_groups[&result.target] {
+                    println!(
+                        "::error file={},line={},col={},title=broken link::{}. {}",
+                        link.source, link.line, link.column, result.target.target, msg
+                    );
                 }
             }
         }
     };
 
     while let Some(result) = buffered_stream.next().await {
+        print_result(&result, &link_target_groups);
         process_result(result);
+    }
+    for broken_ref in broken_references {
+        warnings += 1;
+        println!(
+            "{}",
+            format!(
+                "[{:^4}] {}:{}:{} => {} - {}",
+                &"Warn".yellow(),
+                broken_ref.source,
+                broken_ref.line,
+                broken_ref.column,
+                broken_ref.reference,
+                broken_ref.error
+            )
+        );
+        /* if is_github_runner_env {
+            println!(
+                "::warning file={},line={},col={},title=link checker warning::{}. {}",
+                link.source, broken_reference., link.column, result.target.target, msg
+            );
+        } */
     }
 
     println!();
