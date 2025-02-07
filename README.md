@@ -6,7 +6,7 @@
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/master/CONTRIBUTING.md)
 
-[![asciicast](https://asciinema.org/a/299100.svg)](https://asciinema.org/a/299100)
+![image](./docs/mlc.gif)
 
 Check for broken links in markup files. Currently `html` and `markdown` files are supported. The Markup Link Checker can easily be integrated in your CI pipeline to prevent broken links in your markup docs.
 
