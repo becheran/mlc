@@ -171,6 +171,7 @@ jobs:
       - name: GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          generate_release_notes: true
           files: |
             mlc-x86_64-linux
             mlc-x86_64-apple-darwin
