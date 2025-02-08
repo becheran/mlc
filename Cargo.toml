@@ -15,9 +15,9 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = { version = "4.5.27", features = ["cargo"] }
+clap = { version = "4.5.28", features = ["cargo"] }
 log = "0.4.25"
-simplelog = "0.12.2"
+fern = "0.7.1"
 walkdir = "2.5.0"
 regex = "1.11.1"
 lazy_static = "1.5.0"
@@ -29,7 +29,7 @@ tokio = {version="1.43.0", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.31"
 wildmatch = "2.4.0"
 pulldown-cmark = "0.12.2"
-toml = "0.8.19"
+toml = "0.8.20"
 serde = { version = "1.0.217", features = ["derive"] }
 url-escape = "0.1.1"
 

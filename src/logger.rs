@@ -1,31 +1,29 @@
-extern crate simplelog;
+use std::time::SystemTime;
 
-use serde::Deserialize;
-use simplelog::*;
-
-#[derive(Debug, Clone, Copy, Deserialize, Default)]
-pub enum LogLevel {
-    Info,
-    #[default]
-    Warn,
-    Debug,
-}
-
-pub fn init(log_level: &LogLevel) {
-    let level_filter = match log_level {
-        LogLevel::Info => LevelFilter::Info,
-        LogLevel::Warn => LevelFilter::Warn,
-        LogLevel::Debug => LevelFilter::Debug,
-    };
-
-    let err = CombinedLogger::init(vec![TermLogger::new(
-        level_filter,
-        Config::default(),
-        TerminalMode::Mixed,
-        ColorChoice::Auto,
-    )]);
-    if err.is_err() {
-        panic!("Failied to init logger! Error: {:?}", err);
-    }
+pub fn init(log_level: log::LevelFilter) -> Result<(), fern::InitError> {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "\x1B[{}m[{} {} {}] {}\x1B[0m",
+                match record.level() {
+                    log::Level::Error => "31", // Red
+                    log::Level::Warn => "33",  // Yellow
+                    log::Level::Info => "32",  // Green
+                    log::Level::Debug => "34", // Blue
+                    log::Level::Trace => "37", // White
+                },
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(log_level)
+        .chain(std::io::stdout())
+        .apply()?;
     debug!("Initialized logging");
+    Ok(())
 }
