@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+- Fix remove trailing slashes from OK messages
+- Feat add realistic browser accept headers
+- Feat warn if reference in markdown document is broken
+
 ## [0.19.2] - 2025-02-04
 
 ## [0.19.1] - 2025-02-04
