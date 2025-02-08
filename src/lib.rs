@@ -271,7 +271,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     if let Some(ref gif) = gitignored_files {
                         if gif.iter().any(|path| path == &canonical_link_source) {
                             print_helper(
-                                &link,
+                                link,
                                 &"Skip".green(),
                                 "Ignore link because it is ignored by git.",
                                 false,
@@ -286,7 +286,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     if let Some(ref gif) = gituntracked_files {
                         if gif.iter().any(|path| path == &canonical_link_source) {
                             print_helper(
-                                &link,
+                                link,
                                 &"Skip".green(),
                                 "Ignore link because it is untracked by git.",
                                 false,
@@ -299,7 +299,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
                 if ignore_links.iter().any(|m| m.matches(&link.target)) {
                     print_helper(
-                        &link,
+                        link,
                         &"Skip".green(),
                         "Ignore link because of ignore-links option.",
                         false,
@@ -309,7 +309,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
 
                 let link_type = get_link_type(&link.target);
-                let target = resolve_target_link(&link, &link_type, config).await;
+                let target = resolve_target_link(link, &link_type, config).await;
                 let t = Target { target, link_type };
                 match link_target_groups.get_mut(&t) {
                     Some(v) => v.push(link.clone()),
