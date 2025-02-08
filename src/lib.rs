@@ -194,7 +194,10 @@ fn print_helper(
     msg: &str,
     error_channel: bool,
 ) {
-    let link_str = format!("[{:^4}] {} - {}", status_code, link.source_str(), msg);
+    let mut link_str = format!("[{:^4}] {}", status_code, link.source_str());
+    if !msg.is_empty() {
+        link_str += &format!(" - {}", msg);
+    }
     if error_channel {
         eprintln!("{}", link_str);
     } else {
