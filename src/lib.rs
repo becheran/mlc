@@ -451,16 +451,13 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     for broken_ref in broken_references {
         warnings += 1;
         println!(
-            "{}",
-            format!(
-                "[{:^4}] {}:{}:{} => {} - {}",
-                &"Warn".yellow(),
-                broken_ref.source,
-                broken_ref.line,
-                broken_ref.column,
-                broken_ref.reference,
-                broken_ref.error
-            )
+            "[{:^4}] {}:{}:{} => {} - {}",
+            &"Warn".yellow(),
+            broken_ref.source,
+            broken_ref.line,
+            broken_ref.column,
+            broken_ref.reference,
+            broken_ref.error
         );
         /* if is_github_runner_env {
             println!(
