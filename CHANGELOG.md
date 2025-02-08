@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+- Fix do not log warnings #100
+
 ## [0.20.0] - 2025-02-08
 
 - Fix remove trailing slashes from OK messages
