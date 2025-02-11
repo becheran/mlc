@@ -13,14 +13,12 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 ## Features
 
 * Find and check links in `markdown` and `html` files
-* Support HTML links and plain URLs in `markdown` files
 * Validated absolute and relative file paths and URLs
 * User friendly command line interface
 * Easy [CI pipeline integration](#ci-pipeline-integration)
-* Very fast execution using [async](https://rust-lang.github.io/async-book/)
+* Very fast execution using [async rust](https://rust-lang.github.io/async-book/)
 * Efficient link resolving strategy which tries with minimized network load
 * Throttle option to prevent *429 Too Many Requests* errors
-* Configure via config file
 * Report broken links via GitHub workflow commands
 
 ## Install Locally
@@ -37,11 +35,9 @@ cargo install mlc
 
 ### Download Binaries
 
-To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `x86_64-unknown-linux-gnu` and `x86_64-apple-darwin`.
+To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `linux` and `apple` and `windows`.
 
-### Linux distributions
-
-#### Arch Linux
+### Arch Linux
 
 You can install from the [official repositories](https://archlinux.org/packages/extra/x86_64/markuplinkchecker/) using [pacman](https://wiki.archlinux.org/title/Pacman):
 
@@ -49,7 +45,7 @@ You can install from the [official repositories](https://archlinux.org/packages/
 pacman -S markuplinkchecker
 ```
 
-## CI Pipeline Integration
+## CI Pipeline
 
 ### GitHub Actions
 
@@ -75,18 +71,23 @@ The action does uses [GitHub workflow commands](https://docs.github.com/en/actio
 
 ### Binary
 
-To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download the tool:
+To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download and execute it:
 
 ``` bash
 curl -L https://github.com/becheran/mlc/releases/download/v0.21.0/mlc-x86_64-linux -o mlc
 chmod +x mlc
+./mlc
 ```
 
 For example take a look at the [ntest repo](https://github.com/becheran/ntest/blob/master/.github/workflows/ci.yml) which uses *mlc* in the CI pipeline.
 
-### Docker
+## Docker
 
-Use the *mlc* docker image from the [docker hub](https://hub.docker.com/r/becheran/mlc) which includes *mlc*.
+Use the *mlc* docker image from the [docker hub](https://hub.docker.com/r/becheran/mlc) which includes *mlc*:
+
+``` sh
+docker run becheran/mlc mlc
+```
 
 ## Usage
 
@@ -133,7 +134,7 @@ The following arguments are available:
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
 
-All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working dir where *mlc* is started:
+All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working directory:
 
 ``` toml
 # Print debug information to console
