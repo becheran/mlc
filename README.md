@@ -133,6 +133,7 @@ The following arguments are available:
 | `--markup-types` | `-t` | Comma separated list list of markup types which shall be checked. Possible values: `md`, `html` |
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
+| `--csv`          |      | Path to csv file which contains all failed requests in the format `source,line,column,target` |
 
 All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working directory:
 
