@@ -15,7 +15,7 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = { version = "4.5.28", features = ["cargo"] }
+clap = { version = "4.5.38", features = ["cargo"] }
 log = "0.4.27"
 fern = "0.7.1"
 walkdir = "2.5.0"
@@ -25,17 +25,17 @@ url = "2.5.4"
 colored = "3.0.0"
 async-std = "1.13.1"
 reqwest = {version="0.12.15", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
-tokio = {version="1.44.2", features = ["rt-multi-thread", "macros", "time"] }
+tokio = {version="1.45.0", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.31"
 wildmatch = "2.4.0"
 pulldown-cmark = "0.13.0"
-toml = "0.8.20"
+toml = "0.8.22"
 serde = { version = "1.0.219", features = ["derive"] }
 url-escape = "0.1.1"
 
 [dev-dependencies]
 ntest = "0.9.3"
-criterion = "0.5.1"
+criterion = "0.6.0"
 mockito = "1.7.0"
 
 [[bench]]
