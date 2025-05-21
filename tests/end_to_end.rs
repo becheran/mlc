@@ -87,14 +87,14 @@ async fn end_to_end_write_csv_file() {
             csv_file: Some(csv_output.clone()),
         },
     };
-    if let Err(_) = mlc::run(&config).await {
+    if (mlc::run(&config).await).is_err() {
         let content = fs::read_to_string(csv_output).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 4);
         assert_eq!(lines[0], "source,line,column,target");
-        for i in 1..lines.len() {
+        for (i, line) in lines.iter().enumerate().skip(1) {
             assert_eq!(
-                lines[i],
+                line,
                 &format!(
                     "benches{MAIN_SEPARATOR}benchmark/markdown/ignore_me.md,{i},1,broken_Link",
                 )
