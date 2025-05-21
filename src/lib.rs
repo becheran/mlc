@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -54,6 +55,8 @@ pub struct OptionalConfig {
     pub ignore_path: Option<Vec<PathBuf>>,
     #[serde(rename(deserialize = "root-dir"))]
     pub root_dir: Option<PathBuf>,
+    #[serde(rename(deserialize = "csv"))]
+    pub csv_file: Option<PathBuf>,
     #[serde(rename(deserialize = "gitignore"))]
     pub gitignore: Option<bool>,
     #[serde(rename(deserialize = "gituntracked"))]
@@ -81,6 +84,10 @@ impl fmt::Display for Config {
             Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
             None => vec![],
         };
+        let csv_file_str: Vec<String> = match &self.optional.csv_file {
+            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
+            None => vec![],
+        };
         let markup_types_str: Vec<String> = match &self.optional.markup_types {
             Some(p) => p.iter().map(|m| format!["{:?}", m]).collect(),
             None => vec![],
@@ -99,7 +106,8 @@ Gitignore: {}
 Gituntracked: {}
 IgnoreLinks: {}
 IgnorePath: {:?}
-Throttle: {} ms",
+Throttle: {} ms
+CSVFile: {:?}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
             self.optional.do_not_warn_for_redirect_to,
@@ -111,7 +119,8 @@ Throttle: {} ms",
             self.optional.gituntracked.unwrap_or_default(),
             ignore_str.join(","),
             ignore_path_str,
-            self.optional.throttle.unwrap_or(0)
+            self.optional.throttle.unwrap_or(0),
+            csv_file_str
         )
     }
 }
@@ -163,6 +172,7 @@ fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
         None
     }
 }
+
 fn find_git_untracked_files() -> Option<Vec<PathBuf>> {
     let output = Command::new("git")
         .arg("ls-files")
@@ -462,12 +472,6 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             broken_ref.reference,
             broken_ref.error
         );
-        /* if is_github_runner_env {
-            println!(
-                "::warning file={},line={},col={},title=link checker warning::{}. {}",
-                link.source, broken_reference., link.column, result.target.target, msg
-            );
-        } */
     }
 
     println!();
@@ -484,18 +488,36 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     println!("Errors   {}", error_sum);
     println!();
 
+    // Prepare CSV file if needed
+    let mut csv_file = if let Some(csv_path) = &config.optional.csv_file {
+        info!("Write CSV file: {}", csv_path.display());
+        let mut file = fs::File::create(csv_path).unwrap();
+        writeln!(file, "source,line,column,target").unwrap();
+        Some(file)
+    } else {
+        None
+    };
+
     if errors.is_empty() {
         Ok(())
     } else {
         println!();
         println!("The following links could not be resolved:");
         println!();
-        for res in errors {
+        for res in &errors {
             for link in &link_target_groups[&res.target] {
                 println!("{}", link.source_str());
+
+                if let Some(ref mut file) = csv_file {
+                    writeln!(
+                        file,
+                        "{},{},{},{}",
+                        link.source, link.line, link.column, link.target
+                    )
+                    .unwrap();
+                }
             }
         }
-        println!();
         Err(())
     }
 }
