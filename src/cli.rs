@@ -106,6 +106,13 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::new("csv")
+                .long("csv")
+                .value_name("CSV_FILE")
+                .help("set the output file for the CSV report")
+                .required(false),
+        )
+        .arg(
             Arg::new("gituntracked")
                 .long("gituntracked")
                 .short('u')
@@ -139,6 +146,11 @@ pub fn parse_args() -> Config {
     if let Some(throttle_str) = matches.get_one::<String>("throttle") {
         let throttle = throttle_str.parse::<u32>().unwrap();
         opt.throttle = Some(throttle);
+    }
+
+    if let Some(f) = matches.get_one::<String>("csv") {
+        opt.csv_file =
+            Some(Path::new(&f.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf());
     }
 
     if let Some(markup_types) = matches.get_many::<String>("markup-types") {
