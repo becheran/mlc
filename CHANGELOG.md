@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [0.22.0] - 2025-05-29
+
 - Add csv file output [#40](https://github.com/becheran/mlc/issues/40)
 
 ## [0.21.0] - 2025-02-08
