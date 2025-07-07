@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Vincent A. Cicirello
+# MIT License
+
+name: Update Major Release Tag
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  movetag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get major version num and update tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          MAJOR=${VERSION%%.*}
+          git config --global user.name 'YOUR NAME HERE'
+          git config --global user.email 'USERNAME@users.noreply.github.com'
+          git tag -fa "${MAJOR}" -m 'Update major version tag'
+          git push origin "${MAJOR}" --force
