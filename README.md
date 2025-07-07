@@ -53,14 +53,14 @@ Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://git
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.22.0
+  uses: becheran/mlc@v1
 ```
 
 Use *mlc* command line arguments using the `with` argument:
 
 ``` yaml
 - name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v0.22.0
+  uses: becheran/mlc@v1
   with:
     args: ./README.md
 ```
