@@ -8,7 +8,7 @@ use walkdir::WalkDir;
 
 pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult {
     let target = Path::new(target);
-    debug!("Absolute target path {:?}", target);
+    debug!("Absolute target path {target:?}");
     if target.exists().await {
         LinkCheckResult::Ok
     } else if !config.optional.match_file_extension.unwrap_or_default()
@@ -26,8 +26,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
         debug!("Check if file ignoring the extension exists.");
         if target_parent.exists().await {
             debug!(
-                "Parent {:?} exists. Search dir for file ignoring the extension.",
-                target_parent
+                "Parent {target_parent:?} exists. Search dir for file ignoring the extension."
             );
             for entry in WalkDir::new(target_parent)
                 .follow_links(false)
@@ -41,7 +40,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
                 match file_on_system.file_name() {
                     Some(file_name) => {
                         if target_file_name == file_name {
-                            info!("Found file {:?}", file_on_system);
+                            info!("Found file {file_on_system:?}");
                             return LinkCheckResult::Ok;
                         }
                     }
@@ -79,7 +78,7 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
         }
     }
 
-    debug!("Check file system link target {:?}", target);
+    debug!("Check file system link target {target:?}");
     let abs_path = absolute_target_path(source, &fs_link_target)
         .await
         .to_str()
@@ -95,9 +94,9 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
 async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
     let abs_source = canonicalize(source).await.expect("Expected path to exist.");
     if target.is_relative() {
-        let root = format!("{}", MAIN_SEPARATOR);
+        let root = format!("{MAIN_SEPARATOR}");
         let parent = abs_source.parent().unwrap_or_else(|| Path::new(&root));
-        let new_target = match target.strip_prefix(format!(".{}", MAIN_SEPARATOR)) {
+        let new_target = match target.strip_prefix(format!(".{MAIN_SEPARATOR}")) {
             Ok(t) => t,
             Err(_) => target,
         };
@@ -127,7 +126,7 @@ mod test {
         let path = absolute_target_path(source.to_str().unwrap(), &target).await;
 
         let path_str = path.to_str().unwrap().to_string();
-        println!("{:?}", path_str);
+        println!("{path_str:?}");
         assert_eq!(path_str.matches('.').count(), 1);
     }
 }

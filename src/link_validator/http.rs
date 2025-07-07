@@ -15,12 +15,12 @@ pub async fn check_http(
     target: &str,
     do_not_warn_for_redirect_to: &[WildMatch],
 ) -> LinkCheckResult {
-    debug!("Check http link target {:?}", target);
+    debug!("Check http link target {target:?}");
     let url = reqwest::Url::parse(target).expect("URL of unknown type");
 
     match http_request(&url, do_not_warn_for_redirect_to).await {
         Ok(response) => response,
-        Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {}", error_msg)),
+        Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {error_msg}")),
     }
 }
 
@@ -72,7 +72,7 @@ async fn http_request(
     if status.is_success() || status.is_redirection() {
         check_redirect(response.url())
     } else {
-        debug!("Got the status code {:?}. Retry with get-request.", status);
+        debug!("Got the status code {status:?}. Retry with get-request.");
         let get_request = Request::new(Method::GET, url.clone());
 
         let response = CLIENT.execute(get_request).await?;

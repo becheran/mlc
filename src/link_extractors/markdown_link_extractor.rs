@@ -266,7 +266,7 @@ mod tests {
     fn image_reference() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
-        let input = format!("\n\nBla ![This is an image link]({})", link_str);
+        let input = format!("\n\nBla ![This is an image link]({link_str})");
         let result = le.find_links(&input);
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
@@ -281,7 +281,7 @@ mod tests {
     fn link_no_title() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
-        let input = format!("[This link]({}) has no title attribute.", link_str);
+        let input = format!("[This link]({link_str}) has no title attribute.");
         let result = le.find_links(&input);
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
@@ -296,7 +296,7 @@ mod tests {
     fn link_with_title() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
-        let input = format!("\n123[This is a link]({} \"with title\") oh yea.", link_str);
+        let input = format!("\n123[This is a link]({link_str} \"with title\") oh yea.");
         let result = le.find_links(&input);
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
@@ -388,8 +388,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!(
-            "This is [an example][arbitrary case-insensitive reference text] reference-style link.\n\n[Arbitrary CASE-insensitive reference text]: {}",
-            link_str
+            "This is [an example][arbitrary case-insensitive reference text] reference-style link.\n\n[Arbitrary CASE-insensitive reference text]: {link_str}"
         );
         let result = le.find_links(&input);
         let expected = Ok(MarkupLink {
@@ -406,8 +405,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!(
-            "Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {}",
-            link_str
+            "Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {link_str}"
         );
         let result = le.find_links(&input);
         assert_eq!(0, result.len());

@@ -184,7 +184,7 @@ pub fn parse_args() -> Config {
                     *p = canonical_path;
                 }
                 Err(e) => {
-                    println!("⚠ Warn: Ignore path {:?} not found. {:?}.", p, e);
+                    println!("⚠ Warn: Ignore path {p:?} not found. {e:?}.");
                 }
             };
         }
@@ -203,7 +203,7 @@ pub fn parse_args() -> Config {
         let root_path =
             Path::new(&root_dir.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf();
         if !root_path.is_dir() {
-            eprintln!("Root path {:?} must be a directory!", root_path);
+            eprintln!("Root path {root_path:?} must be a directory!");
             std::process::exit(1);
         }
         opt.root_dir = Some(root_path)

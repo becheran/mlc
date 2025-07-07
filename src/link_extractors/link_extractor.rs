@@ -61,7 +61,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLi
     let path = &file.path;
     let link_extractor = link_extractor_factory(file.markup_type);
 
-    info!("Scan file at path '{}' for links.", path);
+    info!("Scan file at path '{path}' for links.");
     match fs::read_to_string(path) {
         Ok(text) => {
             let mut links = link_extractor.find_links(&text);
@@ -79,8 +79,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLi
         }
         Err(e) => {
             warn!(
-                "File '{}'. IO Error: \"{}\". Check your file encoding.",
-                path, e
+                "File '{path}'. IO Error: \"{e}\". Check your file encoding."
             );
             vec![]
         }

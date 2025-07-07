@@ -13,8 +13,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     };
 
     info!(
-        "Search for files of markup types '{:?}' in directory '{:?}'",
-        markup_types, root
+        "Search for files of markup types '{markup_types:?}' in directory '{root:?}'"
     );
 
     for entry in WalkDir::new(root)
@@ -30,7 +29,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                                 .unwrap_or_default()
                                 .starts_with(fs::canonicalize(f).unwrap_or_default());
                         if ignore {
-                            info!("Ignore directory: '{:?}'", f);
+                            info!("Ignore directory: '{f:?}'");
                         }
                         ignore
                     })
@@ -48,7 +47,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
             let abs_path = match fs::canonicalize(path) {
                 Ok(abs_path) => abs_path,
                 Err(e) => {
-                    warn!("Path '{:?}' not able to canonicalize path. '{e}'", path);
+                    warn!("Path '{path:?}' not able to canonicalize path. '{e}'");
                     continue;
                 }
             };
@@ -64,7 +63,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                     markup_type,
                     path: path.to_string_lossy().to_string(),
                 };
-                debug!("Found file: {:?}.", file);
+                debug!("Found file: {file:?}.");
                 result.push(file);
             }
         }

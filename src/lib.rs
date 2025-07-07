@@ -89,7 +89,7 @@ impl fmt::Display for Config {
             None => vec![],
         };
         let markup_types_str: Vec<String> = match &self.optional.markup_types {
-            Some(p) => p.iter().map(|m| format!["{:?}", m]).collect(),
+            Some(p) => p.iter().map(|m| format!["{m:?}"]).collect(),
             None => vec![],
         };
         write!(
@@ -206,12 +206,12 @@ fn print_helper(
 ) {
     let mut link_str = format!("[{:^4}] {}", status_code, link.source_str());
     if !msg.is_empty() {
-        link_str += &format!(" - {}", msg);
+        link_str += &format!(" - {msg}");
     }
     if error_channel {
-        eprintln!("{}", link_str);
+        eprintln!("{link_str}");
     } else {
-        println!("{}", link_str);
+        println!("{link_str}");
     }
 }
 
@@ -247,7 +247,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let gitignored_files: Option<Vec<PathBuf>> = if config.optional.gitignore.is_some() {
         let files = find_git_ignored_files();
-        debug!("Found gitignored files: {:?}", files);
+        debug!("Found gitignored files: {files:?}");
         files
     } else {
         None
@@ -257,7 +257,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let gituntracked_files: Option<Vec<PathBuf>> = if config.optional.gituntracked.is_some() {
         let files = find_git_untracked_files();
-        debug!("Found gituntracked files: {:?}", files);
+        debug!("Found gituntracked files: {files:?}");
         files
     } else {
         None
@@ -344,7 +344,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         });
 
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
-    info!("Throttle HTTP requests to same host: {:?}", throttle);
+    info!("Throttle HTTP requests to same host: {throttle:?}");
     let waits = Arc::new(Mutex::new(HashMap::new()));
     // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
     let mut buffered_stream = stream::iter(link_target_groups.keys())
@@ -359,8 +359,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                             return FinalResult {
                                 target: target.clone(),
                                 result_code: LinkCheckResult::Failed(format!(
-                                    "Could not parse URL type. Err: {:?}",
-                                    error
+                                    "Could not parse URL type. Err: {error:?}"
                                 )),
                             }
                         }
@@ -480,12 +479,12 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         .map(|e| link_target_groups[&e.target].len())
         .sum();
     let sum = skipped + error_sum + warnings + oks;
-    println!("Result ({} links):", sum);
+    println!("Result ({sum} links):");
     println!();
-    println!("OK       {}", oks);
-    println!("Skipped  {}", skipped);
-    println!("Warnings {}", warnings);
-    println!("Errors   {}", error_sum);
+    println!("OK       {oks}");
+    println!("Skipped  {skipped}");
+    println!("Warnings {warnings}");
+    println!("Errors   {error_sum}");
     println!();
 
     // Prepare CSV file if needed

@@ -2,7 +2,7 @@ use crate::link_validator::LinkCheckResult;
 use regex::Regex;
 
 pub fn check_mail(target: &str) -> LinkCheckResult {
-    debug!("Check mail target {:?}", target);
+    debug!("Check mail target {target:?}");
     let mut mail = target;
     if let Some(stripped) = target.strip_prefix("mailto://") {
         mail = stripped;

@@ -30,7 +30,7 @@ pub fn get_link_type(link: &str) -> LinkType {
 
     if let Ok(url) = Url::parse(link) {
         let scheme = url.scheme();
-        debug!("Link {} is a URL type with scheme {}", link, scheme);
+        debug!("Link {link} is a URL type with scheme {scheme}");
         return match scheme {
             "http" | "https" => LinkType::Http,
             "ftp" | "ftps" => LinkType::Ftp,
