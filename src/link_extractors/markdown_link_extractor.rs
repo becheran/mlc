@@ -404,9 +404,7 @@ mod tests {
     fn referenced_link_tag_only() {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
-        let input = format!(
-            "Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {link_str}"
-        );
+        let input = format!("Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {link_str}");
         let result = le.find_links(&input);
         assert_eq!(0, result.len());
     }

@@ -78,9 +78,7 @@ pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLi
             links
         }
         Err(e) => {
-            warn!(
-                "File '{path}'. IO Error: \"{e}\". Check your file encoding."
-            );
+            warn!("File '{path}'. IO Error: \"{e}\". Check your file encoding.");
             vec![]
         }
     }

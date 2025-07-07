@@ -12,9 +12,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
         None => panic!("Bug! markup_types must be set"),
     };
 
-    info!(
-        "Search for files of markup types '{markup_types:?}' in directory '{root:?}'"
-    );
+    info!("Search for files of markup types '{markup_types:?}' in directory '{root:?}'");
 
     for entry in WalkDir::new(root)
         .follow_links(false)

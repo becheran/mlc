@@ -25,9 +25,7 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
         };
         debug!("Check if file ignoring the extension exists.");
         if target_parent.exists().await {
-            debug!(
-                "Parent {target_parent:?} exists. Search dir for file ignoring the extension."
-            );
+            debug!("Parent {target_parent:?} exists. Search dir for file ignoring the extension.");
             for entry in WalkDir::new(target_parent)
                 .follow_links(false)
                 .max_depth(1)
