@@ -74,7 +74,7 @@ The action does uses [GitHub workflow commands](https://docs.github.com/en/actio
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download and execute it:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v0.22.0/mlc-x86_64-linux -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v1.0.0/mlc-x86_64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
