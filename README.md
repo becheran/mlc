@@ -65,7 +65,7 @@ Use *mlc* command line arguments using the `with` argument:
     args: ./README.md
 ```
 
-The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions) to highlight broken links:
+The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands) to highlight broken links:
 
 ![annotation](./docs/FailingAnnotation.PNG)
 
