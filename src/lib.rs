@@ -501,8 +501,8 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         None
     };
 
-    if errors.is_empty() {
-        // Write warnings to CSV if requested and CSV file exists
+    // Helper function to write warnings to CSV
+    let write_warnings_to_csv = |csv_file: &mut Option<fs::File>| {
         if config.optional.csv_include_warnings.unwrap_or(false) {
             if let Some(ref mut file) = csv_file {
                 // Write link-based warnings
@@ -527,6 +527,10 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
             }
         }
+    };
+
+    if errors.is_empty() {
+        write_warnings_to_csv(&mut csv_file);
         Ok(())
     } else {
         println!();
@@ -547,32 +551,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             }
         }
         
-        // Write warnings to CSV if requested
-        if config.optional.csv_include_warnings.unwrap_or(false) {
-            if let Some(ref mut file) = csv_file {
-                // Write link-based warnings
-                for res in &warning_results {
-                    for link in &link_target_groups[&res.target] {
-                        writeln!(
-                            file,
-                            "{},{},{},{}",
-                            link.source, link.line, link.column, link.target
-                        )
-                        .unwrap();
-                    }
-                }
-                // Write broken reference warnings
-                for broken_ref in &broken_references {
-                    writeln!(
-                        file,
-                        "{},{},{},{}",
-                        broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
-                    )
-                    .unwrap();
-                }
-            }
-        }
-        
+        write_warnings_to_csv(&mut csv_file);
         Err(())
     }
 }
