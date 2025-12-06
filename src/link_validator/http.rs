@@ -55,7 +55,14 @@ async fn http_request(
 
     let response = CLIENT.execute(new_request(Method::HEAD, url)).await?;
     let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
-        if response_url == url
+        // Remove fragments from both URLs for comparison
+        // Fragments are not sent to the server, so the response URL will never have them
+        let mut url_without_fragment = url.clone();
+        url_without_fragment.set_fragment(None);
+        let mut response_url_without_fragment = response_url.clone();
+        response_url_without_fragment.set_fragment(None);
+
+        if response_url_without_fragment == url_without_fragment
             || do_not_warn_for_redirect_to
                 .iter()
                 .any(|x| x.matches(response_url.as_ref()))
@@ -243,6 +250,52 @@ mod test {
         assert_eq!(
             result,
             LinkCheckResult::Failed("403 - Forbidden".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn check_http_with_fragment_no_warning() {
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/page")
+            .with_status(200)
+            .create_async()
+            .await;
+
+        // The URL with a fragment should not produce a redirect warning
+        // because the fragment is not sent to the server
+        let url_with_fragment = format!("{}/page#anchor", server.url());
+        let result = check_http(&url_with_fragment, &[]).await;
+        assert_eq!(result, LinkCheckResult::Ok);
+    }
+
+    #[tokio::test]
+    async fn check_http_with_fragment_real_redirect_warns() {
+        let mut redirect_server = mockito::Server::new_async().await;
+        redirect_server
+            .mock("GET", "/other-page")
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/page")
+            .with_status(301)
+            .with_header("Location", &format!("{}/other-page", redirect_server.url()))
+            .create_async()
+            .await;
+
+        // A real redirect to a different page should still produce a warning
+        // even if the original URL had a fragment
+        let url_with_fragment = format!("{}/page#anchor", server.url());
+        let result = check_http(&url_with_fragment, &[]).await;
+        assert_eq!(
+            result,
+            LinkCheckResult::Warning(format!(
+                "Request was redirected to {}/other-page",
+                &redirect_server.url()
+            ))
         );
     }
 }
