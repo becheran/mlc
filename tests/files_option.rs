@@ -1,4 +1,3 @@
-#[cfg(test)]
 use mlc::file_traversal;
 use mlc::markup::{MarkupFile, MarkupType};
 use mlc::Config;
