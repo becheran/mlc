@@ -38,7 +38,7 @@ async fn end_to_end() {
 #[tokio::test]
 async fn end_to_end_different_root() {
     let test_files = benches_dir().join("different_root");
-    let csv_output = std::env::temp_dir().join("mlc_test_output.csv");
+    let csv_output = std::env::temp_dir().join("mlc_test_different_root.csv");
     let config = Config {
         directory: test_files.clone(),
         optional: OptionalConfig {
@@ -69,7 +69,7 @@ async fn end_to_end_different_root() {
 
 #[tokio::test]
 async fn end_to_end_write_csv_file() {
-    let csv_output = std::env::temp_dir().join("mlc_test_output.csv");
+    let csv_output = std::env::temp_dir().join("mlc_test_write_csv.csv");
     let config = Config {
         directory: benches_dir().join("benchmark/markdown/ignore_me.md"),
         optional: OptionalConfig {
