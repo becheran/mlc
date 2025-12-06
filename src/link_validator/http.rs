@@ -55,14 +55,15 @@ async fn http_request(
 
     let response = CLIENT.execute(new_request(Method::HEAD, url)).await?;
     let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
-        // Remove fragments from both URLs for comparison
-        // Fragments are not sent to the server, so the response URL will never have them
-        let mut url_without_fragment = url.clone();
-        url_without_fragment.set_fragment(None);
-        let mut response_url_without_fragment = response_url.clone();
-        response_url_without_fragment.set_fragment(None);
+        // Compare URLs ignoring fragments since fragments are not sent to the server
+        // and the response URL will never have them
+        let urls_match = url.scheme() == response_url.scheme()
+            && url.host() == response_url.host()
+            && url.port() == response_url.port()
+            && url.path() == response_url.path()
+            && url.query() == response_url.query();
 
-        if response_url_without_fragment == url_without_fragment
+        if urls_match
             || do_not_warn_for_redirect_to
                 .iter()
                 .any(|x| x.matches(response_url.as_ref()))
