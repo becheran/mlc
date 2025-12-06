@@ -57,6 +57,8 @@ pub struct OptionalConfig {
     pub root_dir: Option<PathBuf>,
     #[serde(rename(deserialize = "csv"))]
     pub csv_file: Option<PathBuf>,
+    #[serde(rename(deserialize = "csv-include-warnings"))]
+    pub csv_include_warnings: Option<bool>,
     #[serde(rename(deserialize = "gitignore"))]
     pub gitignore: Option<bool>,
     #[serde(rename(deserialize = "gituntracked"))]
@@ -419,6 +421,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut oks = 0;
     let mut warnings = 0;
     let mut errors = vec![];
+    let mut warning_results = vec![];
 
     let is_github_runner_env = env::var("GITHUB_ENV").is_ok();
     if is_github_runner_env {
@@ -431,6 +434,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
         LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
             warnings += link_target_groups[&result.target].len();
+            warning_results.push(result.clone());
             if is_github_runner_env {
                 for link in &link_target_groups[&result.target] {
                     println!(
@@ -460,7 +464,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         print_result(&result, &link_target_groups);
         process_result(result);
     }
-    for broken_ref in broken_references {
+    for broken_ref in &broken_references {
         warnings += 1;
         println!(
             "[{:^4}] {}:{}:{} => {} - {}",
@@ -498,6 +502,31 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     };
 
     if errors.is_empty() {
+        // Write warnings to CSV if requested and CSV file exists
+        if config.optional.csv_include_warnings.unwrap_or(false) {
+            if let Some(ref mut file) = csv_file {
+                // Write link-based warnings
+                for res in &warning_results {
+                    for link in &link_target_groups[&res.target] {
+                        writeln!(
+                            file,
+                            "{},{},{},{}",
+                            link.source, link.line, link.column, link.target
+                        )
+                        .unwrap();
+                    }
+                }
+                // Write broken reference warnings
+                for broken_ref in &broken_references {
+                    writeln!(
+                        file,
+                        "{},{},{},{}",
+                        broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
+                    )
+                    .unwrap();
+                }
+            }
+        }
         Ok(())
     } else {
         println!();
@@ -517,6 +546,33 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
             }
         }
+        
+        // Write warnings to CSV if requested
+        if config.optional.csv_include_warnings.unwrap_or(false) {
+            if let Some(ref mut file) = csv_file {
+                // Write link-based warnings
+                for res in &warning_results {
+                    for link in &link_target_groups[&res.target] {
+                        writeln!(
+                            file,
+                            "{},{},{},{}",
+                            link.source, link.line, link.column, link.target
+                        )
+                        .unwrap();
+                    }
+                }
+                // Write broken reference warnings
+                for broken_ref in &broken_references {
+                    writeln!(
+                        file,
+                        "{},{},{},{}",
+                        broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
+                    )
+                    .unwrap();
+                }
+            }
+        }
+        
         Err(())
     }
 }

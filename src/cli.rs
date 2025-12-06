@@ -113,6 +113,13 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::new("csv-include-warnings")
+                .long("csv-include-warnings")
+                .action(ArgAction::SetTrue)
+                .help("Include warnings in the CSV report")
+                .required(false),
+        )
+        .arg(
             Arg::new("gituntracked")
                 .long("gituntracked")
                 .short('u')
@@ -151,6 +158,10 @@ pub fn parse_args() -> Config {
     if let Some(f) = matches.get_one::<String>("csv") {
         opt.csv_file =
             Some(Path::new(&f.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf());
+    }
+
+    if matches.get_flag("csv-include-warnings") {
+        opt.csv_include_warnings = Some(true);
     }
 
     if let Some(markup_types) = matches.get_many::<String>("markup-types") {

@@ -28,6 +28,7 @@ async fn end_to_end() {
             gitignore: None,
             gituntracked: None,
             csv_file: None,
+            csv_include_warnings: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -54,6 +55,7 @@ async fn end_to_end_different_root() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
+            csv_include_warnings: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -85,6 +87,7 @@ async fn end_to_end_write_csv_file() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
+            csv_include_warnings: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
@@ -103,4 +106,49 @@ async fn end_to_end_write_csv_file() {
     } else {
         panic!("Should have detected errors");
     }
+}
+
+#[tokio::test]
+async fn end_to_end_csv_include_warnings() {
+    let csv_output = std::env::temp_dir().join("mlc_test_csv_warnings.csv");
+    let config = Config {
+        directory: benches_dir().join("benchmark/markdown/ref_links.md"),
+        optional: OptionalConfig {
+            debug: None,
+            do_not_warn_for_redirect_to: None,
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: Some(true), // Use offline mode to avoid actual HTTP calls
+            match_file_extension: None,
+            throttle: None,
+            ignore_links: None,
+            ignore_path: None,
+            root_dir: None,
+            gitignore: None,
+            gituntracked: None,
+            csv_file: Some(csv_output.clone()),
+            csv_include_warnings: Some(true),
+        },
+    };
+    // Run the check - should succeed because we're offline
+    let result = mlc::run(&config).await;
+    
+    // Check that CSV was created
+    assert!(csv_output.exists(), "CSV file should exist");
+    
+    let content = fs::read_to_string(&csv_output).unwrap();
+    let lines: Vec<&str> = content.lines().collect();
+    
+    // Should have header and warning entries
+    assert!(lines.len() > 1, "CSV should have header and warning entries");
+    assert_eq!(lines[0], "source,line,column,target");
+    
+    // Verify that warning entries are present (broken markdown references)
+    // The ref_links.md file has several broken markdown references that generate warnings
+    assert!(lines.len() >= 7, "Should have at least 6 warning entries plus header");
+    
+    // Clean up
+    let _ = fs::remove_file(csv_output);
+    
+    // Also verify the test would pass
+    assert!(result.is_ok(), "Should succeed with warnings only");
 }
