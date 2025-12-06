@@ -121,6 +121,16 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::SetTrue)
                 .required(false),
         )
+        .arg(
+            Arg::new("files")
+                .long("files")
+                .short('f')
+                .help("Comma separated list of files which shall be checked")
+                .value_name("FILES")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -197,6 +207,23 @@ pub fn parse_args() -> Config {
 
     if matches.get_flag("gituntracked") {
         opt.gituntracked = Some(true);
+    }
+
+    if let Some(files) = matches.get_many::<String>("files") {
+        let mut file_paths: Vec<_> = files
+            .map(|x| Path::new(&x.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf())
+            .collect();
+        for p in file_paths.iter_mut() {
+            match fs::canonicalize(&p) {
+                Ok(canonical_path) => {
+                    *p = canonical_path;
+                }
+                Err(e) => {
+                    println!("⚠ Warn: File path {p:?} not found. {e:?}.");
+                }
+            };
+        }
+        opt.files = Some(file_paths);
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {

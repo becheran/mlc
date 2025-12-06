@@ -62,6 +62,8 @@ pub struct OptionalConfig {
     #[serde(rename(deserialize = "gituntracked"))]
     pub gituntracked: Option<bool>,
     pub throttle: Option<u32>,
+    #[serde(rename(deserialize = "files"))]
+    pub files: Option<Vec<PathBuf>>,
 }
 
 #[derive(Default, Debug, Deserialize)]
@@ -92,6 +94,10 @@ impl fmt::Display for Config {
             Some(p) => p.iter().map(|m| format!["{m:?}"]).collect(),
             None => vec![],
         };
+        let files_str: Vec<String> = match &self.optional.files {
+            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
+            None => vec![],
+        };
         write!(
             f,
             "
@@ -107,7 +113,8 @@ Gituntracked: {}
 IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms
-CSVFile: {:?}",
+CSVFile: {:?}
+Files: {:?}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
             self.optional.do_not_warn_for_redirect_to,
@@ -120,7 +127,8 @@ CSVFile: {:?}",
             ignore_str.join(","),
             ignore_path_str,
             self.optional.throttle.unwrap_or(0),
-            csv_file_str
+            csv_file_str,
+            files_str
         )
     }
 }
