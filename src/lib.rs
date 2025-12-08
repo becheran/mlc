@@ -546,7 +546,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
             }
         }
-        
+
         write_warnings_to_csv(&mut csv_file);
         Err(())
     }

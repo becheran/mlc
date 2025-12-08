@@ -127,32 +127,45 @@ async fn end_to_end_csv_include_warnings() {
     };
     // Run the check - should succeed because we're offline
     let result = mlc::run(&config).await;
-    
+
     // Check that CSV was created
     assert!(csv_output.exists(), "CSV file should exist");
-    
+
     let content = fs::read_to_string(&csv_output).unwrap();
     let lines: Vec<&str> = content.lines().collect();
-    
+
     // Should have header and warning entries
-    assert!(lines.len() > 1, "CSV should have header and warning entries");
+    assert!(
+        lines.len() > 1,
+        "CSV should have header and warning entries"
+    );
     assert_eq!(lines[0], "source,line,column,target,severity");
-    
+
     // Verify that warning entries are present - the ref_links.md file has several broken markdown references
     // Check that all lines after header have the expected CSV format with severity column
     for line in lines.iter().skip(1) {
         let parts: Vec<&str> = line.split(',').collect();
-        assert_eq!(parts.len(), 5, "Each CSV line should have 5 columns including severity");
-        assert!(parts[0].contains("ref_links.md"), "Source should be ref_links.md");
+        assert_eq!(
+            parts.len(),
+            5,
+            "Each CSV line should have 5 columns including severity"
+        );
+        assert!(
+            parts[0].contains("ref_links.md"),
+            "Source should be ref_links.md"
+        );
         assert_eq!(parts[4], "WARN", "Severity should be WARN for warnings");
     }
-    
+
     // Verify specific warnings are captured (broken markdown references)
-    assert!(content.contains(",WARN"), "CSV should contain WARN severity");
-    
+    assert!(
+        content.contains(",WARN"),
+        "CSV should contain WARN severity"
+    );
+
     // Clean up
     let _ = fs::remove_file(csv_output);
-    
+
     // Also verify the test would pass
     assert!(result.is_ok(), "Should succeed with warnings only");
 }
