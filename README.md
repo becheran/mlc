@@ -14,6 +14,7 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 
 * Find and check links in `markdown` and `html` files
 * Validated absolute and relative file paths and URLs
+* Support for ignore/disable comments to skip specific links or blocks
 * User friendly command line interface
 * Easy [CI pipeline integration](#ci-pipeline)
 * Very fast execution using [async rust](https://rust-lang.github.io/async-book/)
@@ -145,6 +146,40 @@ The following arguments are available:
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
 | `--csv`          |      | Path to csv file which contains all failed requests in the format `source,line,column,target` |
+
+## Ignore Comments
+
+You can use HTML comments to disable link checking for specific lines or blocks in both markdown and HTML files:
+
+### Disable for Current Line
+
+```markdown
+<!-- mlc-disable-line --> [This link](http://broken-link.invalid) will be ignored
+```
+
+### Disable for Next Line
+
+```markdown
+<!-- mlc-disable-next-line -->
+[This link](http://broken-link.invalid) will be ignored
+```
+
+### Disable/Enable Blocks
+
+```markdown
+[This link](http://example.com) will be checked
+
+<!-- mlc-disable -->
+[This link](http://broken-link.invalid) will be ignored
+[This link](http://also-broken.invalid) will also be ignored
+<!-- mlc-enable -->
+
+[This link](http://example.org) will be checked again
+```
+
+If you use `<!-- mlc-disable -->` without a corresponding `<!-- mlc-enable -->`, all links from that point until the end of the file will be ignored.
+
+These comments work in both markdown and HTML files.
 
 All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working directory:
 
