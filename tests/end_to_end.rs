@@ -16,7 +16,7 @@ async fn end_to_end() {
             debug: None,
             do_not_warn_for_redirect_to: None,
             markup_types: Some(vec![MarkupType::Markdown]),
-            offline: None,
+            offline: Some(true),  // Set to offline mode to avoid external network calls
             match_file_extension: None,
             throttle: None,
             ignore_links: Some(vec!["./doc/broken-local-link.doc".to_string()]),
@@ -28,6 +28,7 @@ async fn end_to_end() {
             gitignore: None,
             gituntracked: None,
             csv_file: None,
+            check_links_in_code_blocks: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -54,6 +55,7 @@ async fn end_to_end_different_root() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
+            check_links_in_code_blocks: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -85,6 +87,7 @@ async fn end_to_end_write_csv_file() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
+            check_links_in_code_blocks: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
