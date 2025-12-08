@@ -6,12 +6,66 @@ use std::fs;
 use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
-    let root = &config.directory;
     let markup_types = match &config.optional.markup_types {
         Some(t) => t,
         None => panic!("Bug! markup_types must be set"),
     };
 
+    // If specific files are provided, process only those files
+    if let Some(files) = &config.optional.files {
+        info!("Checking specific files: {files:?}");
+
+        for file_path in files {
+            if !file_path.exists() {
+                warn!("File path '{file_path:?}' does not exist.");
+                continue;
+            }
+
+            if !file_path.is_file() {
+                warn!("Path '{file_path:?}' is not a file.");
+                continue;
+            }
+
+            let f_name = file_path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            debug!("Check file: '{f_name}'");
+
+            if let Some(markup_type) = markup_type(&f_name, markup_types) {
+                let abs_path = match fs::canonicalize(file_path) {
+                    Ok(abs_path) => abs_path,
+                    Err(e) => {
+                        warn!("Path '{file_path:?}' not able to canonicalize path. '{e}'");
+                        continue;
+                    }
+                };
+
+                let ignore = match &config.optional.ignore_path {
+                    Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
+                    None => false,
+                };
+
+                if ignore {
+                    debug!("Ignore file {f_name}, because it is in the ignore path list.");
+                } else {
+                    let file = MarkupFile {
+                        markup_type,
+                        path: file_path.to_string_lossy().to_string(),
+                    };
+                    debug!("Found file: {file:?}.");
+                    result.push(file);
+                }
+            } else {
+                warn!("File '{f_name}' does not match any supported markup type.");
+            }
+        }
+        return;
+    }
+
+    // Otherwise, use directory traversal
+    let root = &config.directory;
     info!("Search for files of markup types '{markup_types:?}' in directory '{root:?}'");
 
     for entry in WalkDir::new(root)
