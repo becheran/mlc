@@ -4,6 +4,8 @@
 /// - `<!-- mlc-disable-next-line -->`
 /// - `<!-- mlc-disable-line -->`
 
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum IgnoreState {
     Enabled,
@@ -13,7 +15,7 @@ enum IgnoreState {
 #[derive(Debug, Clone)]
 pub struct IgnoreRegions {
     /// Lines that should be ignored (1-indexed)
-    ignored_lines: Vec<usize>,
+    ignored_lines: HashSet<usize>,
     /// Ranges of lines that should be ignored (1-indexed, inclusive)
     ignored_ranges: Vec<(usize, usize)>,
 }
@@ -21,7 +23,7 @@ pub struct IgnoreRegions {
 impl IgnoreRegions {
     /// Create a new IgnoreRegions from text content
     pub fn from_text(text: &str) -> Self {
-        let mut ignored_lines = Vec::new();
+        let mut ignored_lines = HashSet::new();
         let mut ignored_ranges = Vec::new();
         let mut state = IgnoreState::Enabled;
         let mut disable_start_line = 0;
@@ -37,7 +39,7 @@ impl IgnoreRegions {
                 }
             } else if line.contains("<!-- mlc-enable -->") {
                 if state == IgnoreState::Disabled {
-                    // Add the range from disable to enable (exclusive of enable line)
+                    // Add the range from disable to enable (inclusive)
                     ignored_ranges.push((disable_start_line, line_num));
                     state = IgnoreState::Enabled;
                 }
@@ -45,12 +47,12 @@ impl IgnoreRegions {
 
             // Check for single-line ignores
             if line.contains("<!-- mlc-disable-line -->") {
-                ignored_lines.push(line_num);
+                ignored_lines.insert(line_num);
             }
 
             // Check for next-line ignore
             if line.contains("<!-- mlc-disable-next-line -->") {
-                ignored_lines.push(line_num + 1);
+                ignored_lines.insert(line_num + 1);
             }
         }
 
@@ -58,7 +60,7 @@ impl IgnoreRegions {
         if state == IgnoreState::Disabled {
             let total_lines = text.lines().count();
             if total_lines > 0 {
-                ignored_ranges.push((disable_start_line, total_lines + 1));
+                ignored_ranges.push((disable_start_line, total_lines));
             }
         }
 
