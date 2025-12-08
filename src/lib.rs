@@ -57,8 +57,6 @@ pub struct OptionalConfig {
     pub root_dir: Option<PathBuf>,
     #[serde(rename(deserialize = "csv"))]
     pub csv_file: Option<PathBuf>,
-    #[serde(rename(deserialize = "csv-include-warnings"))]
-    pub csv_include_warnings: Option<bool>,
     #[serde(rename(deserialize = "gitignore"))]
     pub gitignore: Option<bool>,
     #[serde(rename(deserialize = "gituntracked"))]
@@ -495,7 +493,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut csv_file = if let Some(csv_path) = &config.optional.csv_file {
         info!("Write CSV file: {}", csv_path.display());
         let mut file = fs::File::create(csv_path).unwrap();
-        writeln!(file, "source,line,column,target").unwrap();
+        writeln!(file, "source,line,column,target,severity").unwrap();
         Some(file)
     } else {
         None
@@ -503,28 +501,26 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     // Helper function to write warnings to CSV
     let write_warnings_to_csv = |csv_file: &mut Option<fs::File>| {
-        if config.optional.csv_include_warnings.unwrap_or(false) {
-            if let Some(ref mut file) = csv_file {
-                // Write link-based warnings
-                for res in &warning_results {
-                    for link in &link_target_groups[&res.target] {
-                        writeln!(
-                            file,
-                            "{},{},{},{}",
-                            link.source, link.line, link.column, link.target
-                        )
-                        .unwrap();
-                    }
-                }
-                // Write broken reference warnings
-                for broken_ref in &broken_references {
+        if let Some(ref mut file) = csv_file {
+            // Write link-based warnings
+            for res in &warning_results {
+                for link in &link_target_groups[&res.target] {
                     writeln!(
                         file,
-                        "{},{},{},{}",
-                        broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
+                        "{},{},{},{},WARN",
+                        link.source, link.line, link.column, link.target
                     )
                     .unwrap();
                 }
+            }
+            // Write broken reference warnings
+            for broken_ref in &broken_references {
+                writeln!(
+                    file,
+                    "{},{},{},{},WARN",
+                    broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
+                )
+                .unwrap();
             }
         }
     };
@@ -543,7 +539,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 if let Some(ref mut file) = csv_file {
                     writeln!(
                         file,
-                        "{},{},{},{}",
+                        "{},{},{},{},ERR",
                         link.source, link.line, link.column, link.target
                     )
                     .unwrap();

@@ -28,7 +28,6 @@ async fn end_to_end() {
             gitignore: None,
             gituntracked: None,
             csv_file: None,
-            csv_include_warnings: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -55,7 +54,6 @@ async fn end_to_end_different_root() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
-            csv_include_warnings: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -65,7 +63,7 @@ async fn end_to_end_different_root() {
         let content = fs::read_to_string(csv_output).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 1);
-        assert_eq!(lines[0], "source,line,column,target");
+        assert_eq!(lines[0], "source,line,column,target,severity");
     }
 }
 
@@ -87,19 +85,18 @@ async fn end_to_end_write_csv_file() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
-            csv_include_warnings: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
         let content = fs::read_to_string(csv_output).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 4);
-        assert_eq!(lines[0], "source,line,column,target");
+        assert_eq!(lines[0], "source,line,column,target,severity");
         for (i, line) in lines.iter().enumerate().skip(1) {
             assert_eq!(
                 line,
                 &format!(
-                    "benches{MAIN_SEPARATOR}benchmark/markdown/ignore_me.md,{i},1,broken_Link",
+                    "benches{MAIN_SEPARATOR}benchmark/markdown/ignore_me.md,{i},1,broken_Link,ERR",
                 )
             );
         }
@@ -126,7 +123,6 @@ async fn end_to_end_csv_include_warnings() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
-            csv_include_warnings: Some(true),
         },
     };
     // Run the check - should succeed because we're offline
@@ -140,19 +136,19 @@ async fn end_to_end_csv_include_warnings() {
     
     // Should have header and warning entries
     assert!(lines.len() > 1, "CSV should have header and warning entries");
-    assert_eq!(lines[0], "source,line,column,target");
+    assert_eq!(lines[0], "source,line,column,target,severity");
     
     // Verify that warning entries are present - the ref_links.md file has several broken markdown references
-    // Check that all lines after header have the expected CSV format
+    // Check that all lines after header have the expected CSV format with severity column
     for line in lines.iter().skip(1) {
         let parts: Vec<&str> = line.split(',').collect();
-        assert_eq!(parts.len(), 4, "Each CSV line should have 4 columns");
+        assert_eq!(parts.len(), 5, "Each CSV line should have 5 columns including severity");
         assert!(parts[0].contains("ref_links.md"), "Source should be ref_links.md");
+        assert_eq!(parts[4], "WARN", "Severity should be WARN for warnings");
     }
     
     // Verify specific warnings are captured (broken markdown references)
-    assert!(content.contains("nonexistent") || content.contains(",1,") || content.contains(",foo,") || content.contains(",boo,"), 
-            "CSV should contain the broken reference identifiers");
+    assert!(content.contains(",WARN"), "CSV should contain WARN severity");
     
     // Clean up
     let _ = fs::remove_file(csv_output);
