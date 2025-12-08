@@ -2,6 +2,7 @@ use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
 use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
+use crate::Config;
 
 use super::link_extractor::BrokenExtractedLink;
 pub struct HtmlLinkExtractor();
@@ -16,7 +17,7 @@ enum ParserState {
 }
 
 impl LinkExtractor for HtmlLinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+    fn find_links(&self, text: &str, _config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
         let mut result: Vec<Result<MarkupLink, BrokenExtractedLink>> = Vec::new();
         let mut state: ParserState = ParserState::Text;
         let mut link_column = 0;
@@ -113,13 +114,22 @@ impl LinkExtractor for HtmlLinkExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::OptionalConfig;
     use ntest::test_case;
+    use std::path::PathBuf;
+
+    fn default_config() -> Config {
+        Config {
+            directory: PathBuf::from("."),
+            optional: OptionalConfig::default(),
+        }
+    }
 
     #[test]
     fn no_link() {
         let le = HtmlLinkExtractor();
         let input = "]This is not a <has> no link <h1>Bla</h1> attribute.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -127,14 +137,14 @@ mod tests {
     fn commented() {
         let le = HtmlLinkExtractor();
         let input = "df <!-- <a href=\"http://wiki.selfhtml.org\"> haha</a> -->";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
     #[test]
     fn space() {
         let le = HtmlLinkExtractor();
-        let result = le.find_links("blah <a href=\"some file.html\">foo</a>.");
+        let result = le.find_links("blah <a href=\"some file.html\">foo</a>.", &default_config());
         let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
@@ -147,7 +157,7 @@ mod tests {
     #[test]
     fn url_encoded_path() {
         let le = HtmlLinkExtractor();
-        let result = le.find_links("blah <a href=\"some%20file.html\">foo</a>.");
+        let result = le.find_links("blah <a href=\"some%20file.html\">foo</a>.", &default_config());
         let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
@@ -175,7 +185,7 @@ mod tests {
     )]
     fn links(input: &str, line: usize, column: usize) {
         let le = HtmlLinkExtractor();
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "https://www.w3schools.com".to_string(),
             line,

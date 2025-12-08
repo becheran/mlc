@@ -2,12 +2,14 @@ use super::html_link_extractor::HtmlLinkExtractor;
 use super::link_extractor::BrokenExtractedLink;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
+use crate::Config;
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
+use regex::Regex;
 
 pub struct MarkdownLinkExtractor();
 
 impl LinkExtractor for MarkdownLinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+    fn find_links(&self, text: &str, config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
         use std::cell::RefCell;
         let result: RefCell<Vec<Result<MarkupLink, BrokenExtractedLink>>> =
             RefCell::new(Vec::new());
@@ -33,6 +35,8 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let parser = Parser::new_with_broken_link_callback(text, Options::empty(), Some(callback));
 
+        let check_code_blocks = config.optional.check_links_in_code_blocks.unwrap_or(false);
+        
         for (evt, range) in parser.into_offset_iter() {
             match evt {
                 Event::Start(Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. }) => {
@@ -46,7 +50,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                 }
                 Event::Html(html) | Event::InlineHtml(html) => {
                     let line_col = converter.line_column_from_idx(range.start);
-                    let html_result = html_extractor.find_links(html.as_ref());
+                    let html_result = html_extractor.find_links(html.as_ref(), config);
                     let mut parsed_html = html_result
                         .iter()
                         .filter_map(|res| res.as_ref().ok())
@@ -66,6 +70,23 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         })
                         .collect();
                     result.borrow_mut().append(&mut parsed_html);
+                }
+                Event::Text(code_text) | Event::Code(code_text) if check_code_blocks => {
+                    // Extract HTTP(S) URLs from code blocks
+                    lazy_static! {
+                        static ref URL_REGEX: Regex = Regex::new(r"https?://[^\s<>\[\]()]+").unwrap();
+                    }
+                    
+                    for url_match in URL_REGEX.find_iter(code_text.as_ref()) {
+                        let url_start_idx = range.start + url_match.start();
+                        let url_line_col = converter.line_column_from_idx(url_start_idx);
+                        result.borrow_mut().push(Ok(MarkupLink {
+                            line: url_line_col.0,
+                            column: url_line_col.1,
+                            source: String::new(),
+                            target: url_match.as_str().to_string(),
+                        }));
+                    }
                 }
                 _ => (),
             };
@@ -109,13 +130,32 @@ impl LineColumnConverter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::OptionalConfig;
     use ntest::test_case;
+    use std::path::PathBuf;
+
+    fn default_config() -> Config {
+        Config {
+            directory: PathBuf::from("."),
+            optional: OptionalConfig::default(),
+        }
+    }
+
+    fn config_with_code_blocks() -> Config {
+        Config {
+            directory: PathBuf::from("."),
+            optional: OptionalConfig {
+                check_links_in_code_blocks: Some(true),
+                ..OptionalConfig::default()
+            },
+        }
+    }
 
     #[test]
     fn inline_no_link() {
         let le = MarkdownLinkExtractor();
         let input = "]This is not a () link](! has no title attribute.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -123,7 +163,7 @@ mod tests {
     fn commented_link() {
         let le = MarkdownLinkExtractor();
         let input = "]This is not a () <!--[link](link)-->.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -132,7 +172,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let input =
             "\n\r\t\n[![](http://meritbadge.herokuapp.com/mlc)](https://crates.io/crates/mlc)";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let img = Ok(MarkupLink {
             target: "http://meritbadge.herokuapp.com/mlc".to_string(),
             line: 3,
@@ -152,7 +192,7 @@ mod tests {
     fn link_escaped() {
         let le = MarkdownLinkExtractor();
         let input = "This is not a \\[link\\](random_link).";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -160,7 +200,7 @@ mod tests {
     fn link_in_headline() {
         let le = MarkdownLinkExtractor();
         let input = "  # This is a [link](http://example.net/).";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert_eq!(result[0].as_ref().unwrap().column, 15);
     }
 
@@ -168,7 +208,7 @@ mod tests {
     fn no_link_colon() {
         let le = MarkdownLinkExtractor();
         let input = "This is not a [link:bla.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -176,7 +216,7 @@ mod tests {
     fn broken_reference_link() {
         let le = MarkdownLinkExtractor();
         let input = "This is not a [link]:bla.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
 
         let expected = Err(BrokenExtractedLink {
             source: "".to_string(),
@@ -192,7 +232,7 @@ mod tests {
     fn inline_code() {
         let le = MarkdownLinkExtractor();
         let input = " `[code](http://example.net/)`, no link!.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -200,7 +240,7 @@ mod tests {
     fn link_near_inline_code() {
         let le = MarkdownLinkExtractor();
         let input = " `bug` [code](http://example.net/), link!.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -214,7 +254,7 @@ mod tests {
     fn link_very_near_inline_code() {
         let le = MarkdownLinkExtractor();
         let input = "`bug`[code](http://example.net/)";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -228,7 +268,7 @@ mod tests {
     fn code_block() {
         let le = MarkdownLinkExtractor();
         let input = " ``` js\n[code](http://example.net/)```, no link!.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -236,7 +276,7 @@ mod tests {
     fn html_code_block() {
         let le = MarkdownLinkExtractor();
         let input = "<script>\n[code](http://example.net/)</script>, no link!.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -244,7 +284,7 @@ mod tests {
     fn escaped_code_block() {
         let le = MarkdownLinkExtractor();
         let input = "   klsdjf \\`[escape](http://example.net/)\\`, no link!.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -258,7 +298,7 @@ mod tests {
     fn link_in_code_block() {
         let le = MarkdownLinkExtractor();
         let input = "```\n[only code](http://example.net/)\n```.";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -267,7 +307,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!("\n\nBla ![This is an image link]({link_str})");
-        let result = le.find_links(&input);
+        let result = le.find_links(&input, &default_config());
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
             line: 3,
@@ -282,7 +322,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!("[This link]({link_str}) has no title attribute.");
-        let result = le.find_links(&input);
+        let result = le.find_links(&input, &default_config());
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
             line: 1,
@@ -297,7 +337,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!("\n123[This is a link]({link_str} \"with title\") oh yea.");
-        let result = le.find_links(&input);
+        let result = le.find_links(&input, &default_config());
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
             line: 2,
@@ -314,7 +354,7 @@ mod tests {
     #[test_case("This is a short link <http://example.net/>", 22)]
     fn inline_link(input: &str, column: usize) {
         let le = MarkdownLinkExtractor();
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -334,7 +374,7 @@ mod tests {
     )]
     fn html_link(input: &str) {
         let le = MarkdownLinkExtractor();
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -347,7 +387,7 @@ mod tests {
     #[test]
     fn html_link_ident() {
         let le = MarkdownLinkExtractor();
-        let result = le.find_links("123<a href=\"http://example.net/\"> link text</a>");
+        let result = le.find_links("123<a href=\"http://example.net/\"> link text</a>", &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 1,
@@ -360,7 +400,7 @@ mod tests {
     #[test]
     fn html_link_new_line() {
         let le = MarkdownLinkExtractor();
-        let result = le.find_links("\n123<a href=\"http://example.net/\"> link text</a>");
+        let result = le.find_links("\n123<a href=\"http://example.net/\"> link text</a>", &default_config());
         let expected = Ok(MarkupLink {
             target: "http://example.net/".to_string(),
             line: 2,
@@ -373,7 +413,7 @@ mod tests {
     #[test]
     fn raw_html_issue_31() {
         let le = MarkdownLinkExtractor();
-        let result = le.find_links("Some text <a href=\"some_url\">link text</a> more text.");
+        let result = le.find_links("Some text <a href=\"some_url\">link text</a> more text.", &default_config());
         let expected = Ok(MarkupLink {
             target: "some_url".to_string(),
             line: 1,
@@ -390,7 +430,7 @@ mod tests {
         let input = format!(
             "This is [an example][arbitrary case-insensitive reference text] reference-style link.\n\n[Arbitrary CASE-insensitive reference text]: {link_str}"
         );
-        let result = le.find_links(&input);
+        let result = le.find_links(&input, &default_config());
         let expected = Ok(MarkupLink {
             target: link_str.to_string(),
             line: 1,
@@ -405,7 +445,7 @@ mod tests {
         let le = MarkdownLinkExtractor();
         let link_str = "http://example.net/";
         let input = format!("Foo Bar\n\n[Arbitrary CASE-insensitive reference text]: {link_str}");
-        let result = le.find_links(&input);
+        let result = le.find_links(&input, &default_config());
         assert_eq!(0, result.len());
     }
 
@@ -413,7 +453,55 @@ mod tests {
     fn referenced_link_no_tag_only() {
         let le = MarkdownLinkExtractor();
         let input = "[link][reference]";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
+    }
+
+    // Tests for code block link checking feature
+    #[test]
+    fn code_block_with_url_not_checked_by_default() {
+        let le = MarkdownLinkExtractor();
+        let input = "```bash\nwget https://raw.githubusercontent.com/example/file.txt\n```";
+        let result = le.find_links(input, &default_config());
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn code_block_with_url_checked_when_enabled() {
+        let le = MarkdownLinkExtractor();
+        let input = "```bash\nwget https://raw.githubusercontent.com/example/file.txt\n```";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(1, result.len());
+        let link = result[0].as_ref().unwrap();
+        assert_eq!(link.target, "https://raw.githubusercontent.com/example/file.txt");
+    }
+
+    #[test]
+    fn inline_code_with_url_checked_when_enabled() {
+        let le = MarkdownLinkExtractor();
+        let input = "Use `wget https://example.com/file.txt` to download.";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(1, result.len());
+        let link = result[0].as_ref().unwrap();
+        assert_eq!(link.target, "https://example.com/file.txt");
+    }
+
+    #[test]
+    fn code_block_with_multiple_urls() {
+        let le = MarkdownLinkExtractor();
+        let input = "```\nwget https://example.com/file1.txt\ncurl http://example.org/file2.txt\n```";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(2, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/file1.txt");
+        assert_eq!(result[1].as_ref().unwrap().target, "http://example.org/file2.txt");
+    }
+
+    #[test]
+    fn code_block_url_with_special_chars() {
+        let le = MarkdownLinkExtractor();
+        let input = "```\nhttps://example.com/path?param=value&other=123\n```";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/path?param=value&other=123");
     }
 }

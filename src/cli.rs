@@ -121,6 +121,14 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::SetTrue)
                 .required(false),
         )
+        .arg(
+            Arg::new("check-links-in-code-blocks")
+                .long("check-links-in-code-blocks")
+                .short('c')
+                .action(ArgAction::SetTrue)
+                .help("Check links inside code blocks")
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -197,6 +205,10 @@ pub fn parse_args() -> Config {
 
     if matches.get_flag("gituntracked") {
         opt.gituntracked = Some(true);
+    }
+
+    if matches.get_flag("check-links-in-code-blocks") {
+        opt.check_links_in_code_blocks = Some(true);
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {

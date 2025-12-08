@@ -1,6 +1,7 @@
 use super::html_link_extractor::HtmlLinkExtractor;
 use super::markdown_link_extractor::MarkdownLinkExtractor;
 use crate::markup::{MarkupFile, MarkupType};
+use crate::Config;
 use std::env;
 use std::fmt;
 use std::fs;
@@ -57,14 +58,14 @@ impl MarkupLink {
 }
 
 #[must_use]
-pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+pub fn find_links(file: &MarkupFile, config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
     let path = &file.path;
     let link_extractor = link_extractor_factory(file.markup_type);
 
     info!("Scan file at path '{path}' for links.");
     match fs::read_to_string(path) {
         Ok(text) => {
-            let mut links = link_extractor.find_links(&text);
+            let mut links = link_extractor.find_links(&text, config);
             for l in &mut links {
                 match l {
                     Ok(link) => {
@@ -92,5 +93,5 @@ fn link_extractor_factory(markup_type: MarkupType) -> Box<dyn LinkExtractor> {
 }
 
 pub trait LinkExtractor {
-    fn find_links(&self, text: &str) -> Vec<Result<MarkupLink, BrokenExtractedLink>>;
+    fn find_links(&self, text: &str, config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>>;
 }

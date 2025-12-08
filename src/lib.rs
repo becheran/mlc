@@ -62,6 +62,8 @@ pub struct OptionalConfig {
     #[serde(rename(deserialize = "gituntracked"))]
     pub gituntracked: Option<bool>,
     pub throttle: Option<u32>,
+    #[serde(rename(deserialize = "check-links-in-code-blocks"))]
+    pub check_links_in_code_blocks: Option<bool>,
 }
 
 #[derive(Default, Debug, Deserialize)]
@@ -107,7 +109,8 @@ Gituntracked: {}
 IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms
-CSVFile: {:?}",
+CSVFile: {:?}
+CheckLinksInCodeBlocks: {}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
             self.optional.do_not_warn_for_redirect_to,
@@ -120,7 +123,8 @@ CSVFile: {:?}",
             ignore_str.join(","),
             ignore_path_str,
             self.optional.throttle.unwrap_or(0),
-            csv_file_str
+            csv_file_str,
+            self.optional.check_links_in_code_blocks.unwrap_or_default()
         )
     }
 }
@@ -142,7 +146,7 @@ fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink
     file_traversal::find(config, &mut files);
     let mut links = vec![];
     for file in files {
-        links.append(&mut link_extractors::link_extractor::find_links(&file));
+        links.append(&mut link_extractors::link_extractor::find_links(&file, config));
     }
     links
 }
