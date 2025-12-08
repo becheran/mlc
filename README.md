@@ -35,7 +35,10 @@ cargo install mlc
 
 ### Download Binaries
 
-To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for `linux` and `apple` and `windows`.
+To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for:
+- **Linux**: x86_64 and aarch64 (arm64)
+- **macOS**: aarch64 (Apple Silicon)
+- **Windows**: x86_64
 
 ### Arch Linux
 
@@ -75,6 +78,14 @@ To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* y
 
 ``` bash
 curl -L https://github.com/becheran/mlc/releases/download/v1.0.0/mlc-x86_64-linux -o mlc
+chmod +x mlc
+./mlc
+```
+
+For **linux aarch64/arm64** environments, use:
+
+``` bash
+curl -L https://github.com/becheran/mlc/releases/download/v1.0.0/mlc-aarch64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
