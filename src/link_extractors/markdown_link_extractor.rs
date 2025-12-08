@@ -6,6 +6,14 @@ use crate::Config;
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
 use regex::Regex;
 
+lazy_static! {
+    // Regex to match HTTP(S) URLs in code blocks
+    // Matches URLs including those with parentheses, brackets, and query parameters
+    // The pattern matches greedily but we trim trailing punctuation in code
+    static ref CODE_BLOCK_URL_REGEX: Regex = 
+        Regex::new(r"https?://[^\s<>]+").unwrap();
+}
+
 pub struct MarkdownLinkExtractor();
 
 impl LinkExtractor for MarkdownLinkExtractor {
@@ -72,19 +80,31 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     result.borrow_mut().append(&mut parsed_html);
                 }
                 Event::Text(code_text) | Event::Code(code_text) if check_code_blocks => {
-                    // Extract HTTP(S) URLs from code blocks
-                    lazy_static! {
-                        static ref URL_REGEX: Regex = Regex::new(r"https?://[^\s<>\[\]()]+").unwrap();
-                    }
-                    
-                    for url_match in URL_REGEX.find_iter(code_text.as_ref()) {
+                    // Extract HTTP(S) URLs from code blocks using the pre-compiled regex
+                    for url_match in CODE_BLOCK_URL_REGEX.find_iter(code_text.as_ref()) {
+                        let mut url = url_match.as_str();
+                        
+                        // Trim common trailing punctuation that's likely not part of the URL
+                        // But keep parentheses and brackets if they appear to be balanced
+                        while let Some(last_char) = url.chars().last() {
+                            if matches!(last_char, '.' | ',' | ';' | '!' | '?') {
+                                url = &url[..url.len() - last_char.len_utf8()];
+                            } else {
+                                break;
+                            }
+                        }
+                        
+                        if url.is_empty() {
+                            continue;
+                        }
+                        
                         let url_start_idx = range.start + url_match.start();
                         let url_line_col = converter.line_column_from_idx(url_start_idx);
                         result.borrow_mut().push(Ok(MarkupLink {
                             line: url_line_col.0,
                             column: url_line_col.1,
                             source: String::new(),
-                            target: url_match.as_str().to_string(),
+                            target: url.to_string(),
                         }));
                     }
                 }
@@ -503,5 +523,25 @@ mod tests {
         let result = le.find_links(input, &config_with_code_blocks());
         assert_eq!(1, result.len());
         assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/path?param=value&other=123");
+    }
+
+    #[test]
+    fn code_block_url_with_parentheses() {
+        let le = MarkdownLinkExtractor();
+        let input = "```\nSee https://en.wikipedia.org/wiki/Markdown_(markup_language) for details\n```";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(1, result.len());
+        // URL should include the parentheses in the path
+        assert_eq!(result[0].as_ref().unwrap().target, "https://en.wikipedia.org/wiki/Markdown_(markup_language)");
+    }
+
+    #[test]
+    fn code_block_url_ending_with_punctuation() {
+        let le = MarkdownLinkExtractor();
+        let input = "```\nVisit https://example.com/page. Then do something.\n```";
+        let result = le.find_links(input, &config_with_code_blocks());
+        assert_eq!(1, result.len());
+        // URL should NOT include the trailing period
+        assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/page");
     }
 }
