@@ -14,7 +14,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     // If specific files are provided, process only those files
     if let Some(files) = &config.optional.files {
         info!("Checking specific files: {files:?}");
-        
+
         for file_path in files {
             if !file_path.exists() {
                 warn!("File path '{file_path:?}' does not exist.");
@@ -30,7 +30,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default();
-            
+
             debug!("Check file: '{f_name}'");
 
             if let Some(markup_type) = markup_type(&f_name, markup_types) {
@@ -46,7 +46,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                     Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                     None => false,
                 };
-                
+
                 if ignore {
                     debug!("Ignore file {f_name}, because it is in the ignore path list.");
                 } else {
