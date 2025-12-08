@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 fn find_specific_files() {
     let file1 = Path::new("./README.md").to_path_buf();
     let file2 = Path::new("./CHANGELOG.md").to_path_buf();
-    
+
     let config: Config = Config {
         directory: PathBuf::from("."),
         optional: OptionalConfig {
@@ -17,10 +17,10 @@ fn find_specific_files() {
             ..Default::default()
         },
     };
-    
+
     let mut result: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut result);
-    
+
     assert_eq!(result.len(), 2);
     assert!(result.iter().any(|f| f.path.contains("README.md")));
     assert!(result.iter().any(|f| f.path.contains("CHANGELOG.md")));
@@ -29,7 +29,7 @@ fn find_specific_files() {
 #[test]
 fn find_single_file() {
     let file1 = Path::new("./README.md").to_path_buf();
-    
+
     let config: Config = Config {
         directory: PathBuf::from("."),
         optional: OptionalConfig {
@@ -38,10 +38,10 @@ fn find_single_file() {
             ..Default::default()
         },
     };
-    
+
     let mut result: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut result);
-    
+
     assert_eq!(result.len(), 1);
     assert!(result[0].path.contains("README.md"));
 }
@@ -50,7 +50,7 @@ fn find_single_file() {
 fn find_files_ignores_non_matching_types() {
     // Test with a markdown file but only HTML markup type configured
     let file1 = Path::new("./README.md").to_path_buf();
-    
+
     let config: Config = Config {
         directory: PathBuf::from("."),
         optional: OptionalConfig {
@@ -59,10 +59,10 @@ fn find_files_ignores_non_matching_types() {
             ..Default::default()
         },
     };
-    
+
     let mut result: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut result);
-    
+
     // Should not find any files since README.md is markdown, not HTML
     assert_eq!(result.len(), 0);
 }
@@ -71,7 +71,7 @@ fn find_files_ignores_non_matching_types() {
 fn find_files_with_ignore_path() {
     let file1 = Path::new("./README.md").to_path_buf();
     let ignore_file = std::fs::canonicalize(Path::new("./README.md")).unwrap();
-    
+
     let config: Config = Config {
         directory: PathBuf::from("."),
         optional: OptionalConfig {
@@ -81,10 +81,10 @@ fn find_files_with_ignore_path() {
             ..Default::default()
         },
     };
-    
+
     let mut result: Vec<MarkupFile> = Vec::new();
     file_traversal::find(&config, &mut result);
-    
+
     // Should be empty because the file is in ignore_path
     assert_eq!(result.len(), 0);
 }
