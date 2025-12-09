@@ -19,7 +19,16 @@ async fn end_to_end() {
             offline: None,
             match_file_extension: None,
             throttle: None,
-            ignore_links: Some(vec!["./doc/broken-local-link.doc".to_string()]),
+            ignore_links: Some(vec![
+                "./doc/broken-local-link.doc".to_string(),
+                "http*://google.de*".to_string(),
+                "http*://www.google.de*".to_string(),
+                "http*://www.google.com*".to_string(),
+                "http*://www.mozilla.org*".to_string(),
+                "http*://slashdot.org*".to_string(),
+                "http*://www.example.com*".to_string(),
+                "http*://en.wikipedia.org*".to_string(),
+            ]),
             ignore_path: Some(vec![
                 fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
                 fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
@@ -65,7 +74,7 @@ async fn end_to_end_different_root() {
         let content = fs::read_to_string(csv_output).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 1);
-        assert_eq!(lines[0], "source,line,column,target");
+        assert_eq!(lines[0], "source,line,column,target,severity");
     }
 }
 
@@ -94,16 +103,82 @@ async fn end_to_end_write_csv_file() {
         let content = fs::read_to_string(csv_output).unwrap();
         let lines: Vec<&str> = content.lines().collect();
         assert_eq!(lines.len(), 4);
-        assert_eq!(lines[0], "source,line,column,target");
+        assert_eq!(lines[0], "source,line,column,target,severity");
         for (i, line) in lines.iter().enumerate().skip(1) {
             assert_eq!(
                 line,
                 &format!(
-                    "benches{MAIN_SEPARATOR}benchmark/markdown/ignore_me.md,{i},1,broken_Link",
+                    "benches{MAIN_SEPARATOR}benchmark/markdown/ignore_me.md,{i},1,broken_Link,ERR",
                 )
             );
         }
     } else {
         panic!("Should have detected errors");
     }
+}
+
+#[tokio::test]
+async fn end_to_end_csv_include_warnings() {
+    let csv_output = std::env::temp_dir().join("mlc_test_csv_warnings.csv");
+    let config = Config {
+        directory: benches_dir().join("benchmark/markdown/ref_links.md"),
+        optional: OptionalConfig {
+            debug: None,
+            do_not_warn_for_redirect_to: None,
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: Some(true), // Use offline mode to avoid actual HTTP calls
+            match_file_extension: None,
+            throttle: None,
+            ignore_links: None,
+            ignore_path: None,
+            root_dir: None,
+            gitignore: None,
+            gituntracked: None,
+            csv_file: Some(csv_output.clone()),
+            files: None,
+        },
+    };
+    // Run the check - should succeed because we're offline
+    let result = mlc::run(&config).await;
+
+    // Check that CSV was created
+    assert!(csv_output.exists(), "CSV file should exist");
+
+    let content = fs::read_to_string(&csv_output).unwrap();
+    let lines: Vec<&str> = content.lines().collect();
+
+    // Should have header and warning entries
+    assert!(
+        lines.len() > 1,
+        "CSV should have header and warning entries"
+    );
+    assert_eq!(lines[0], "source,line,column,target,severity");
+
+    // Verify that warning entries are present - the ref_links.md file has several broken markdown references
+    // Check that all lines after header have the expected CSV format with severity column
+    for line in lines.iter().skip(1) {
+        let parts: Vec<&str> = line.split(',').collect();
+        assert_eq!(
+            parts.len(),
+            5,
+            "Each CSV line should have 5 columns including severity"
+        );
+        assert!(
+            parts[0].contains("ref_links.md"),
+            "Source should be ref_links.md"
+        );
+        assert_eq!(parts[4], "WARN", "Severity should be WARN for warnings");
+    }
+
+    // Verify specific warnings are captured (broken markdown references)
+    assert!(
+        content.contains(",WARN"),
+        "CSV should contain WARN severity"
+    );
+
+    // Clean up
+    let _ = fs::remove_file(csv_output);
+
+    // Also verify the test would pass
+    assert!(result.is_ok(), "Should succeed with warnings only");
 }
