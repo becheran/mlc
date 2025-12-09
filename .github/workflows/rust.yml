@@ -32,13 +32,35 @@ jobs:
 
   formatting:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          components: rustfmt
-      - uses: actions-rust-lang/rustfmt@v1
-      - run: cargo clippy --all-targets --all-features
+          components: rustfmt, clippy
+      - name: Run rustfmt
+        run: cargo fmt
+      - name: Run clippy with auto-fix
+        run: cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged
+      - name: Check for formatting changes
+        id: check_changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Commit and push formatting and clippy changes
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "Auto-format code with rustfmt and clippy"
+          git push
 
   test:
     runs-on: ubuntu-latest
