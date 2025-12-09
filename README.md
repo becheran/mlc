@@ -179,6 +179,8 @@ throttle= 100
 root-dir="./"
 # Disable checking of raw links in code blocks (enabled by default)
 disable-raw-link-check = false
+# Path to csv file which contains all failed requests and warnings
+csv="output.csv"
 # List of specific files to check
 files=["./README.md","./docs/README.md"]
 ```
