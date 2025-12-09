@@ -44,7 +44,7 @@ jobs:
       - name: Check for formatting changes
         id: check_changes
         run: |
-          if [[ -n $(git status --porcelain) ]]; then
+          if [[ -n "$(git status --porcelain)" ]]; then
             echo "changes=true" >> $GITHUB_OUTPUT
           else
             echo "changes=false" >> $GITHUB_OUTPUT
