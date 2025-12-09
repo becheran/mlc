@@ -126,6 +126,7 @@ async fn end_to_end_csv_include_warnings() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
+            files: None,
         },
     };
     // Run the check - should succeed because we're offline
