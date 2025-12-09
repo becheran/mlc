@@ -64,6 +64,8 @@ pub struct OptionalConfig {
     pub throttle: Option<u32>,
     #[serde(rename(deserialize = "disable-raw-link-check"))]
     pub disable_raw_link_check: Option<bool>,
+    #[serde(rename(deserialize = "files"))]
+    pub files: Option<Vec<PathBuf>>,
 }
 
 #[derive(Default, Debug, Deserialize)]
@@ -94,6 +96,10 @@ impl fmt::Display for Config {
             Some(p) => p.iter().map(|m| format!["{m:?}"]).collect(),
             None => vec![],
         };
+        let files_str: Vec<String> = match &self.optional.files {
+            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
+            None => vec![],
+        };
         write!(
             f,
             "
@@ -110,7 +116,8 @@ IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms
 CSVFile: {:?}
-CheckLinksInCodeBlocks: {}",
+DisableRawLinkCheck: {}
+Files: {:?}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
             self.optional.do_not_warn_for_redirect_to,
@@ -124,7 +131,8 @@ CheckLinksInCodeBlocks: {}",
             ignore_path_str,
             self.optional.throttle.unwrap_or(0),
             csv_file_str,
-            self.optional.check_links_in_code_blocks.unwrap_or_default()
+            self.optional.disable_raw_link_check.unwrap_or_default(),
+            files_str
         )
     }
 }

@@ -114,6 +114,12 @@ Another example is to call *mlc* on a certain directory or file:
 mlc ./docs
 ```
 
+To check only specific files, for example all `README.md` files in a monorepo:
+
+```bash
+mlc --files "./README.md,./project1/README.md,./project2/README.md"
+```
+
 Alternatively you may want to ignore all files currently ignored by `git` (requires `git` binary to be found on $PATH) and set a root-dir for relative links:
 
 ```bash
@@ -144,8 +150,9 @@ The following arguments are available:
 | `--markup-types` | `-t` | Comma separated list list of markup types which shall be checked. Possible values: `md`, `html` |
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
-| `--check-links-in-code-blocks` | `-c` | Check links inside code blocks and inline code. By default, links inside code blocks are ignored. When this flag is set, raw URLs starting with `http://` or `https://` are extracted and checked. |
+| `--disable-raw-link-check` | `-c` | Disable checking of raw links in code blocks and other text. By default, raw HTTP(S) URLs are extracted and checked from code blocks and inline code. |
 | `--csv`          |      | Path to csv file which contains all failed requests in the format `source,line,column,target` |
+| `--files`        | `-f` | Comma separated list of files which shall be checked. For example `--files "./README.md,./docs/README.md"` will check only the specified files. This is useful for checking specific files in a monorepo without having to exclude many directories. |
 
 All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working directory:
 
@@ -170,8 +177,10 @@ markup-types=["Markdown","Html"]
 throttle= 100
 # Path to the root folder used to resolve all relative paths
 root-dir="./"
-# Check links inside code blocks and inline code
-check-links-in-code-blocks = true
+# Disable checking of raw links in code blocks (enabled by default)
+disable-raw-link-check = false
+# List of specific files to check
+files=["./README.md","./docs/README.md"]
 ```
 
 ## Changelog

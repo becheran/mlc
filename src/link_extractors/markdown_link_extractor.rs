@@ -3,7 +3,7 @@ use super::link_extractor::BrokenExtractedLink;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
 use crate::Config;
-use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
+use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag, TagEnd};
 use regex::Regex;
 
 lazy_static! {
@@ -43,11 +43,13 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let parser = Parser::new_with_broken_link_callback(text, Options::empty(), Some(callback));
 
-        let check_code_blocks = config.optional.check_links_in_code_blocks.unwrap_or(false);
+        let check_code_blocks = !config.optional.disable_raw_link_check.unwrap_or(false);
+        let mut inside_link = false;
         
         for (evt, range) in parser.into_offset_iter() {
             match evt {
                 Event::Start(Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. }) => {
+                    inside_link = true;
                     let line_col = converter.line_column_from_idx(range.start);
                     result.borrow_mut().push(Ok(MarkupLink {
                         line: line_col.0,
@@ -55,6 +57,9 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         source: String::new(),
                         target: dest_url.to_string(),
                     }));
+                }
+                Event::End(TagEnd::Link | TagEnd::Image) => {
+                    inside_link = false;
                 }
                 Event::Html(html) | Event::InlineHtml(html) => {
                     let line_col = converter.line_column_from_idx(range.start);
@@ -79,7 +84,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                         .collect();
                     result.borrow_mut().append(&mut parsed_html);
                 }
-                Event::Text(code_text) | Event::Code(code_text) if check_code_blocks => {
+                Event::Text(code_text) | Event::Code(code_text) if check_code_blocks && !inside_link => {
                     // Extract HTTP(S) URLs from code blocks using the pre-compiled regex
                     for url_match in CODE_BLOCK_URL_REGEX.find_iter(code_text.as_ref()) {
                         let mut url = url_match.as_str();
@@ -161,11 +166,11 @@ mod tests {
         }
     }
 
-    fn config_with_code_blocks() -> Config {
+    fn config_with_raw_link_check_disabled() -> Config {
         Config {
             directory: PathBuf::from("."),
             optional: OptionalConfig {
-                check_links_in_code_blocks: Some(true),
+                disable_raw_link_check: Some(true),
                 ..OptionalConfig::default()
             },
         }
@@ -252,7 +257,18 @@ mod tests {
     fn inline_code() {
         let le = MarkdownLinkExtractor();
         let input = " `[code](http://example.net/)`, no link!.";
+        // With raw link checking enabled (default), raw URL in inline code is extracted
         let result = le.find_links(input, &default_config());
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.net/)");
+    }
+
+    #[test]
+    fn inline_code_with_raw_link_check_disabled() {
+        let le = MarkdownLinkExtractor();
+        let input = " `[code](http://example.net/)`, no link!.";
+        // With raw link checking disabled, inline code is ignored
+        let result = le.find_links(input, &config_with_raw_link_check_disabled());
         assert!(result.is_empty());
     }
 
@@ -287,8 +303,19 @@ mod tests {
     #[test]
     fn code_block() {
         let le = MarkdownLinkExtractor();
-        let input = " ``` js\n[code](http://example.net/)```, no link!.";
+        let input = "```js\n[code](http://example.net/)\n```\nno link!.";
+        // With raw link checking enabled (default), the raw URL in the code block is extracted
         let result = le.find_links(input, &default_config());
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.net/)");
+    }
+
+    #[test]
+    fn code_block_with_raw_link_check_disabled() {
+        let le = MarkdownLinkExtractor();
+        let input = "```js\n[code](http://example.net/)\n```\nno link!.";
+        // With raw link checking disabled, code blocks are ignored
+        let result = le.find_links(input, &config_with_raw_link_check_disabled());
         assert!(result.is_empty());
     }
 
@@ -318,7 +345,18 @@ mod tests {
     fn link_in_code_block() {
         let le = MarkdownLinkExtractor();
         let input = "```\n[only code](http://example.net/)\n```.";
+        // With raw link checking enabled (default), raw URL in code block is extracted
         let result = le.find_links(input, &default_config());
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.net/)");
+    }
+
+    #[test]
+    fn link_in_code_block_with_raw_link_check_disabled() {
+        let le = MarkdownLinkExtractor();
+        let input = "```\n[only code](http://example.net/)\n```.";
+        // With raw link checking disabled, code blocks are ignored
+        let result = le.find_links(input, &config_with_raw_link_check_disabled());
         assert!(result.is_empty());
     }
 
@@ -479,10 +517,20 @@ mod tests {
 
     // Tests for code block link checking feature
     #[test]
-    fn code_block_with_url_not_checked_by_default() {
+    fn code_block_with_url_checked_by_default() {
         let le = MarkdownLinkExtractor();
         let input = "```bash\nwget https://raw.githubusercontent.com/example/file.txt\n```";
         let result = le.find_links(input, &default_config());
+        assert_eq!(1, result.len());
+        let link = result[0].as_ref().unwrap();
+        assert_eq!(link.target, "https://raw.githubusercontent.com/example/file.txt");
+    }
+
+    #[test]
+    fn code_block_with_url_not_checked_when_disabled() {
+        let le = MarkdownLinkExtractor();
+        let input = "```bash\nwget https://raw.githubusercontent.com/example/file.txt\n```";
+        let result = le.find_links(input, &config_with_raw_link_check_disabled());
         assert!(result.is_empty());
     }
 
@@ -490,7 +538,7 @@ mod tests {
     fn code_block_with_url_checked_when_enabled() {
         let le = MarkdownLinkExtractor();
         let input = "```bash\nwget https://raw.githubusercontent.com/example/file.txt\n```";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         let link = result[0].as_ref().unwrap();
         assert_eq!(link.target, "https://raw.githubusercontent.com/example/file.txt");
@@ -500,7 +548,7 @@ mod tests {
     fn inline_code_with_url_checked_when_enabled() {
         let le = MarkdownLinkExtractor();
         let input = "Use `wget https://example.com/file.txt` to download.";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         let link = result[0].as_ref().unwrap();
         assert_eq!(link.target, "https://example.com/file.txt");
@@ -510,7 +558,7 @@ mod tests {
     fn code_block_with_multiple_urls() {
         let le = MarkdownLinkExtractor();
         let input = "```\nwget https://example.com/file1.txt\ncurl http://example.org/file2.txt\n```";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(2, result.len());
         assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/file1.txt");
         assert_eq!(result[1].as_ref().unwrap().target, "http://example.org/file2.txt");
@@ -520,7 +568,7 @@ mod tests {
     fn code_block_url_with_special_chars() {
         let le = MarkdownLinkExtractor();
         let input = "```\nhttps://example.com/path?param=value&other=123\n```";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/path?param=value&other=123");
     }
@@ -529,7 +577,7 @@ mod tests {
     fn code_block_url_with_parentheses() {
         let le = MarkdownLinkExtractor();
         let input = "```\nSee https://en.wikipedia.org/wiki/Markdown_(markup_language) for details\n```";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         // URL should include the parentheses in the path
         assert_eq!(result[0].as_ref().unwrap().target, "https://en.wikipedia.org/wiki/Markdown_(markup_language)");
@@ -539,7 +587,7 @@ mod tests {
     fn code_block_url_ending_with_punctuation() {
         let le = MarkdownLinkExtractor();
         let input = "```\nVisit https://example.com/page. Then do something.\n```";
-        let result = le.find_links(input, &config_with_code_blocks());
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         // URL should NOT include the trailing period
         assert_eq!(result[0].as_ref().unwrap().target, "https://example.com/page");

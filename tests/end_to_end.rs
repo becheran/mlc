@@ -28,7 +28,8 @@ async fn end_to_end() {
             gitignore: None,
             gituntracked: None,
             csv_file: None,
-            check_links_in_code_blocks: None,
+            disable_raw_link_check: None,
+            files: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -55,7 +56,8 @@ async fn end_to_end_different_root() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
-            check_links_in_code_blocks: None,
+            disable_raw_link_check: None,
+            files: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -87,7 +89,8 @@ async fn end_to_end_write_csv_file() {
             gitignore: None,
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
-            check_links_in_code_blocks: None,
+            disable_raw_link_check: None,
+            files: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
