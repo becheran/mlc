@@ -427,6 +427,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut oks = 0;
     let mut warnings = 0;
     let mut errors = vec![];
+    let mut warning_results = vec![];
 
     let is_github_runner_env = env::var("GITHUB_ENV").is_ok();
     if is_github_runner_env {
@@ -439,6 +440,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         }
         LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
             warnings += link_target_groups[&result.target].len();
+            warning_results.push(result.clone());
             if is_github_runner_env {
                 for link in &link_target_groups[&result.target] {
                     println!(
@@ -468,7 +470,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         print_result(&result, &link_target_groups);
         process_result(result);
     }
-    for broken_ref in broken_references {
+    for broken_ref in &broken_references {
         warnings += 1;
         println!(
             "[{:^4}] {}:{}:{} => {} - {}",
@@ -499,13 +501,40 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let mut csv_file = if let Some(csv_path) = &config.optional.csv_file {
         info!("Write CSV file: {}", csv_path.display());
         let mut file = fs::File::create(csv_path).unwrap();
-        writeln!(file, "source,line,column,target").unwrap();
+        writeln!(file, "source,line,column,target,severity").unwrap();
         Some(file)
     } else {
         None
     };
 
+    // Helper function to write warnings to CSV
+    let write_warnings_to_csv = |csv_file: &mut Option<fs::File>| {
+        if let Some(ref mut file) = csv_file {
+            // Write link-based warnings
+            for res in &warning_results {
+                for link in &link_target_groups[&res.target] {
+                    writeln!(
+                        file,
+                        "{},{},{},{},WARN",
+                        link.source, link.line, link.column, link.target
+                    )
+                    .unwrap();
+                }
+            }
+            // Write broken reference warnings
+            for broken_ref in &broken_references {
+                writeln!(
+                    file,
+                    "{},{},{},{},WARN",
+                    broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
+                )
+                .unwrap();
+            }
+        }
+    };
+
     if errors.is_empty() {
+        write_warnings_to_csv(&mut csv_file);
         Ok(())
     } else {
         println!();
@@ -518,13 +547,15 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 if let Some(ref mut file) = csv_file {
                     writeln!(
                         file,
-                        "{},{},{},{}",
+                        "{},{},{},{},ERR",
                         link.source, link.line, link.column, link.target
                     )
                     .unwrap();
                 }
             }
         }
+
+        write_warnings_to_csv(&mut csv_file);
         Err(())
     }
 }
