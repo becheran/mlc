@@ -9,6 +9,10 @@ use std::path::MAIN_SEPARATOR;
 
 const CONFIG_FILE_PATH: &str = "./.mlc.toml";
 
+fn normalize_path_separators(path: &str) -> String {
+    path.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)
+}
+
 #[must_use]
 pub fn parse_args() -> Config {
     let mut opt: OptionalConfig = match fs::read_to_string(CONFIG_FILE_PATH) {
@@ -121,14 +125,23 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::SetTrue)
                 .required(false),
         )
+        .arg(
+            Arg::new("files")
+                .long("files")
+                .short('f')
+                .help("Comma separated list of files which shall be checked")
+                .value_name("FILES")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
     let dir_string = matches
         .get_one::<String>("directory")
         .unwrap_or(&default_dir);
-    let directory = dir_string
-        .replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)
+    let directory = normalize_path_separators(dir_string)
         .parse()
         .expect("failed to parse path");
 
@@ -149,8 +162,7 @@ pub fn parse_args() -> Config {
     }
 
     if let Some(f) = matches.get_one::<String>("csv") {
-        opt.csv_file =
-            Some(Path::new(&f.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf());
+        opt.csv_file = Some(Path::new(&normalize_path_separators(f)).to_path_buf());
     }
 
     if let Some(markup_types) = matches.get_many::<String>("markup-types") {
@@ -199,9 +211,25 @@ pub fn parse_args() -> Config {
         opt.gituntracked = Some(true);
     }
 
+    if let Some(files) = matches.get_many::<String>("files") {
+        let mut file_paths: Vec<_> = files
+            .map(|x| Path::new(&normalize_path_separators(x)).to_path_buf())
+            .collect();
+        for p in file_paths.iter_mut() {
+            match fs::canonicalize(&p) {
+                Ok(canonical_path) => {
+                    *p = canonical_path;
+                }
+                Err(e) => {
+                    println!("⚠ Warn: File path {p:?} not found. {e:?}.");
+                }
+            };
+        }
+        opt.files = Some(file_paths);
+    }
+
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
-        let root_path =
-            Path::new(&root_dir.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)).to_path_buf();
+        let root_path = Path::new(&normalize_path_separators(root_dir)).to_path_buf();
         if !root_path.is_dir() {
             eprintln!("Root path {root_path:?} must be a directory!");
             std::process::exit(1);
