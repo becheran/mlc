@@ -62,8 +62,8 @@ pub struct OptionalConfig {
     #[serde(rename(deserialize = "gituntracked"))]
     pub gituntracked: Option<bool>,
     pub throttle: Option<u32>,
-    #[serde(rename(deserialize = "check-links-in-code-blocks"))]
-    pub check_links_in_code_blocks: Option<bool>,
+    #[serde(rename(deserialize = "disable-raw-link-check"))]
+    pub disable_raw_link_check: Option<bool>,
 }
 
 #[derive(Default, Debug, Deserialize)]
