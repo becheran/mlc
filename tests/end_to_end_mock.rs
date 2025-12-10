@@ -63,7 +63,7 @@ async fn end_to_end_with_mock_servers() {
 
     // Copy and replace URLs in test files
     let test_files = test_files_dir();
-    
+
     // Reference links file
     let content = fs::read_to_string(test_files.join("reference_links.md")).unwrap();
     let updated_content = replace_mock_urls(&content, &servers);

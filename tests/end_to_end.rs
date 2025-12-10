@@ -19,9 +19,7 @@ async fn end_to_end() {
             offline: Some(true), // Use offline mode to avoid checking external URLs
             match_file_extension: None,
             throttle: None,
-            ignore_links: Some(vec![
-                "./doc/broken-local-link.doc".to_string(),
-            ]),
+            ignore_links: Some(vec!["./doc/broken-local-link.doc".to_string()]),
             ignore_path: Some(vec![
                 fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
                 fs::canonicalize("./benches/benchmark/markdown/ignore_me_dir").unwrap(),
