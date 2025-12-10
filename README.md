@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/mlc.svg?color=orange)](https://crates.io/crates/mlc)
 [![downloads](https://badgen.net/crates/d/mlc?color=blue)](https://crates.io/crates/mlc)
-[![build status](https://github.com/becheran/mlc/actions/workflows/rust.yml/badge.svg)](https://github.com/becheran/mlc/actions/workflows/rust.yml)
+[![build status](https://github.com/becheran/mlc/actions/workflows/ci.yml/badge.svg)](https://github.com/becheran/mlc/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/becheran/mlc/blob/master/CONTRIBUTING.md)
 
@@ -36,9 +36,10 @@ cargo install mlc
 ### Download Binaries
 
 To download a compiled binary version of *mlc* go to [github releases](https://github.com/becheran/mlc/releases) and download the binaries compiled for:
-- **Linux**: x86_64 and aarch64 (arm64)
-- **macOS**: aarch64 (Apple Silicon)
-- **Windows**: x86_64
+
+* **Linux**: x86_64 and aarch64 (arm64)
+* **macOS**: aarch64 (Apple Silicon)
+* **Windows**: x86_64
 
 ### Arch Linux
 
