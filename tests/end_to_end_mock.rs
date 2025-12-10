@@ -74,10 +74,10 @@ async fn end_to_end_with_mock_servers() {
     let updated_content = replace_mock_urls(&content, &servers);
     fs::write(temp_dir.join("many_links.md"), updated_content).unwrap();
 
-    // Repeate links file
-    let content = fs::read_to_string(test_files.join("repeate_links.md")).unwrap();
+    // Repeat links file
+    let content = fs::read_to_string(test_files.join("repeat_links.md")).unwrap();
     let updated_content = replace_mock_urls(&content, &servers);
-    fs::write(temp_dir.join("repeate_links.md"), updated_content).unwrap();
+    fs::write(temp_dir.join("repeat_links.md"), updated_content).unwrap();
 
     // Deep directory file
     let content = fs::read_to_string(test_files.join("deep/index.md")).unwrap();

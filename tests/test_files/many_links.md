@@ -7,4 +7,4 @@
 
 [mail](mailto://test.mail@tester.com)
 
-[unkown_url](another://foobar)
+[unknown_url](another://foobar)
