@@ -3,7 +3,6 @@
 /// - `<!-- mlc-disable -->` / `<!-- mlc-enable -->`
 /// - `<!-- mlc-disable-next-line -->`
 /// - `<!-- mlc-disable-line -->`
-
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -37,13 +36,12 @@ impl IgnoreRegions {
                     state = IgnoreState::Disabled;
                     disable_start_line = line_num;
                 }
-            } else if line.contains("<!-- mlc-enable -->") {
-                if state == IgnoreState::Disabled {
+            } else if line.contains("<!-- mlc-enable -->")
+                && state == IgnoreState::Disabled {
                     // Add the range from disable to enable (inclusive)
                     ignored_ranges.push((disable_start_line, line_num));
                     state = IgnoreState::Enabled;
                 }
-            }
 
             // Check for single-line ignores
             if line.contains("<!-- mlc-disable-line -->") {

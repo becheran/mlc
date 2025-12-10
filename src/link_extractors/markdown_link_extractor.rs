@@ -19,12 +19,12 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let callback = &mut |broken_link: BrokenLink| {
             let line_col = converter.line_column_from_idx(broken_link.span.start);
-            
+
             // Skip if line is ignored
             if ignore_regions.is_line_ignored(line_col.0) {
                 return None;
             }
-            
+
             info!(
                 "Broken link in md file: {} (line {}, column {})",
                 broken_link.reference, line_col.0, line_col.1
@@ -45,12 +45,12 @@ impl LinkExtractor for MarkdownLinkExtractor {
             match evt {
                 Event::Start(Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. }) => {
                     let line_col = converter.line_column_from_idx(range.start);
-                    
+
                     // Skip if line is ignored
                     if ignore_regions.is_line_ignored(line_col.0) {
                         continue;
                     }
-                    
+
                     result.borrow_mut().push(Ok(MarkupLink {
                         line: line_col.0,
                         column: line_col.1,
