@@ -60,7 +60,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add .
           git commit -m "Auto-format code with rustfmt and clippy"
-          git push
+          git push origin HEAD:${{ github.ref_name }}
 
   test:
     runs-on: ubuntu-latest
