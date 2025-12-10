@@ -16,18 +16,11 @@ async fn end_to_end() {
             debug: None,
             do_not_warn_for_redirect_to: None,
             markup_types: Some(vec![MarkupType::Markdown]),
-            offline: None,
+            offline: Some(true), // Use offline mode to avoid checking external URLs
             match_file_extension: None,
             throttle: None,
             ignore_links: Some(vec![
                 "./doc/broken-local-link.doc".to_string(),
-                "http*://google.de*".to_string(),
-                "http*://www.google.de*".to_string(),
-                "http*://www.google.com*".to_string(),
-                "http*://www.mozilla.org*".to_string(),
-                "http*://slashdot.org*".to_string(),
-                "http*://www.example.com*".to_string(),
-                "http*://en.wikipedia.org*".to_string(),
             ]),
             ignore_path: Some(vec![
                 fs::canonicalize("benches/benchmark/markdown/ignore_me.md").unwrap(),
