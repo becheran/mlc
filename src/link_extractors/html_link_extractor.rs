@@ -23,7 +23,7 @@ impl LinkExtractor for HtmlLinkExtractor {
         let mut link_column = 0;
         let mut link_line = 0;
         let ignore_regions = IgnoreRegions::from_text(text);
-        
+
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
@@ -94,7 +94,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                 if get_link_type(&link) == LinkType::FileSystem {
                                     link = url_escape::decode(link.as_str()).to_string();
                                 };
-                                
+
                                 // Check if this line should be ignored
                                 let line_num = link_line + 1; // Convert to 1-indexed
                                 if !ignore_regions.is_line_ignored(line_num) {
