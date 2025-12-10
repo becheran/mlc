@@ -153,6 +153,7 @@ The following arguments are available:
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
 | `--csv`          |      | Path to csv file which contains all failed requests and warnings in the format `source,line,column,target,severity`. The severity column contains `ERR` for errors and `WARN` for warnings. |
 | `--files`        | `-f` | Comma separated list of files which shall be checked. For example `--files "./README.md,./docs/README.md"` will check only the specified files. This is useful for checking specific files in a monorepo without having to exclude many directories. |
+| `--http-headers` | `-H` | Comma separated list of custom HTTP headers in the format `'Name: Value'`. This is useful for setting custom user agents or other headers required by specific websites. For example `--http-headers "User-Agent: Mozilla/5.0,X-Custom-Header: value"` will set both a custom user agent and an additional header. |
 
 All optional arguments which can be passed via the command line can also be configured via the `.mlc.toml` config file in the working directory:
 
@@ -181,6 +182,8 @@ root-dir="./"
 csv="output.csv"
 # List of specific files to check
 files=["./README.md","./docs/README.md"]
+# Custom HTTP headers to send with web requests
+http-headers=["User-Agent: Mozilla/5.0","X-Custom-Header: value"]
 ```
 
 ## Changelog

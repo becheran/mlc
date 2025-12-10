@@ -135,6 +135,16 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::Append)
                 .required(false),
         )
+        .arg(
+            Arg::new("http-headers")
+                .long("http-headers")
+                .short('H')
+                .help("Comma separated list of custom HTTP headers in the format 'Name: Value'. For example 'User-Agent: Mozilla/5.0'")
+                .value_name("HEADERS")
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .required(false),
+        )
         .get_matches();
 
     let default_dir = format!(".{}", &MAIN_SEPARATOR);
@@ -226,6 +236,10 @@ pub fn parse_args() -> Config {
             };
         }
         opt.files = Some(file_paths);
+    }
+
+    if let Some(http_headers) = matches.get_many::<String>("http-headers") {
+        opt.http_headers = Some(http_headers.map(|x| x.to_string()).collect());
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {

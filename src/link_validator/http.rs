@@ -14,27 +14,47 @@ const BROWSER_ACCEPT_HEADER: &str =
 pub async fn check_http(
     target: &str,
     do_not_warn_for_redirect_to: &[WildMatch],
+    http_headers: &[(String, String)],
 ) -> LinkCheckResult {
     debug!("Check http link target {target:?}");
     let url = reqwest::Url::parse(target).expect("URL of unknown type");
 
-    match http_request(&url, do_not_warn_for_redirect_to).await {
+    match http_request(&url, do_not_warn_for_redirect_to, http_headers).await {
         Ok(response) => response,
         Err(error_msg) => LinkCheckResult::Failed(format!("Http(s) request failed. {error_msg}")),
     }
 }
 
-fn new_request(method: Method, url: &reqwest::Url) -> Request {
+fn new_request(method: Method, url: &reqwest::Url, http_headers: &[(String, String)]) -> Request {
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
     headers.insert(ACCEPT, BROWSER_ACCEPT_HEADER.parse().unwrap());
-    headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
+    
+    // Set default user agent if no custom User-Agent is provided
+    let has_custom_user_agent = http_headers.iter().any(|(k, _)| k.to_lowercase() == "user-agent");
+    if !has_custom_user_agent {
+        headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
+    }
+    
+    // Apply custom headers
+    for (key, value) in http_headers {
+        if let (Ok(header_name), Ok(header_value)) = (
+            reqwest::header::HeaderName::from_bytes(key.as_bytes()),
+            reqwest::header::HeaderValue::from_str(value)
+        ) {
+            headers.insert(header_name, header_value);
+        } else {
+            warn!("Invalid HTTP header: {}: {}", key, value);
+        }
+    }
+    
     req
 }
 
 async fn http_request(
     url: &reqwest::Url,
     do_not_warn_for_redirect_to: &[WildMatch],
+    http_headers: &[(String, String)],
 ) -> reqwest::Result<LinkCheckResult> {
     lazy_static! {
         static ref CLIENT: Client = reqwest::Client::builder()
@@ -53,7 +73,7 @@ async fn http_request(
         )
     }
 
-    let response = CLIENT.execute(new_request(Method::HEAD, url)).await?;
+    let response = CLIENT.execute(new_request(Method::HEAD, url, http_headers)).await?;
     let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
         // Compare URLs ignoring fragments since fragments are not sent to the server
         // and the response URL will never have them
@@ -81,7 +101,7 @@ async fn http_request(
         check_redirect(response.url())
     } else {
         debug!("Got the status code {status:?}. Retry with get-request.");
-        let get_request = Request::new(Method::GET, url.clone());
+        let get_request = new_request(Method::GET, url, http_headers);
 
         let response = CLIENT.execute(get_request).await?;
         let status = response.status();
@@ -106,7 +126,7 @@ mod test {
             .create_async()
             .await;
 
-        let result = check_http(&server.url(), &[]).await;
+        let result = check_http(&server.url(), &[], &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -119,7 +139,7 @@ mod test {
             .create_async()
             .await;
 
-        let result = check_http(&server.url(), &[]).await;
+        let result = check_http(&server.url(), &[], &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Failed("500 - Internal Server Error".to_string())
@@ -143,7 +163,7 @@ mod test {
             .create_async()
             .await;
 
-        let result = check_http(&server.url(), &[]).await;
+        let result = check_http(&server.url(), &[], &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(format!(
@@ -172,6 +192,7 @@ mod test {
         let result = check_http(
             &server.url(),
             &[WildMatch::new(&format!("{}*", &redirect_server.url()))],
+            &[],
         )
         .await;
 
@@ -194,7 +215,7 @@ mod test {
             .create_async()
             .await;
 
-        let result = check_http(&server.url(), &[WildMatch::new("*")]).await;
+        let result = check_http(&server.url(), &[WildMatch::new("*")], &[]).await;
 
         assert_eq!(result, LinkCheckResult::Ok);
     }
@@ -218,6 +239,7 @@ mod test {
         let result = check_http(
             &server.url(),
             &[WildMatch::new("http://is-mismatched.com/*")],
+            &[],
         )
         .await;
 
@@ -246,7 +268,7 @@ mod test {
             .create_async()
             .await;
 
-        let result = check_http(&server.url(), &[]).await;
+        let result = check_http(&server.url(), &[], &[]).await;
 
         assert_eq!(
             result,
@@ -266,7 +288,7 @@ mod test {
         // The URL with a fragment should not produce a redirect warning
         // because the fragment is not sent to the server
         let url_with_fragment = format!("{}/page#anchor", server.url());
-        let result = check_http(&url_with_fragment, &[]).await;
+        let result = check_http(&url_with_fragment, &[], &[]).await;
         assert_eq!(result, LinkCheckResult::Ok);
     }
 
@@ -290,7 +312,7 @@ mod test {
         // A real redirect to a different page should still produce a warning
         // even if the original URL had a fragment
         let url_with_fragment = format!("{}/page#anchor", server.url());
-        let result = check_http(&url_with_fragment, &[]).await;
+        let result = check_http(&url_with_fragment, &[], &[]).await;
         assert_eq!(
             result,
             LinkCheckResult::Warning(format!(
@@ -298,5 +320,24 @@ mod test {
                 &redirect_server.url()
             ))
         );
+    }
+
+    #[tokio::test]
+    async fn check_http_with_custom_headers() {
+        let mut server = mockito::Server::new_async().await;
+        server
+            .mock("GET", "/")
+            .match_header("user-agent", "CustomAgent/1.0")
+            .match_header("x-custom-header", "test-value")
+            .with_status(200)
+            .create_async()
+            .await;
+
+        let custom_headers = vec![
+            ("User-Agent".to_string(), "CustomAgent/1.0".to_string()),
+            ("X-Custom-Header".to_string(), "test-value".to_string()),
+        ];
+        let result = check_http(&server.url(), &[], &custom_headers).await;
+        assert_eq!(result, LinkCheckResult::Ok);
     }
 }
