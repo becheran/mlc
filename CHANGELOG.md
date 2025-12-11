@@ -14,6 +14,26 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- Support for ignore/disable comments to skip specific links or blocks in markup files [#114](https://github.com/becheran/mlc/pull/114)
+- `--files` option to specify individual files to check [#115](https://github.com/becheran/mlc/pull/115)
+- Severity column to CSV reports to distinguish errors from warnings [#109](https://github.com/becheran/mlc/pull/109)
+- ARM64 binary support for Linux
+
+### Changed
+
+- Replace external URL dependencies in E2E tests with local mock servers [#118](https://github.com/becheran/mlc/pull/118)
+- CI workflow now auto-fixes and pushes formatting/clippy changes instead of failing [#116](https://github.com/becheran/mlc/pull/116)
+- Optimize URL comparison to avoid unnecessary cloning
+
+### Fixed
+
+- False redirect warnings for URLs with fragments
+- Linux ARM64 build by using cross for proper musl cross-compilation
+- CSV file race condition by using unique file names for each test
+- Build status badge link in README
+
 ## [1.0.0] - 2025-07-07
 
 ## [0.22.0] - 2025-05-29
