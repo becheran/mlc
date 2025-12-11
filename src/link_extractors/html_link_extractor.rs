@@ -4,6 +4,7 @@ use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
 use crate::Config;
 
+use super::ignore_comments::IgnoreRegions;
 use super::link_extractor::BrokenExtractedLink;
 pub struct HtmlLinkExtractor();
 
@@ -22,6 +23,8 @@ impl LinkExtractor for HtmlLinkExtractor {
         let mut state: ParserState = ParserState::Text;
         let mut link_column = 0;
         let mut link_line = 0;
+        let ignore_regions = IgnoreRegions::from_text(text);
+
         for (line, line_str) in text.lines().enumerate() {
             let line_chars: Vec<char> = line_str.chars().collect();
             let mut column: usize = 0;
@@ -92,12 +95,17 @@ impl LinkExtractor for HtmlLinkExtractor {
                                 if get_link_type(&link) == LinkType::FileSystem {
                                     link = url_escape::decode(link.as_str()).to_string();
                                 };
-                                result.push(Ok(MarkupLink {
-                                    column: link_column + 1,
-                                    line: link_line + 1,
-                                    target: link.to_string(),
-                                    source: "".to_string(),
-                                }));
+
+                                // Check if this line should be ignored
+                                let line_num = link_line + 1; // Convert to 1-indexed
+                                if !ignore_regions.is_line_ignored(line_num) {
+                                    result.push(Ok(MarkupLink {
+                                        column: link_column + 1,
+                                        line: line_num,
+                                        target: link.to_string(),
+                                        source: "".to_string(),
+                                    }));
+                                }
                                 state = ParserState::Text;
                             }
                             Some(_) | None => {}
@@ -193,5 +201,41 @@ mod tests {
             source: "".to_string(),
         });
         assert_eq!(vec![expected], result);
+    }
+
+    #[test]
+    fn ignore_disable_line() {
+        let le = HtmlLinkExtractor();
+        let input = "<!-- mlc-disable-line --> <a href=\"http://example.net/\">link</a>";
+        let result = le.find_links(input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ignore_disable_next_line() {
+        let le = HtmlLinkExtractor();
+        let input = "<!-- mlc-disable-next-line -->\n<a href=\"http://example.net/\">link</a>";
+        let result = le.find_links(input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ignore_disable_block() {
+        let le = HtmlLinkExtractor();
+        let input = "<!-- mlc-disable -->\n<a href=\"http://example.net/\">link1</a>\n<!-- mlc-enable -->\n<a href=\"http://example.com/\">link2</a>";
+        let result = le.find_links(input);
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.com/");
+        assert_eq!(result[0].as_ref().unwrap().line, 4);
+    }
+
+    #[test]
+    fn ignore_multiple_blocks() {
+        let le = HtmlLinkExtractor();
+        let input = "<a href=\"http://a.com/\">1</a>\n<!-- mlc-disable -->\n<a href=\"http://b.com/\">2</a>\n<!-- mlc-enable -->\n<a href=\"http://c.com/\">3</a>";
+        let result = le.find_links(input);
+        assert_eq!(2, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://a.com/");
+        assert_eq!(result[1].as_ref().unwrap().target, "http://c.com/");
     }
 }
