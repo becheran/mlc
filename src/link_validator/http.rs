@@ -29,25 +29,27 @@ fn new_request(method: Method, url: &reqwest::Url, http_headers: &[(String, Stri
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
     headers.insert(ACCEPT, BROWSER_ACCEPT_HEADER.parse().unwrap());
-    
+
     // Set default user agent if no custom User-Agent is provided
-    let has_custom_user_agent = http_headers.iter().any(|(k, _)| k.to_lowercase() == "user-agent");
+    let has_custom_user_agent = http_headers
+        .iter()
+        .any(|(k, _)| k.to_lowercase() == "user-agent");
     if !has_custom_user_agent {
         headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
     }
-    
+
     // Apply custom headers
     for (key, value) in http_headers {
         if let (Ok(header_name), Ok(header_value)) = (
             reqwest::header::HeaderName::from_bytes(key.as_bytes()),
-            reqwest::header::HeaderValue::from_str(value)
+            reqwest::header::HeaderValue::from_str(value),
         ) {
             headers.insert(header_name, header_value);
         } else {
             warn!("Invalid HTTP header: {}: {}", key, value);
         }
     }
-    
+
     req
 }
 
@@ -73,7 +75,9 @@ async fn http_request(
         )
     }
 
-    let response = CLIENT.execute(new_request(Method::HEAD, url, http_headers)).await?;
+    let response = CLIENT
+        .execute(new_request(Method::HEAD, url, http_headers))
+        .await?;
     let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
         // Compare URLs ignoring fragments since fragments are not sent to the server
         // and the response URL will never have them

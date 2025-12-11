@@ -360,23 +360,21 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         });
 
     // Parse HTTP headers from config
-    let http_headers: Arc<Vec<(String, String)>> = Arc::new(
-        match &config.optional.http_headers {
-            Some(headers) => headers
-                .iter()
-                .filter_map(|h| {
-                    let parts: Vec<&str> = h.splitn(2, ':').collect();
-                    if parts.len() == 2 {
-                        Some((parts[0].trim().to_string(), parts[1].trim().to_string()))
-                    } else {
-                        warn!("Invalid HTTP header format (expected 'Name: Value'): {}", h);
-                        None
-                    }
-                })
-                .collect(),
-            None => vec![],
-        }
-    );
+    let http_headers: Arc<Vec<(String, String)>> = Arc::new(match &config.optional.http_headers {
+        Some(headers) => headers
+            .iter()
+            .filter_map(|h| {
+                let parts: Vec<&str> = h.splitn(2, ':').collect();
+                if parts.len() == 2 {
+                    Some((parts[0].trim().to_string(), parts[1].trim().to_string()))
+                } else {
+                    warn!("Invalid HTTP header format (expected 'Name: Value'): {}", h);
+                    None
+                }
+            })
+            .collect(),
+        None => vec![],
+    });
     info!("Custom HTTP headers: {:?}", http_headers);
 
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
