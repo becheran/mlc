@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [1.1.0] - 2025-12-11
+
 ### Added
 
 - Support for ignore/disable comments to skip specific links or blocks in markup files [#114](https://github.com/becheran/mlc/pull/114)

@@ -1,4 +1,4 @@
-FROM becheran/mlc:1.0.0
+FROM becheran/mlc:1.1.0
 
 LABEL repository="https://github.com/becheran/mlc"
 
