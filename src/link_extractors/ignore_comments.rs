@@ -36,12 +36,11 @@ impl IgnoreRegions {
                     state = IgnoreState::Disabled;
                     disable_start_line = line_num;
                 }
-            } else if line.contains("<!-- mlc-enable -->")
-                && state == IgnoreState::Disabled {
-                    // Add the range from disable to enable (inclusive)
-                    ignored_ranges.push((disable_start_line, line_num));
-                    state = IgnoreState::Enabled;
-                }
+            } else if line.contains("<!-- mlc-enable -->") && state == IgnoreState::Disabled {
+                // Add the range from disable to enable (inclusive)
+                ignored_ranges.push((disable_start_line, line_num));
+                state = IgnoreState::Enabled;
+            }
 
             // Check for single-line ignores
             if line.contains("<!-- mlc-disable-line -->") {
