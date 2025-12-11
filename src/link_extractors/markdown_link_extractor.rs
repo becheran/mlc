@@ -1,4 +1,5 @@
 use super::html_link_extractor::HtmlLinkExtractor;
+use super::ignore_comments::IgnoreRegions;
 use super::link_extractor::BrokenExtractedLink;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
@@ -14,9 +15,16 @@ impl LinkExtractor for MarkdownLinkExtractor {
 
         let html_extractor = HtmlLinkExtractor();
         let converter = LineColumnConverter::new(text);
+        let ignore_regions = IgnoreRegions::from_text(text);
 
         let callback = &mut |broken_link: BrokenLink| {
             let line_col = converter.line_column_from_idx(broken_link.span.start);
+
+            // Skip if line is ignored
+            if ignore_regions.is_line_ignored(line_col.0) {
+                return None;
+            }
+
             info!(
                 "Broken link in md file: {} (line {}, column {})",
                 broken_link.reference, line_col.0, line_col.1
@@ -37,6 +45,12 @@ impl LinkExtractor for MarkdownLinkExtractor {
             match evt {
                 Event::Start(Tag::Link { dest_url, .. } | Tag::Image { dest_url, .. }) => {
                     let line_col = converter.line_column_from_idx(range.start);
+
+                    // Skip if line is ignored
+                    if ignore_regions.is_line_ignored(line_col.0) {
+                        continue;
+                    }
+
                     result.borrow_mut().push(Ok(MarkupLink {
                         line: line_col.0,
                         column: line_col.1,
@@ -63,6 +77,14 @@ impl LinkExtractor for MarkdownLinkExtractor {
                                 source: md_link.source.clone(),
                                 target: md_link.target.clone(),
                             })
+                        })
+                        .filter(|link| {
+                            // Skip if line is ignored
+                            if let Ok(ml) = link {
+                                !ignore_regions.is_line_ignored(ml.line)
+                            } else {
+                                true
+                            }
                         })
                         .collect();
                     result.borrow_mut().append(&mut parsed_html);
@@ -415,5 +437,60 @@ mod tests {
         let input = "[link][reference]";
         let result = le.find_links(input);
         assert_eq!(1, result.len());
+    }
+
+    #[test]
+    fn ignore_disable_line() {
+        let le = MarkdownLinkExtractor();
+        let input = "<!-- mlc-disable-line --> [link](http://example.net/)";
+        let result = le.find_links(input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ignore_disable_next_line() {
+        let le = MarkdownLinkExtractor();
+        let input = "<!-- mlc-disable-next-line -->\n[link](http://example.net/)";
+        let result = le.find_links(input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ignore_disable_block() {
+        let le = MarkdownLinkExtractor();
+        let input = "<!-- mlc-disable -->\n[link1](http://example.net/)\n<!-- mlc-enable -->\n[link2](http://example.com/)";
+        let result = le.find_links(input);
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.com/");
+        assert_eq!(result[0].as_ref().unwrap().line, 4);
+    }
+
+    #[test]
+    fn ignore_multiple_blocks() {
+        let le = MarkdownLinkExtractor();
+        let input = "[link1](http://a.com/)\n<!-- mlc-disable -->\n[link2](http://b.com/)\n<!-- mlc-enable -->\n[link3](http://c.com/)\n<!-- mlc-disable -->\n[link4](http://d.com/)\n<!-- mlc-enable -->\n[link5](http://e.com/)";
+        let result = le.find_links(input);
+        assert_eq!(3, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://a.com/");
+        assert_eq!(result[1].as_ref().unwrap().target, "http://c.com/");
+        assert_eq!(result[2].as_ref().unwrap().target, "http://e.com/");
+    }
+
+    #[test]
+    fn ignore_html_link_in_markdown() {
+        let le = MarkdownLinkExtractor();
+        let input = "<!-- mlc-disable-next-line -->\n<a href=\"http://example.net/\">link</a>";
+        let result = le.find_links(input);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn ignore_mixed_types() {
+        let le = MarkdownLinkExtractor();
+        let input = "[link1](http://a.com/)\n<!-- mlc-disable-line --> [link2](http://b.com/)\n[link3](http://c.com/)";
+        let result = le.find_links(input);
+        assert_eq!(2, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://a.com/");
+        assert_eq!(result[1].as_ref().unwrap().target, "http://c.com/");
     }
 }
