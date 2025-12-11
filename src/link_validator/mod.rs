@@ -40,6 +40,7 @@ pub async fn check(
     link_type: &LinkType,
     config: &Config,
     do_not_warn_for_redirect_to: &[WildMatch],
+    http_headers: &[(String, String)],
 ) -> LinkCheckResult {
     info!("Check link {}.", &link_target);
     match link_type {
@@ -55,7 +56,7 @@ pub async fn check(
             if config.optional.offline.unwrap_or_default() {
                 LinkCheckResult::Ignored("Ignore web link because of the offline flag.".to_string())
             } else {
-                check_http(link_target, do_not_warn_for_redirect_to).await
+                check_http(link_target, do_not_warn_for_redirect_to, http_headers).await
             }
         }
         LinkType::FileSystem => check_filesystem(link_target, config).await,

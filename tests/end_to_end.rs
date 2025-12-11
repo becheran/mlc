@@ -29,6 +29,7 @@ async fn end_to_end() {
             gituntracked: None,
             csv_file: None,
             files: None,
+            http_headers: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -56,6 +57,7 @@ async fn end_to_end_different_root() {
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
             files: None,
+            http_headers: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -88,6 +90,7 @@ async fn end_to_end_write_csv_file() {
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
             files: None,
+            http_headers: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
@@ -127,6 +130,7 @@ async fn end_to_end_csv_include_warnings() {
             gituntracked: None,
             csv_file: Some(csv_output.clone()),
             files: None,
+            http_headers: None,
         },
     };
     // Run the check - should succeed because we're offline
