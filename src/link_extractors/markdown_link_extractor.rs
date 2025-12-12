@@ -493,4 +493,23 @@ mod tests {
         assert_eq!(result[0].as_ref().unwrap().target, "http://a.com/");
         assert_eq!(result[1].as_ref().unwrap().target, "http://c.com/");
     }
+
+    #[test]
+    fn gfm_checkbox_not_link() {
+        let le = MarkdownLinkExtractor();
+        let input = "- [x] checked task\n- [ ] unchecked task";
+        let result = le.find_links(input);
+        // GitHub-flavored markdown task list checkboxes should NOT be treated as links
+        assert!(result.is_empty(), "Task list checkboxes should not be detected as links: {:?}", result);
+    }
+
+    #[test]
+    fn gfm_checkbox_with_link() {
+        let le = MarkdownLinkExtractor();
+        let input = "- [x] [actual link](http://example.com/)\n- [ ] unchecked task";
+        let result = le.find_links(input);
+        // Only the actual link should be detected, not the checkboxes
+        assert_eq!(1, result.len());
+        assert_eq!(result[0].as_ref().unwrap().target, "http://example.com/");
+    }
 }
