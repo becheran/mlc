@@ -39,7 +39,8 @@ impl LinkExtractor for MarkdownLinkExtractor {
             None
         };
 
-        let parser = Parser::new_with_broken_link_callback(text, Options::empty(), Some(callback));
+        let parser =
+            Parser::new_with_broken_link_callback(text, Options::ENABLE_TASKLISTS, Some(callback));
 
         for (evt, range) in parser.into_offset_iter() {
             match evt {
@@ -500,7 +501,11 @@ mod tests {
         let input = "- [x] checked task\n- [ ] unchecked task";
         let result = le.find_links(input);
         // GitHub-flavored markdown task list checkboxes should NOT be treated as links
-        assert!(result.is_empty(), "Task list checkboxes should not be detected as links: {:?}", result);
+        assert!(
+            result.is_empty(),
+            "Task list checkboxes should not be detected as links: {:?}",
+            result
+        );
     }
 
     #[test]
