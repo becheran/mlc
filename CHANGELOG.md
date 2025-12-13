@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [1.2.0] - 2025-12-13
+
 ### Added
 
 - Custom HTTP headers support for HTTP checks (`--http-headers` / `-H`) [#119](https://github.com/becheran/mlc/pull/119)
