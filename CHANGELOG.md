@@ -14,6 +14,20 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- Custom HTTP headers support for HTTP checks (`--http-headers` / `-H`) [#119](https://github.com/becheran/mlc/pull/119)
+
+### Changed
+
+- GitHub Actions usage example now documents how to pass custom HTTP headers
+- Developer instructions now include pre-PR `cargo fmt` / `cargo clippy` steps [#120](https://github.com/becheran/mlc/pull/120)
+
+### Fixed
+
+- GitHub-flavored markdown task list checkboxes are no longer detected as links [#121](https://github.com/becheran/mlc/pull/121)
+- Root directory configuration is validated to avoid crashes when `root-dir` does not exist
+
 ## [1.1.0] - 2025-12-11
 
 ### Added
