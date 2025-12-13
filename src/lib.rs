@@ -162,7 +162,9 @@ fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink
     file_traversal::find(config, &mut files);
     let mut links = vec![];
     for file in files {
-        links.append(&mut link_extractors::link_extractor::find_links(&file, config));
+        links.append(&mut link_extractors::link_extractor::find_links(
+            &file, config,
+        ));
     }
     links
 }

@@ -58,7 +58,10 @@ impl MarkupLink {
 }
 
 #[must_use]
-pub fn find_links(file: &MarkupFile, config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+pub fn find_links(
+    file: &MarkupFile,
+    config: &Config,
+) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
     let path = &file.path;
     let link_extractor = link_extractor_factory(file.markup_type);
 
@@ -93,5 +96,9 @@ fn link_extractor_factory(markup_type: MarkupType) -> Box<dyn LinkExtractor> {
 }
 
 pub trait LinkExtractor {
-    fn find_links(&self, text: &str, config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>>;
+    fn find_links(
+        &self,
+        text: &str,
+        config: &Config,
+    ) -> Vec<Result<MarkupLink, BrokenExtractedLink>>;
 }

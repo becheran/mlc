@@ -16,7 +16,7 @@ async fn end_to_end() {
             debug: None,
             do_not_warn_for_redirect_to: None,
             markup_types: Some(vec![MarkupType::Markdown]),
-            offline: Some(true),  // Set to offline mode to avoid external network calls
+            offline: Some(true), // Set to offline mode to avoid external network calls
             match_file_extension: None,
             throttle: None,
             ignore_links: Some(vec!["./doc/broken-local-link.doc".to_string()]),
@@ -134,6 +134,7 @@ async fn end_to_end_csv_include_warnings() {
             csv_file: Some(csv_output.clone()),
             files: None,
             http_headers: None,
+            disable_raw_link_check: None,
         },
     };
     // Run the check - should succeed because we're offline

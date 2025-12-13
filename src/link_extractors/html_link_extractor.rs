@@ -18,7 +18,11 @@ enum ParserState {
 }
 
 impl LinkExtractor for HtmlLinkExtractor {
-    fn find_links(&self, text: &str, _config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+    fn find_links(
+        &self,
+        text: &str,
+        _config: &Config,
+    ) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
         let mut result: Vec<Result<MarkupLink, BrokenExtractedLink>> = Vec::new();
         let mut state: ParserState = ParserState::Text;
         let mut link_column = 0;
@@ -152,7 +156,10 @@ mod tests {
     #[test]
     fn space() {
         let le = HtmlLinkExtractor();
-        let result = le.find_links("blah <a href=\"some file.html\">foo</a>.", &default_config());
+        let result = le.find_links(
+            "blah <a href=\"some file.html\">foo</a>.",
+            &default_config(),
+        );
         let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
@@ -165,7 +172,10 @@ mod tests {
     #[test]
     fn url_encoded_path() {
         let le = HtmlLinkExtractor();
-        let result = le.find_links("blah <a href=\"some%20file.html\">foo</a>.", &default_config());
+        let result = le.find_links(
+            "blah <a href=\"some%20file.html\">foo</a>.",
+            &default_config(),
+        );
         let expected = Ok(MarkupLink {
             target: "some file.html".to_string(),
             line: 1,
@@ -207,7 +217,7 @@ mod tests {
     fn ignore_disable_line() {
         let le = HtmlLinkExtractor();
         let input = "<!-- mlc-disable-line --> <a href=\"http://example.net/\">link</a>";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -215,7 +225,7 @@ mod tests {
     fn ignore_disable_next_line() {
         let le = HtmlLinkExtractor();
         let input = "<!-- mlc-disable-next-line -->\n<a href=\"http://example.net/\">link</a>";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert!(result.is_empty());
     }
 
@@ -223,7 +233,7 @@ mod tests {
     fn ignore_disable_block() {
         let le = HtmlLinkExtractor();
         let input = "<!-- mlc-disable -->\n<a href=\"http://example.net/\">link1</a>\n<!-- mlc-enable -->\n<a href=\"http://example.com/\">link2</a>";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert_eq!(1, result.len());
         assert_eq!(result[0].as_ref().unwrap().target, "http://example.com/");
         assert_eq!(result[0].as_ref().unwrap().line, 4);
@@ -233,7 +243,7 @@ mod tests {
     fn ignore_multiple_blocks() {
         let le = HtmlLinkExtractor();
         let input = "<a href=\"http://a.com/\">1</a>\n<!-- mlc-disable -->\n<a href=\"http://b.com/\">2</a>\n<!-- mlc-enable -->\n<a href=\"http://c.com/\">3</a>";
-        let result = le.find_links(input);
+        let result = le.find_links(input, &default_config());
         assert_eq!(2, result.len());
         assert_eq!(result[0].as_ref().unwrap().target, "http://a.com/");
         assert_eq!(result[1].as_ref().unwrap().target, "http://c.com/");
