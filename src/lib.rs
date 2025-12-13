@@ -66,6 +66,8 @@ pub struct OptionalConfig {
     pub disable_raw_link_check: Option<bool>,
     #[serde(rename(deserialize = "files"))]
     pub files: Option<Vec<PathBuf>>,
+    #[serde(rename(deserialize = "http-headers"))]
+    pub http_headers: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug, Deserialize)]
@@ -100,6 +102,10 @@ impl fmt::Display for Config {
             Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
             None => vec![],
         };
+        let http_headers_str: Vec<String> = match &self.optional.http_headers {
+            Some(h) => h.clone(),
+            None => vec![],
+        };
         write!(
             f,
             "
@@ -117,7 +123,8 @@ IgnorePath: {:?}
 Throttle: {} ms
 CSVFile: {:?}
 DisableRawLinkCheck: {}
-Files: {:?}",
+Files: {:?},
+HttpHeaders: {:?}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
             self.optional.do_not_warn_for_redirect_to,
@@ -132,7 +139,8 @@ Files: {:?}",
             self.optional.throttle.unwrap_or(0),
             csv_file_str,
             self.optional.disable_raw_link_check.unwrap_or_default(),
-            files_str
+            files_str,
+            http_headers_str
         )
     }
 }
@@ -355,6 +363,24 @@ pub async fn run(config: &Config) -> Result<(), ()> {
             None => vec![],
         });
 
+    // Parse HTTP headers from config
+    let http_headers: Arc<Vec<(String, String)>> = Arc::new(match &config.optional.http_headers {
+        Some(headers) => headers
+            .iter()
+            .filter_map(|h| {
+                let parts: Vec<&str> = h.splitn(2, ':').collect();
+                if parts.len() == 2 {
+                    Some((parts[0].trim().to_string(), parts[1].trim().to_string()))
+                } else {
+                    warn!("Invalid HTTP header format (expected 'Name: Value'): {}", h);
+                    None
+                }
+            })
+            .collect(),
+        None => vec![],
+    });
+    info!("Custom HTTP headers: {:?}", http_headers);
+
     let throttle = config.optional.throttle.unwrap_or_default() > 0;
     info!("Throttle HTTP requests to same host: {throttle:?}");
     let waits = Arc::new(Mutex::new(HashMap::new()));
@@ -363,6 +389,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         .map(|target| {
             let waits = waits.clone();
             let do_not_warn_for_redirect_to = Arc::clone(&do_not_warn_for_redirect_to);
+            let http_headers = Arc::clone(&http_headers);
             async move {
                 if throttle && target.link_type == LinkType::Http {
                     let parsed = match Url::parse(&target.target) {
@@ -417,6 +444,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                     &target.link_type,
                     config,
                     &do_not_warn_for_redirect_to,
+                    &http_headers,
                 )
                 .await;
 

@@ -116,6 +116,27 @@ Eagerly implement common traits where appropriate:
 - Organize code into modules using `mod.rs` or named files.
 - Keep `main.rs` or `lib.rs` minimal - move logic to modules.
 
+## Pre-Pull Request Requirements
+
+**IMPORTANT**: Before opening or updating a pull request, you MUST run the following commands and fix any issues:
+
+1. **Format code with rustfmt**:
+   ```bash
+   cargo fmt
+   ```
+
+2. **Apply clippy fixes**:
+   ```bash
+   cargo clippy --fix --all-targets --all-features --allow-dirty --allow-staged
+   ```
+
+3. **Verify no warnings remain**:
+   ```bash
+   cargo clippy --all-targets --all-features -- -D warnings
+   ```
+
+These steps ensure code quality and consistency before the PR is opened for review.
+
 ## Quality Checklist
 
 Before publishing or reviewing Rust code, ensure:

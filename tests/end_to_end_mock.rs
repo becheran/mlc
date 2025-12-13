@@ -104,6 +104,7 @@ async fn end_to_end_with_mock_servers() {
             gituntracked: None,
             csv_file: None,
             files: None,
+            http_headers: None,
         },
     };
 
@@ -158,6 +159,7 @@ async fn end_to_end_with_mock_server_failure() {
             gituntracked: None,
             csv_file: None,
             files: None,
+            http_headers: None,
         },
     };
 
@@ -226,6 +228,7 @@ async fn end_to_end_with_mock_server_redirect() {
             gituntracked: None,
             csv_file: None,
             files: None,
+            http_headers: None,
         },
     };
 

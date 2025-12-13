@@ -155,6 +155,7 @@ The following arguments are available:
 | `--disable-raw-link-check` | `-c` | Disable checking of raw links in code blocks and other text. By default, raw HTTP(S) URLs are extracted and checked from code blocks and inline code. |
 | `--csv`          |      | Path to csv file which contains all failed requests in the format `source,line,column,target` |
 | `--files`        | `-f` | Comma separated list of files which shall be checked. For example `--files "./README.md,./docs/README.md"` will check only the specified files. This is useful for checking specific files in a monorepo without having to exclude many directories. |
+| `--http-headers` | `-H` | Comma separated list of custom HTTP headers in the format `'Name: Value'`. This is useful for setting custom user agents or other headers required by specific websites. For example `--http-headers "User-Agent: Mozilla/5.0,X-Custom-Header: value"` will set both a custom user agent and an additional header. |
 
 ## Ignore Comments
 
@@ -219,6 +220,8 @@ disable-raw-link-check = false
 csv="output.csv"
 # List of specific files to check
 files=["./README.md","./docs/README.md"]
+# Custom HTTP headers to send with web requests
+http-headers=["User-Agent: Mozilla/5.0","X-Custom-Header: value"]
 ```
 
 ## Changelog
