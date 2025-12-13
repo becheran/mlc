@@ -67,7 +67,10 @@ Use *mlc* command line arguments using the `with` argument:
 - name: Markup Link Checker (mlc)
   uses: becheran/mlc@v1
   with:
-    args: ./README.md
+    args: >-
+      ./README.md
+      -H "User-Agent: Mozilla/5.0"
+      -H "Authorization: Bearer ${{ secrets.MY_TOKEN }}"
 ```
 
 The action does uses [GitHub workflow commands](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands) to highlight broken links:
