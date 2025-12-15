@@ -2,10 +2,13 @@ extern crate walkdir;
 
 use crate::markup::{MarkupFile, MarkupType};
 use crate::Config;
+use std::collections::HashSet;
 use std::fs;
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
+    let mut seen_paths: HashSet<PathBuf> = HashSet::new();
     let markup_types = match &config.optional.markup_types {
         Some(t) => t,
         None => panic!("Bug! markup_types must be set"),
@@ -42,6 +45,15 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                     }
                 };
 
+                // Skip if we've already seen this canonical path
+                if seen_paths.contains(&abs_path) {
+                    debug!(
+                        "Skip file {f_name}, already checked via canonical path: {:?}",
+                        abs_path
+                    );
+                    continue;
+                }
+
                 let ignore = match &config.optional.ignore_path {
                     Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                     None => false,
@@ -50,6 +62,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                 if ignore {
                     debug!("Ignore file {f_name}, because it is in the ignore path list.");
                 } else {
+                    seen_paths.insert(abs_path);
                     let file = MarkupFile {
                         markup_type,
                         path: file_path.to_string_lossy().to_string(),
@@ -104,6 +117,15 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                 }
             };
 
+            // Skip if we've already seen this canonical path
+            if seen_paths.contains(&abs_path) {
+                debug!(
+                    "Skip file {f_name}, already checked via canonical path: {:?}",
+                    abs_path
+                );
+                continue;
+            }
+
             let ignore = match &config.optional.ignore_path {
                 Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                 None => false,
@@ -111,6 +133,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
             if ignore {
                 debug!("Ignore file {f_name}, because it is in the ignore path list.");
             } else {
+                seen_paths.insert(abs_path);
                 let file = MarkupFile {
                     markup_type,
                     path: path.to_string_lossy().to_string(),
