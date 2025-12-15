@@ -23,6 +23,13 @@ pub fn parse_args() -> Config {
         Err(_) => OptionalConfig::default(),
     };
 
+    if let Some(root_dir) = &opt.root_dir {
+        if !root_dir.is_dir() {
+            eprintln!("Root path {root_dir:?} must be an existing directory (from .mlc.toml).");
+            std::process::exit(1);
+        }
+    }
+
     let matches = command!()
         .arg(
             Arg::new("directory")
