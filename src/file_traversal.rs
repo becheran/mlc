@@ -7,6 +7,21 @@ use std::fs;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
+/// Checks if a file path has already been seen and adds it to the set if not.
+/// Returns true if the file should be skipped (already seen), false otherwise.
+fn should_skip_file(seen_paths: &mut HashSet<PathBuf>, abs_path: PathBuf, f_name: &str) -> bool {
+    if seen_paths.contains(&abs_path) {
+        debug!(
+            "Skip file {f_name}, already checked via canonical path: {:?}",
+            abs_path
+        );
+        true
+    } else {
+        seen_paths.insert(abs_path);
+        false
+    }
+}
+
 pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     let mut seen_paths: HashSet<PathBuf> = HashSet::new();
     let markup_types = match &config.optional.markup_types {
@@ -45,15 +60,6 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                     }
                 };
 
-                // Skip if we've already seen this canonical path
-                if seen_paths.contains(&abs_path) {
-                    debug!(
-                        "Skip file {f_name}, already checked via canonical path: {:?}",
-                        abs_path
-                    );
-                    continue;
-                }
-
                 let ignore = match &config.optional.ignore_path {
                     Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                     None => false,
@@ -61,8 +67,7 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
 
                 if ignore {
                     debug!("Ignore file {f_name}, because it is in the ignore path list.");
-                } else {
-                    seen_paths.insert(abs_path);
+                } else if !should_skip_file(&mut seen_paths, abs_path, &f_name) {
                     let file = MarkupFile {
                         markup_type,
                         path: file_path.to_string_lossy().to_string(),
@@ -117,23 +122,13 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
                 }
             };
 
-            // Skip if we've already seen this canonical path
-            if seen_paths.contains(&abs_path) {
-                debug!(
-                    "Skip file {f_name}, already checked via canonical path: {:?}",
-                    abs_path
-                );
-                continue;
-            }
-
             let ignore = match &config.optional.ignore_path {
                 Some(p) => p.iter().any(|ignore_path| ignore_path == &abs_path),
                 None => false,
             };
             if ignore {
                 debug!("Ignore file {f_name}, because it is in the ignore path list.");
-            } else {
-                seen_paths.insert(abs_path);
+            } else if !should_skip_file(&mut seen_paths, abs_path, &f_name) {
                 let file = MarkupFile {
                     markup_type,
                     path: path.to_string_lossy().to_string(),
