@@ -123,7 +123,7 @@ IgnorePath: {:?}
 Throttle: {} ms
 CSVFile: {:?}
 DisableRawLinkCheck: {}
-Files: {:?},
+Files: {:?}
 HttpHeaders: {:?}",
             self.optional.debug.unwrap_or(false),
             self.directory.to_str().unwrap_or_default(),
