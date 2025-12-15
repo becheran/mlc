@@ -14,6 +14,10 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+- Gitignore files in sub dirs are now also checked
+
 ## [1.2.0] - 2025-12-13
 
 ### Added

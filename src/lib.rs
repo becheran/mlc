@@ -163,21 +163,71 @@ fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink
     links
 }
 
-fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
+fn git_repo_root(scan_root: &Path) -> Option<PathBuf> {
     let output = Command::new("git")
-        .arg("ls-files")
-        .arg("--ignored")
-        .arg("--others")
-        .arg("--exclude-standard")
+        .arg("-C")
+        .arg(scan_root)
+        .args(["rev-parse", "--show-toplevel"])
         .output()
-        .expect("Failed to execute 'git' command");
+        .ok()?;
+
+    if !output.status.success() {
+        debug!(
+            "git rev-parse failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        return None;
+    }
+
+    let root = String::from_utf8(output.stdout).ok()?;
+    let root = root.trim();
+    if root.is_empty() {
+        None
+    } else {
+        Some(PathBuf::from(root))
+    }
+}
+
+fn scan_root_dir(config: &Config) -> &Path {
+    let p = config.directory.as_path();
+    if p.is_file() {
+        p.parent().unwrap_or_else(|| Path::new("."))
+    } else {
+        p
+    }
+}
+
+fn find_git_ignored_files(config: &Config) -> Option<Vec<PathBuf>> {
+    let scan_root = scan_root_dir(config);
+    let repo_root = git_repo_root(scan_root)?;
+
+    // Limit ls-files to the scanned subtree so nested .gitignore files are respected
+    // and we don't accidentally base results on the caller's current working directory.
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(&repo_root)
+        .args([
+            "ls-files",
+            "--ignored",
+            "--others",
+            "--exclude-standard",
+            "--",
+            ".",
+        ])
+        .current_dir(scan_root)
+        .output()
+        .ok()?;
 
     if output.status.success() {
         let ignored_files = String::from_utf8(output.stdout)
-            .expect("Invalid UTF-8 sequence")
+            .ok()?
             .lines()
             .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
-            .filter_map(|line| fs::canonicalize(Path::new(line.trim())).ok())
+            .filter_map(|line| {
+                let rel = line.trim();
+                let full = repo_root.join(rel);
+                fs::canonicalize(full).ok()
+            })
             .collect::<Vec<_>>();
         Some(ignored_files)
     } else {
@@ -189,22 +239,30 @@ fn find_git_ignored_files() -> Option<Vec<PathBuf>> {
     }
 }
 
-fn find_git_untracked_files() -> Option<Vec<PathBuf>> {
+fn find_git_untracked_files(config: &Config) -> Option<Vec<PathBuf>> {
+    let scan_root = scan_root_dir(config);
+    let repo_root = git_repo_root(scan_root)?;
+
     let output = Command::new("git")
-        .arg("ls-files")
-        .arg("--others")
-        .arg("--exclude-standard")
+        .arg("-C")
+        .arg(&repo_root)
+        .args(["ls-files", "--others", "--exclude-standard", "--", "."])
+        .current_dir(scan_root)
         .output()
-        .expect("Failed to execute 'git' command");
+        .ok()?;
 
     if output.status.success() {
-        let ignored_files = String::from_utf8(output.stdout)
-            .expect("Invalid UTF-8 sequence")
+        let untracked_files = String::from_utf8(output.stdout)
+            .ok()?
             .lines()
             .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
-            .filter_map(|line| fs::canonicalize(Path::new(line.trim())).ok())
+            .filter_map(|line| {
+                let rel = line.trim();
+                let full = repo_root.join(rel);
+                fs::canonicalize(full).ok()
+            })
             .collect::<Vec<_>>();
-        Some(ignored_files)
+        Some(untracked_files)
     } else {
         eprintln!(
             "git ls-files command failed: {}",
@@ -262,7 +320,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     };
 
     let gitignored_files: Option<Vec<PathBuf>> = if config.optional.gitignore.is_some() {
-        let files = find_git_ignored_files();
+        let files = find_git_ignored_files(config);
         debug!("Found gitignored files: {files:?}");
         files
     } else {
@@ -272,7 +330,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let is_gitignore_enabled = gitignored_files.is_some();
 
     let gituntracked_files: Option<Vec<PathBuf>> = if config.optional.gituntracked.is_some() {
-        let files = find_git_untracked_files();
+        let files = find_git_untracked_files(config);
         debug!("Found gituntracked files: {files:?}");
         files
     } else {
