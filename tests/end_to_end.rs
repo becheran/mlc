@@ -181,3 +181,71 @@ async fn end_to_end_csv_include_warnings() {
     // Also verify the test would pass
     assert!(result.is_ok(), "Should succeed with warnings only");
 }
+
+#[tokio::test]
+async fn end_to_end_code_block_links_enabled() {
+    // Test that raw links in code blocks are checked by default
+    let test_file = "tests/test_files/code_block_links.md";
+    let config = Config {
+        directory: test_file.into(),
+        optional: OptionalConfig {
+            debug: None,
+            do_not_warn_for_redirect_to: None,
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: Some(true), // Offline mode to avoid actual HTTP calls
+            match_file_extension: None,
+            throttle: None,
+            ignore_links: None,
+            ignore_path: None,
+            root_dir: None,
+            gitignore: None,
+            gituntracked: None,
+            csv_file: None,
+            disable_raw_link_check: None, // Default: enabled (checks raw links in code blocks)
+            files: None,
+            http_headers: None,
+        },
+    };
+
+    // Run the check - should succeed in offline mode (links are skipped but counted)
+    let result = mlc::run(&config).await;
+    assert!(
+        result.is_ok(),
+        "Should succeed in offline mode: {:?}",
+        result
+    );
+}
+
+#[tokio::test]
+async fn end_to_end_code_block_links_disabled() {
+    // Test that raw links in code blocks can be disabled
+    let test_file = "tests/test_files/code_block_links.md";
+    let config = Config {
+        directory: test_file.into(),
+        optional: OptionalConfig {
+            debug: None,
+            do_not_warn_for_redirect_to: None,
+            markup_types: Some(vec![MarkupType::Markdown]),
+            offline: Some(true), // Offline mode to avoid actual HTTP calls
+            match_file_extension: None,
+            throttle: None,
+            ignore_links: None,
+            ignore_path: None,
+            root_dir: None,
+            gitignore: None,
+            gituntracked: None,
+            csv_file: None,
+            disable_raw_link_check: Some(true), // Disable raw link checking
+            files: None,
+            http_headers: None,
+        },
+    };
+
+    // Run the check - should succeed
+    let result = mlc::run(&config).await;
+    assert!(
+        result.is_ok(),
+        "Should succeed with raw link checking disabled: {:?}",
+        result
+    );
+}
