@@ -105,6 +105,7 @@ async fn end_to_end_with_mock_servers() {
             csv_file: None,
             files: None,
             http_headers: None,
+            disable_raw_link_check: None,
         },
     };
 
@@ -160,6 +161,7 @@ async fn end_to_end_with_mock_server_failure() {
             csv_file: None,
             files: None,
             http_headers: None,
+            disable_raw_link_check: None,
         },
     };
 
@@ -229,6 +231,7 @@ async fn end_to_end_with_mock_server_redirect() {
             csv_file: None,
             files: None,
             http_headers: None,
+            disable_raw_link_check: None,
         },
     };
 

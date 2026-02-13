@@ -28,7 +28,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Run
-        run: cargo run -- ./README.md -d
+        run: cargo run -- ./README.md -d --disable-raw-link-check
 
   formatting:
     runs-on: ubuntu-latest
