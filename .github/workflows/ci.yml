@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -84,7 +84,7 @@ jobs:
           targets: x86_64-unknown-linux-musl
           components: rustfmt, clippy
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -109,7 +109,7 @@ jobs:
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
