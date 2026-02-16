@@ -133,6 +133,14 @@ pub fn parse_args() -> Config {
                 .required(false),
         )
         .arg(
+            Arg::new("disable-raw-link-check")
+                .long("disable-raw-link-check")
+                .short('c')
+                .action(ArgAction::SetTrue)
+                .help("Disable checking of raw links in code blocks and other text. By default, raw HTTP(S) URLs are extracted and checked.")
+                .required(false),
+        )
+        .arg(
             Arg::new("files")
                 .long("files")
                 .short('f')
@@ -226,6 +234,10 @@ pub fn parse_args() -> Config {
 
     if matches.get_flag("gituntracked") {
         opt.gituntracked = Some(true);
+    }
+
+    if matches.get_flag("disable-raw-link-check") {
+        opt.disable_raw_link_check = Some(true);
     }
 
     if let Some(files) = matches.get_many::<String>("files") {

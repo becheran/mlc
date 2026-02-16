@@ -106,6 +106,7 @@ async fn gitignore_is_recursive_nested_gitignore_is_respected() {
             throttle: None,
             files: None,
             http_headers: None,
+            disable_raw_link_check: None,
         },
     };
 
