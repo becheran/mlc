@@ -28,7 +28,7 @@ reqwest = {version="0.13.2", features = ["native-tls-vendored", "brotli", "gzip"
 tokio = {version="1.49.0", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.32"
 wildmatch = "2.6.1"
-pulldown-cmark = "0.13.0"
+pulldown-cmark = "0.13.1"
 toml = "0.9.6"
 serde = { version = "1.0.219", features = ["derive"] }
 url-escape = "0.1.1"
