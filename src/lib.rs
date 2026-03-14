@@ -62,6 +62,8 @@ pub struct OptionalConfig {
     #[serde(rename(deserialize = "gituntracked"))]
     pub gituntracked: Option<bool>,
     pub throttle: Option<u32>,
+    #[serde(rename(deserialize = "disable-raw-link-check"))]
+    pub disable_raw_link_check: Option<bool>,
     #[serde(rename(deserialize = "files"))]
     pub files: Option<Vec<PathBuf>>,
     #[serde(rename(deserialize = "http-headers"))]
@@ -120,6 +122,7 @@ IgnoreLinks: {}
 IgnorePath: {:?}
 Throttle: {} ms
 CSVFile: {:?}
+DisableRawLinkCheck: {}
 Files: {:?}
 HttpHeaders: {:?}",
             self.optional.debug.unwrap_or(false),
@@ -135,6 +138,7 @@ HttpHeaders: {:?}",
             ignore_path_str,
             self.optional.throttle.unwrap_or(0),
             csv_file_str,
+            self.optional.disable_raw_link_check.unwrap_or_default(),
             files_str,
             http_headers_str
         )
@@ -158,7 +162,9 @@ fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink
     file_traversal::find(config, &mut files);
     let mut links = vec![];
     for file in files {
-        links.append(&mut link_extractors::link_extractor::find_links(&file));
+        links.append(&mut link_extractors::link_extractor::find_links(
+            &file, config,
+        ));
     }
     links
 }
