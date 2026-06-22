@@ -155,6 +155,7 @@ The following arguments are available:
 | `--markup-types` | `-t` | Comma separated list list of markup types which shall be checked. Possible values: `md`, `html` |
 | `--root-dir`     | `-r` | All links to the file system starting with a slash on linux or backslash on windows will use another virtual root dir. For example the link in a file `[link](/dir/other/file.md)` checked with the cli arg `--root-dir /env/another/dir` will let *mlc* check the existence of `/env/another/dir/dir/other/file.md`. |
 | `--throttle`     | `-T` | Number of milliseconds to wait in between web requests to the same host. Default is zero which means no throttling. Set this if you need to slow down the web request frequency to avoid `429 - Too Many Requests` responses. For example with `--throttle 15`, between each http check to the same host, 15 ms will be waited. Note that this setting can slow down the link checker. |
+| `--disable-raw-link-check` | `-c` | Disable checking of raw links in code blocks and other text. By default, raw HTTP(S) URLs are extracted and checked from code blocks and inline code. |
 | `--csv`          |      | Path to csv file which contains all failed requests and warnings in the format `source,line,column,target,severity`. The severity column contains `ERR` for errors and `WARN` for warnings. |
 | `--files`        | `-f` | Comma separated list of files which shall be checked. For example `--files "./README.md,./docs/README.md"` will check only the specified files. This is useful for checking specific files in a monorepo without having to exclude many directories. |
 | `--http-headers` | `-H` | Comma separated list of custom HTTP headers in the format `'Name: Value'`. This is useful for setting custom user agents or other headers required by specific websites. For example `--http-headers "User-Agent: Mozilla/5.0,X-Custom-Header: value"` will set both a custom user agent and an additional header. |
@@ -216,6 +217,8 @@ markup-types=["Markdown","Html"]
 throttle= 100
 # Path to the root folder used to resolve all relative paths
 root-dir="./"
+# Disable checking of raw links in code blocks (enabled by default)
+disable-raw-link-check = false
 # Path to csv file which contains all failed requests and warnings
 csv="output.csv"
 # List of specific files to check
