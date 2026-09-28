@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [1.2.2] - 2026-09-28
+
 ## [1.2.1] - 2026-09-28
 
 ### Changed
