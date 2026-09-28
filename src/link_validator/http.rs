@@ -172,7 +172,7 @@ mod test {
             result,
             LinkCheckResult::Warning(format!(
                 "Request was redirected to {}/",
-                &redirect_server.url()
+                redirect_server.url()
             ))
         );
     }
@@ -195,7 +195,7 @@ mod test {
 
         let result = check_http(
             &server.url(),
-            &[WildMatch::new(&format!("{}*", &redirect_server.url()))],
+            &[WildMatch::new(&format!("{}*", redirect_server.url()))],
             &[],
         )
         .await;
@@ -251,7 +251,7 @@ mod test {
             result,
             LinkCheckResult::Warning(format!(
                 "Request was redirected to {}/",
-                &redirect_server.url()
+                redirect_server.url()
             ))
         );
     }
@@ -321,7 +321,7 @@ mod test {
             result,
             LinkCheckResult::Warning(format!(
                 "Request was redirected to {}/other-page",
-                &redirect_server.url()
+                redirect_server.url()
             ))
         );
     }
