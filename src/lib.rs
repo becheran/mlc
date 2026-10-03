@@ -560,7 +560,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         warnings += 1;
         println!(
             "[{:^4}] {}:{}:{} => {} - {}",
-            &"Warn".yellow(),
+            "Warn".yellow(),
             broken_ref.source,
             broken_ref.line,
             broken_ref.column,

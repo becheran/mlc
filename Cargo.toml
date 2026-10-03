@@ -1,6 +1,6 @@
 [package]
 name = "mlc"
-version = "1.2.0"
+version = "1.2.2"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
 edition = "2018"
 description = "The markup link checker (mlc) checks for broken links in markup files."
@@ -15,22 +15,22 @@ is-it-maintained-open-issues = { repository = "becheran/mlc" }
 is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
 
 [dependencies]
-clap = { version = "4.6.0", features = ["cargo"] }
-log = "0.4.29"
+clap = { version = "4.6.1", features = ["cargo"] }
+log = "0.4.30"
 fern = "0.7.1"
 walkdir = "2.5.0"
 regex = "1.12.3"
 lazy_static = "1.5.0"
-url = "2.5.4"
+url = "2.5.8"
 colored = "3.1.1"
 async-std = "1.13.2"
-reqwest = {version="0.13.2", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
-tokio = {version="1.51.1", features = ["rt-multi-thread", "macros", "time"] }
+reqwest = {version="0.13.4", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
+tokio = {version="1.52.3", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.32"
 wildmatch = "2.6.1"
-pulldown-cmark = "0.13.3"
-toml = "1.1.2"
-serde = { version = "1.0.219", features = ["derive"] }
+pulldown-cmark = "0.13.4"
+toml = "1.1.2+spec-1.1.0"
+serde = { version = "1.0.228", features = ["derive"] }
 url-escape = "0.1.1"
 
 [dev-dependencies]

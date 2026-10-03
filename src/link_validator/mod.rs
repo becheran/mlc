@@ -42,11 +42,11 @@ pub async fn check(
     do_not_warn_for_redirect_to: &[WildMatch],
     http_headers: &[(String, String)],
 ) -> LinkCheckResult {
-    info!("Check link {}.", &link_target);
+    info!("Check link {}.", link_target);
     match link_type {
         LinkType::Ftp => LinkCheckResult::NotImplemented(format!(
             "Link type '{:?}' is not supported yet...",
-            &link_target
+            link_target
         )),
         LinkType::UnknownUrlSchema | LinkType::Unknown => LinkCheckResult::NotImplemented(
             "Link type is not implemented yet and cannot be checked.".to_string(),

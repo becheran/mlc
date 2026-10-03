@@ -154,7 +154,7 @@ pub fn parse_args() -> Config {
         )
         .get_matches();
 
-    let default_dir = format!(".{}", &MAIN_SEPARATOR);
+    let default_dir = format!(".{}", MAIN_SEPARATOR);
     let dir_string = matches
         .get_one::<String>("directory")
         .unwrap_or(&default_dir);
