@@ -86,24 +86,31 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
     let root = &config.directory;
     info!("Search for files of markup types '{markup_types:?}' in directory '{root:?}'");
 
+    // Canonicalize the ignored directories once instead of for every visited entry
+    let ignore_dirs: Vec<(&PathBuf, PathBuf)> = config
+        .optional
+        .ignore_path
+        .iter()
+        .flatten()
+        .filter(|f| f.is_dir())
+        .map(|f| (f, fs::canonicalize(f).unwrap_or_default()))
+        .collect();
+
     for entry in WalkDir::new(root)
         .follow_links(false)
         .into_iter()
         .filter_entry(|e| {
-            !(e.file_type().is_dir()
-                && config.optional.ignore_path.as_ref().is_some_and(|x| {
-                    x.iter().any(|f| {
-                        let ignore = f.is_dir()
-                            && e.path()
-                                .canonicalize()
-                                .unwrap_or_default()
-                                .starts_with(fs::canonicalize(f).unwrap_or_default());
-                        if ignore {
-                            info!("Ignore directory: '{f:?}'");
-                        }
-                        ignore
-                    })
-                }))
+            if !e.file_type().is_dir() || ignore_dirs.is_empty() {
+                return true;
+            }
+            let canonical = e.path().canonicalize().unwrap_or_default();
+            !ignore_dirs.iter().any(|(f, canonical_ignore)| {
+                let ignore = canonical.starts_with(canonical_ignore);
+                if ignore {
+                    info!("Ignore directory: '{f:?}'");
+                }
+                ignore
+            })
         })
         .filter_map(Result::ok)
         .filter(|e| !e.file_type().is_dir())
@@ -141,13 +148,14 @@ pub fn find(config: &Config, result: &mut Vec<MarkupFile>) {
 }
 
 fn markup_type(file: &str, markup_types: &[MarkupType]) -> Option<MarkupType> {
-    let file_low = file.to_lowercase();
+    let name = file.as_bytes();
     for markup_type in markup_types {
-        let extensions = markup_type.file_extensions();
-        for ext in extensions {
-            let mut ext_low = String::from(".");
-            ext_low.push_str(&ext.to_lowercase());
-            if file_low.ends_with(&ext_low) {
+        for ext in markup_type.file_extensions() {
+            let ext = ext.as_bytes();
+            if name.len() > ext.len()
+                && name[name.len() - ext.len() - 1] == b'.'
+                && name[name.len() - ext.len()..].eq_ignore_ascii_case(ext)
+            {
                 return Some(*markup_type);
             }
         }

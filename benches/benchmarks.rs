@@ -15,11 +15,30 @@ async fn end_to_end_benchmark() {
             ..Default::default()
         },
     };
-    mlc::run(&config).await.unwrap();
+    let _ = mlc::run(&config).await;
+}
+
+/// Many local links across all benchmark files, offline so no network noise
+async fn many_links_benchmark() {
+    let config = Config {
+        directory: fs::canonicalize("./benches/benchmark").unwrap(),
+        optional: OptionalConfig {
+            markup_types: Some(vec![MarkupType::Markdown, MarkupType::Html]),
+            offline: Some(true),
+            ..Default::default()
+        },
+    };
+    let _ = mlc::run(&config).await;
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("End to end benchmark", |b| b.iter(end_to_end_benchmark));
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("End to end benchmark", |b| {
+        b.iter(|| rt.block_on(end_to_end_benchmark()))
+    });
+    c.bench_function("Many links offline", |b| {
+        b.iter(|| rt.block_on(many_links_benchmark()))
+    });
 }
 
 criterion_group! {

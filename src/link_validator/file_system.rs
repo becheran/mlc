@@ -56,7 +56,12 @@ pub async fn check_filesystem(target: &str, config: &Config) -> LinkCheckResult 
     }
 }
 
-pub async fn resolve_target_link(source: &str, target: &str, config: &Config) -> String {
+pub async fn resolve_target_link(
+    source: &str,
+    canonical_source: Option<&std::path::Path>,
+    target: &str,
+    config: &Config,
+) -> String {
     let mut normalized_link = target.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR);
     if let Some(idx) = normalized_link.find('#') {
         info!(
@@ -77,7 +82,7 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
     }
 
     debug!("Check file system link target {target:?}");
-    let abs_path = absolute_target_path(source, &fs_link_target)
+    let abs_path = absolute_target_path(source, canonical_source, &fs_link_target)
         .await
         .to_str()
         .expect("Could not resolve target path")
@@ -89,8 +94,15 @@ pub async fn resolve_target_link(source: &str, target: &str, config: &Config) ->
         .to_string()
 }
 
-async fn absolute_target_path(source: &str, target: &PathBuf) -> PathBuf {
-    let abs_source = canonicalize(source).await.expect("Expected path to exist.");
+async fn absolute_target_path(
+    source: &str,
+    canonical_source: Option<&std::path::Path>,
+    target: &PathBuf,
+) -> PathBuf {
+    let abs_source: PathBuf = match canonical_source {
+        Some(p) => p.to_path_buf().into(),
+        None => canonicalize(source).await.expect("Expected path to exist."),
+    };
     if target.is_relative() {
         let root = format!("{MAIN_SEPARATOR}");
         let parent = abs_source.parent().unwrap_or_else(|| Path::new(&root));
@@ -121,7 +133,7 @@ mod test {
             .join("benchmark");
         let target = Path::new("./script_and_comments.md").to_path_buf();
 
-        let path = absolute_target_path(source.to_str().unwrap(), &target).await;
+        let path = absolute_target_path(source.to_str().unwrap(), None, &target).await;
 
         let path_str = path.to_str().unwrap().to_string();
         println!("{path_str:?}");

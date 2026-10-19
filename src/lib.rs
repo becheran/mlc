@@ -12,7 +12,7 @@ use crate::link_validator::resolve_target_link;
 use crate::markup::MarkupFile;
 use link_extractors::link_extractor::BrokenExtractedLink;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fmt;
 use std::fs;
@@ -319,8 +319,8 @@ pub async fn run(config: &Config) -> Result<(), ()> {
         None => vec![],
     };
 
-    let gitignored_files: Option<Vec<PathBuf>> = if config.optional.gitignore.is_some() {
-        let files = find_git_ignored_files(config);
+    let gitignored_files: Option<HashSet<PathBuf>> = if config.optional.gitignore.is_some() {
+        let files = find_git_ignored_files(config).map(|f| f.into_iter().collect());
         debug!("Found gitignored files: {files:?}");
         files
     } else {
@@ -329,8 +329,8 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
     let is_gitignore_enabled = gitignored_files.is_some();
 
-    let gituntracked_files: Option<Vec<PathBuf>> = if config.optional.gituntracked.is_some() {
-        let files = find_git_untracked_files(config);
+    let gituntracked_files: Option<HashSet<PathBuf>> = if config.optional.gituntracked.is_some() {
+        let files = find_git_untracked_files(config).map(|f| f.into_iter().collect());
         debug!("Found gituntracked files: {files:?}");
         files
     } else {
@@ -340,23 +340,33 @@ pub async fn run(config: &Config) -> Result<(), ()> {
     let is_gituntracked_enabled = gituntracked_files.is_some();
 
     let mut broken_references: Vec<BrokenExtractedLink> = vec![];
+    // Links of one file are consecutive, so remembering the last source avoids
+    // canonicalizing the same path for every single link.
+    let mut last_source: Option<(&str, Option<PathBuf>)> = None;
     for link in &links {
         match link {
             Ok(link) => {
-                let canonical_link_source = match fs::canonicalize(&link.source) {
-                    Ok(path) => path,
-                    Err(e) => {
-                        warn!(
-                            "Failed to canonicalize link source: {}. Error: {:?}",
-                            link.source, e
-                        );
-                        continue;
-                    }
+                if last_source.as_ref().map(|(s, _)| *s) != Some(link.source.as_str()) {
+                    let canonical = match fs::canonicalize(&link.source) {
+                        Ok(path) => Some(path),
+                        Err(e) => {
+                            warn!(
+                                "Failed to canonicalize link source: {}. Error: {:?}",
+                                link.source, e
+                            );
+                            None
+                        }
+                    };
+                    last_source = Some((link.source.as_str(), canonical));
+                }
+                let canonical_link_source = match &last_source {
+                    Some((_, Some(path))) => path,
+                    _ => continue,
                 };
 
                 if is_gitignore_enabled {
                     if let Some(ref gif) = gitignored_files {
-                        if gif.iter().any(|path| path == &canonical_link_source) {
+                        if gif.contains(canonical_link_source) {
                             print_helper(
                                 link,
                                 &"Skip".green(),
@@ -371,7 +381,7 @@ pub async fn run(config: &Config) -> Result<(), ()> {
 
                 if is_gituntracked_enabled {
                     if let Some(ref gif) = gituntracked_files {
-                        if gif.iter().any(|path| path == &canonical_link_source) {
+                        if gif.contains(canonical_link_source) {
                             print_helper(
                                 link,
                                 &"Skip".green(),
@@ -396,14 +406,11 @@ pub async fn run(config: &Config) -> Result<(), ()> {
                 }
 
                 let link_type = get_link_type(&link.target);
-                let target = resolve_target_link(link, &link_type, config).await;
+                let target =
+                    resolve_target_link(link, &link_type, config, Some(canonical_link_source))
+                        .await;
                 let t = Target { target, link_type };
-                match link_target_groups.get_mut(&t) {
-                    Some(v) => v.push(link.clone()),
-                    None => {
-                        link_target_groups.insert(t, vec![link.clone()]);
-                    }
-                }
+                link_target_groups.entry(t).or_default().push(link.clone());
             }
             Err(broken_reference) => {
                 broken_references.push(broken_reference.clone());
