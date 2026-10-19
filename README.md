@@ -21,6 +21,7 @@ Check for broken links in markup files. Currently `html` and `markdown` files ar
 * Efficient link resolving strategy which tries with minimized network load
 * Throttle option to prevent *429 Too Many Requests* errors
 * Report broken links via GitHub workflow commands
+* `--quiet` and `--format json` for scripts and [AI coding agents](#ai-agents-and-automation)
 
 ## Install Locally
 
@@ -105,6 +106,8 @@ Use the *mlc* docker image from the [docker hub](https://hub.docker.com/r/becher
 docker run becheran/mlc mlc
 ```
 
+The image is based on Alpine Linux and only contains *mlc* and `git`, which is needed for the `--gitignore` and `--gituntracked` options.
+
 ## Usage
 
 Once you have *mlc* installed, it can be called from the command line. The following call will check all links in markup files found in the current folder and all subdirectories:
@@ -144,6 +147,8 @@ The following arguments are available:
 | `<directory>` | | Only positional argument. Path to directory which shall be checked with all sub-dirs. Can also be a specific filename which shall be checked. |
 | `--help` | `-h` | Print help |
 | `--debug` | `-d` | Show verbose debug information |
+| `--quiet` | `-q` | Only print warnings, errors and the summary. Skips the banner and all links which are ok or skipped. |
+| `--format` | | Output format on stdout. Either `text` (default) or `json`. With `json` a single JSON document with the summary and all issues is printed to stdout and nothing else. See [AI agents and automation](#ai-agents-and-automation). |
 | `--do-not-warn-for-redirect-to` | | Do not warn for links which redirect to the given URL. Allows the same link format as `--ignore-links`. For example, `--do-not-warn-for-redirect-to "http*://crates.io*"` will not warn for links which redirect to the `crates.io` website. |
 | `--offline` | `-o` | Do not check any web links. Renamed from `--no-web-links`, which is still available as an alias for backward compatibility. |
 | `--match-file-extension` | `-e` | Set the flag, if the file extension shall be checked as well. For example the following markup link `[link](dir/file)` matches if for example a file called `file.md` exists in `dir`, but would fail when the `--match-file-extension` flag is set. |
@@ -198,6 +203,10 @@ All optional arguments which can be passed via the command line can also be conf
 ``` toml
 # Print debug information to console
 debug = true
+# Only print warnings, errors and the summary
+quiet = true
+# Output format on stdout: "text" or "json"
+format = "text"
 # Do not warn for links which redirect to the given URL
 do-not-warn-for-redirect-to=["http*://crates.io*"]
 # Do not check web links
@@ -223,6 +232,76 @@ files=["./README.md","./docs/README.md"]
 # Custom HTTP headers to send with web requests
 http-headers=["User-Agent: Mozilla/5.0","X-Custom-Header: value"]
 ```
+
+## AI Agents and Automation
+
+*mlc* is a good fit for coding agents (Claude Code, Codex, Cursor, GitHub Copilot, ...) and other scripts. It is a single binary without a daemon, fast enough to run after every edit, and signals broken links via its exit code. Agents tend to write relative links to files which do not exist and to invent URLs, which is exactly what *mlc* catches.
+
+### Recommended commands
+
+``` bash
+# Check the files you just edited. No network access, so it is fast and deterministic
+mlc --offline --quiet --files "README.md,docs/guide.md"
+
+# Check all markup files which changed on a branch (skips deleted files)
+mlc --offline --quiet --files "$(git diff --name-only --diff-filter=d origin/main... -- '*.md' '*.html' | paste -sd,)"
+
+# Also verify external URLs, for example to find invented ones. Needs network and takes longer
+mlc --quiet --throttle 100 ./docs
+
+# Structured output for programs
+mlc --format json ./docs
+```
+
+Passing a single file as the directory argument works as well: `mlc --offline --quiet docs/guide.md`.
+
+### Output contract
+
+* **Exit code**: `0` if no link is broken. Warnings never change the exit code. `1` if at least one link is broken. Any other non-zero code means *mlc* could not run, for example because of invalid arguments or an invalid `.mlc.toml`.
+* **Errors** are printed to *stderr* in the format `[Err ] <file> (<line>, <column>) => <link> - <reason>`.
+* **Everything else** (warnings, summary, ...) goes to *stdout*.
+* **`--quiet`** drops the banner and all `OK` and `Skip` lines. A run without problems only prints the summary.
+* **`--format json`** prints exactly one JSON document to *stdout* and nothing else, also when running inside GitHub Actions. Debug output (`--debug`) goes to *stderr* in this mode. The `issues` are sorted by file, line and column. Links which are ok or skipped are only part of the `summary`.
+
+``` json
+{
+  "summary": { "total": 3, "ok": 1, "skipped": 1, "warnings": 0, "errors": 1 },
+  "issues": [
+    {
+      "severity": "error",
+      "source": "docs/guide.md",
+      "line": 3,
+      "column": 1,
+      "target": "./missing.md",
+      "message": "Target filename not found."
+    }
+  ]
+}
+```
+
+`severity` is either `error` or `warning`. `target` is the link as it is written in the file.
+
+### Good to know
+
+* Only the file part of a link is checked. Anchors like `guide.md#installation` are **not** validated, so a wrong heading name is not detected.
+* Links in code blocks and inline code are ignored.
+* A link which is reported but intended (an example, a private site, ...) can be silenced with an [ignore comment](#ignore-comments) or `--ignore-links`.
+* Some sites reject requests which look like bots. Set a browser like user agent with `--http-headers "User-Agent: Mozilla/5.0"`.
+* If a host answers with `429 - Too Many Requests`, use `--throttle`.
+* `--gituntracked` *skips* files which are untracked by git. It does not select them. To check only changed files, use `--files` as shown above.
+
+### Ready to use integrations
+
+The [examples](./examples) folder contains snippets which can be copied into your own project:
+
+| What | File |
+| --- | --- |
+| Rule for `AGENTS.md` or `CLAUDE.md` which tells agents to check their links | [examples/agents/AGENTS-snippet.md](./examples/agents/AGENTS-snippet.md) |
+| Claude Code hook which checks every markup file right after Claude edited it | [examples/claude-code/](./examples/claude-code) |
+| Claude Code skill | [examples/claude-code/skills/check-links/SKILL.md](./examples/claude-code/skills/check-links/SKILL.md) |
+| [pre-commit](https://pre-commit.com) hook, also covers agents which commit | [examples/pre-commit/](./examples/pre-commit) |
+
+This repository also has an [AGENTS.md](./AGENTS.md) and an [llms.txt](./llms.txt) which agents can read to learn how to use *mlc*.
 
 ## Changelog
 

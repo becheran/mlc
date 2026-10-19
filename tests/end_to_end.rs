@@ -2,9 +2,9 @@
 mod helper;
 
 use helper::benches_dir;
-use mlc::markup::MarkupType;
 use mlc::Config;
 use mlc::OptionalConfig;
+use mlc::markup::MarkupType;
 use std::fs;
 use std::path::MAIN_SEPARATOR;
 
@@ -30,6 +30,8 @@ async fn end_to_end() {
             csv_file: None,
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -58,6 +60,8 @@ async fn end_to_end_different_root() {
             csv_file: Some(csv_output.clone()),
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
     if let Err(e) = mlc::run(&config).await {
@@ -91,6 +95,8 @@ async fn end_to_end_write_csv_file() {
             csv_file: Some(csv_output.clone()),
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
     if (mlc::run(&config).await).is_err() {
@@ -131,6 +137,8 @@ async fn end_to_end_csv_include_warnings() {
             csv_file: Some(csv_output.clone()),
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
     // Run the check - should succeed because we're offline

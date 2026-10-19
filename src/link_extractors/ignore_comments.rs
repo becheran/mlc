@@ -69,19 +69,11 @@ impl IgnoreRegions {
 
     /// Check if a given line number (1-indexed) should be ignored
     pub fn is_line_ignored(&self, line: usize) -> bool {
-        // Check if line is in ignored_lines
-        if self.ignored_lines.contains(&line) {
-            return true;
-        }
-
-        // Check if line is in any ignored range
-        for (start, end) in &self.ignored_ranges {
-            if line >= *start && line <= *end {
-                return true;
-            }
-        }
-
-        false
+        self.ignored_lines.contains(&line)
+            || self
+                .ignored_ranges
+                .iter()
+                .any(|&(start, end)| (start..=end).contains(&line))
     }
 }
 

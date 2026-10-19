@@ -1,20 +1,21 @@
 use crate::link_validator::LinkCheckResult;
+use log::debug;
 use regex::Regex;
+use std::sync::LazyLock;
+
+static EMAIL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^((?i-u)[a-z0-9_!#$%&'*+-/=?^`{|}~+]([a-z0-9_!#$%&'*+-/=?^`{|}~+.]*[a-z0-9_!#$%&'*+-/=?^_{|}~+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})",
+    )
+    .unwrap()
+});
 
 pub fn check_mail(target: &str) -> LinkCheckResult {
     debug!("Check mail target {target:?}");
-    let mut mail = target;
-    if let Some(stripped) = target.strip_prefix("mailto://") {
-        mail = stripped;
-    } else if let Some(stripped) = target.strip_prefix("mailto:") {
-        mail = stripped;
-    }
-    lazy_static! {
-        static ref EMAIL_REGEX: Regex = Regex::new(
-            r"^((?i)[a-z0-9_!#$%&'*+-/=?^`{|}~+]([a-z0-9_!#$%&'*+-/=?^`{|}~+.]*[a-z0-9_!#$%&'*+-/=?^_{|}~+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})"
-        )
-        .unwrap();
-    }
+    let mail = target
+        .strip_prefix("mailto://")
+        .or_else(|| target.strip_prefix("mailto:"))
+        .unwrap_or(target);
     if EMAIL_REGEX.is_match(mail) {
         LinkCheckResult::Ok
     } else {

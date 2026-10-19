@@ -2,29 +2,24 @@
 name = "mlc"
 version = "1.2.2"
 authors = ["Armin Becher <becherarmin@gmail.com>"]
-edition = "2018"
+edition = "2024"
+rust-version = "1.88"
 description = "The markup link checker (mlc) checks for broken links in markup files."
 keywords = [ "link-checker", "broken", "markup", "html", "markdown"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/becheran/mlc"
 
-[badges]
-maintenance = { status = "actively-developed" }
-is-it-maintained-open-issues = { repository = "becheran/mlc" }
-is-it-maintained-issue-resolution = { repository = "becheran/mlc" }
-
 [dependencies]
 clap = { version = "4.6.1", features = ["cargo"] }
 log = "0.4.30"
 fern = "0.7.1"
 walkdir = "2.5.0"
-regex = "1.12.3"
-lazy_static = "1.5.0"
+regex = { version = "1.12.3", default-features = false, features = ["std", "perf"] }
 url = "2.5.8"
 colored = "3.1.1"
-async-std = "1.13.2"
-reqwest = {version="0.13.4", features = ["native-tls-vendored", "brotli", "gzip", "deflate"] }
+# Only the status code of a response is used, so no decoders and no charset support are needed
+reqwest = { version = "0.13.4", default-features = false, features = ["native-tls-vendored", "http2", "system-proxy"] }
 tokio = {version="1.52.3", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.32"
 wildmatch = "2.6.1"
@@ -32,6 +27,7 @@ pulldown-cmark = "0.13.4"
 toml = "1.1.2"
 serde = { version = "1.0.228", features = ["derive"] }
 url-escape = "0.1.1"
+serde_json = "1.0.140"
 
 [dev-dependencies]
 ntest = "0.9.5"
@@ -42,6 +38,15 @@ mockito = "1.7.2"
 name = "benchmarks"
 harness = false
 
+# Small binaries are downloaded and started faster, for example in CI
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
 [lints.rust]
+unsafe_code = "forbid"
 # MSVC link.exe prints an informational "creating library/object" line on stdout
 linker_messages = "allow"

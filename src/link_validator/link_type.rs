@@ -1,7 +1,10 @@
-extern crate url;
-
-use self::url::Url;
+use log::debug;
 use regex::Regex;
+use std::sync::LazyLock;
+use url::Url;
+
+static FILE_SYSTEM_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(([[:alpha:]]:(\\|/))|(..?(\\|/))|((\\\\?|//?))).*").unwrap());
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum LinkType {
@@ -15,11 +18,6 @@ pub enum LinkType {
 
 #[must_use]
 pub fn get_link_type(link: &str) -> LinkType {
-    lazy_static! {
-        static ref FILE_SYSTEM_REGEX: Regex =
-            Regex::new(r"^(([[:alpha:]]:(\\|/))|(..?(\\|/))|((\\\\?|//?))).*").unwrap();
-    }
-
     if FILE_SYSTEM_REGEX.is_match(link) || !link.contains(':') {
         return if link.contains('@') {
             LinkType::Mail

@@ -14,6 +14,34 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- `--quiet` / `-q` option (and `quiet` in `.mlc.toml`) which only prints warnings, errors and the summary. The banner and all links which are ok or skipped are left out
+- `--format json` option (and `format = "json"` in `.mlc.toml`) which prints a single JSON document with the summary and all issues to stdout. Debug output goes to stderr in this mode
+- Documentation for AI agents and automation: README section, `AGENTS.md`, `llms.txt` and ready to copy [examples](./examples) for `AGENTS.md`, Claude Code hooks and skills, and pre-commit
+
+### Changed
+
+- Rust edition 2024. Building from source needs Rust 1.88 or newer, which is checked in CI
+- Invalid arguments (for example `--throttle abc` or an unknown markup type) and an invalid `.mlc.toml` print an error and exit with code `2` instead of panicking. The same exit code is used for an invalid `--root-dir`, which used to be `1`
+- Failing to write the `--csv` file prints an error instead of panicking. A web link which is not a valid URL is reported as broken link instead of panicking
+- The banner is not printed anymore when `--help` or an invalid argument is passed
+- Warnings about not existing paths passed via `--files` or `--ignore-path` are printed to stderr instead of stdout
+- The CSV report and the list of broken links are sorted (errors first, then by file, line and column) instead of depending on which web request finished first
+- Library: `mlc::run` returns `Result<(), mlc::Error>`, the `Display` implementation of `Config`, the glob re-export of `colored` and the async-ness of `link_validator::resolve_target_link` are gone, `logger::init` takes a second `use_stderr` argument and `MarkupType::file_extensions` returns a slice
+- The release binary is much smaller (release profile with LTO, `opt-level = "s"`, `panic = "abort"` and stripped symbols, and the unused code above). This means faster downloads in CI and a faster start
+- The docker image is based on Alpine Linux instead of Ubuntu and is about 10 times smaller. The `entrypoint.sh` of the GitHub Action uses `sh` instead of `bash`
+
+### Fixed
+
+- `gitignore = false` and `gituntracked = false` in `.mlc.toml` enabled the options. Now they are only enabled with `true`
+- `--gitignore` and `--gituntracked` now also recognize the markup files with extensions like `.markdown` or `.htm` and upper case extensions
+
+### Removed
+
+- Dependencies `lazy_static` and `async-std`. The standard library is used instead
+- The second, never used TLS implementation (rustls with aws-lc) and the response decoders (brotli, gzip, deflate) and charset detection of `reqwest`. They were compiled in, but the web links are checked with the system TLS library and only the status code of a response is looked at. The `Accept-Encoding` header is still sent
+
 ## [1.2.2] - 2026-09-28
 
 ## [1.2.1] - 2026-09-28
