@@ -29,7 +29,7 @@ tokio = {version="1.52.3", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.32"
 wildmatch = "2.6.1"
 pulldown-cmark = "0.13.4"
-toml = "1.1.2+spec-1.1.0"
+toml = "1.1.2"
 serde = { version = "1.0.228", features = ["derive"] }
 url-escape = "0.1.1"
 
@@ -41,3 +41,7 @@ mockito = "1.7.2"
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[lints.rust]
+# MSVC link.exe prints an informational "creating library/object" line on stdout
+linker_messages = "allow"
