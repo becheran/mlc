@@ -30,8 +30,7 @@ pub async fn resolve_target_link(
     canonical_source: Option<&std::path::Path>,
 ) -> String {
     if link_type == &LinkType::FileSystem {
-        file_system::resolve_target_link(&link.source, canonical_source, &link.target, config)
-            .await
+        file_system::resolve_target_link(&link.source, canonical_source, &link.target, config).await
     } else {
         link.target.to_string()
     }
