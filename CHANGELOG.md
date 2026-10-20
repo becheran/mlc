@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [1.3.0] - 2026-10-20
+
 ### Added
 
 - `--quiet` / `-q` option (and `quiet` in `.mlc.toml`) which only prints warnings, errors and the summary. The banner and all links which are ok or skipped are left out

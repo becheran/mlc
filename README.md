@@ -83,7 +83,7 @@ The action uses [GitHub workflow commands](https://docs.github.com/en/actions/re
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download and execute it:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v1.2.2/mlc-x86_64-linux -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v1.3.0/mlc-x86_64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
@@ -91,7 +91,7 @@ chmod +x mlc
 For **linux aarch64/arm64** environments, use:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v1.2.2/mlc-aarch64-linux -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v1.3.0/mlc-aarch64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
