@@ -1,654 +1,221 @@
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate lazy_static;
-
-use crate::link_extractors::link_extractor::MarkupLink;
+use crate::checker::{Checker, Target};
+use crate::config::wildcards;
+use crate::link_extractors::link_extractor::{BrokenExtractedLink, MarkupLink};
 use crate::link_validator::link_type::get_link_type;
-use crate::link_validator::link_type::LinkType;
 use crate::link_validator::resolve_target_link;
-use crate::markup::MarkupFile;
-use link_extractors::link_extractor::BrokenExtractedLink;
-use serde::Deserialize;
+use crate::printer::Printer;
+use crate::report::{Issue, Report, Severity, Summary};
+use futures::{StreamExt, stream};
+use link_validator::LinkCheckResult;
+use log::{debug, info, warn};
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::fmt;
 use std::fs;
-use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
-use std::sync::Arc;
-use std::vec;
-use tokio::sync::Mutex;
-use tokio::time::{sleep_until, Duration, Instant};
+use std::io;
+use std::path::{Path, PathBuf};
+
+mod checker;
 pub mod cli;
+mod config;
 pub mod file_traversal;
+mod git;
 pub mod link_extractors;
 pub mod link_validator;
 pub mod logger;
 pub mod markup;
-pub use colored::*;
-pub use wildmatch::WildMatch;
+mod printer;
+pub mod report;
 
-use futures::{stream, StreamExt};
-use link_validator::LinkCheckResult;
-use url::Url;
+pub use config::{Config, OptionalConfig};
+pub use wildmatch::WildMatch;
 
 const PARALLEL_REQUESTS: usize = 20;
 
-#[derive(Default, Debug, Deserialize)]
-pub struct OptionalConfig {
-    pub debug: Option<bool>,
-    #[serde(rename(deserialize = "do-not-warn-for-redirect-to"))]
-    pub do_not_warn_for_redirect_to: Option<Vec<String>>,
-    #[serde(rename(deserialize = "markup-types"))]
-    pub markup_types: Option<Vec<markup::MarkupType>>,
-    pub offline: Option<bool>,
-    #[serde(rename(deserialize = "match-file-extension"))]
-    pub match_file_extension: Option<bool>,
-    #[serde(rename(deserialize = "ignore-links"))]
-    pub ignore_links: Option<Vec<String>>,
-    #[serde(rename(deserialize = "ignore-path"))]
-    pub ignore_path: Option<Vec<PathBuf>>,
-    #[serde(rename(deserialize = "root-dir"))]
-    pub root_dir: Option<PathBuf>,
-    #[serde(rename(deserialize = "csv"))]
-    pub csv_file: Option<PathBuf>,
-    #[serde(rename(deserialize = "gitignore"))]
-    pub gitignore: Option<bool>,
-    #[serde(rename(deserialize = "gituntracked"))]
-    pub gituntracked: Option<bool>,
-    pub throttle: Option<u32>,
-    #[serde(rename(deserialize = "files"))]
-    pub files: Option<Vec<PathBuf>>,
-    #[serde(rename(deserialize = "http-headers"))]
-    pub http_headers: Option<Vec<String>>,
+/// Why [`run`] did not succeed
+#[derive(Debug)]
+pub enum Error {
+    /// At least one link is broken. The broken links have already been reported.
+    BrokenLinks,
+    /// The CSV report could not be written
+    CsvFile { path: PathBuf, source: io::Error },
 }
 
-#[derive(Default, Debug, Deserialize)]
-pub struct Config {
-    pub directory: PathBuf,
-    pub optional: OptionalConfig,
-}
-
-impl fmt::Display for Config {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ignore_str: Vec<String> = match &self.optional.ignore_links {
-            Some(s) => s.iter().map(|m| m.to_string()).collect(),
-            None => vec![],
-        };
-        let root_dir_str = match &self.optional.root_dir {
-            Some(p) => p.to_str().unwrap_or(""),
-            None => "",
-        };
-        let ignore_path_str: Vec<String> = match &self.optional.ignore_path {
-            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
-            None => vec![],
-        };
-        let csv_file_str: Vec<String> = match &self.optional.csv_file {
-            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
-            None => vec![],
-        };
-        let markup_types_str: Vec<String> = match &self.optional.markup_types {
-            Some(p) => p.iter().map(|m| format!["{m:?}"]).collect(),
-            None => vec![],
-        };
-        let files_str: Vec<String> = match &self.optional.files {
-            Some(p) => p.iter().map(|m| m.to_str().unwrap().to_string()).collect(),
-            None => vec![],
-        };
-        let http_headers_str: Vec<String> = match &self.optional.http_headers {
-            Some(h) => h.clone(),
-            None => vec![],
-        };
-        write!(
-            f,
-            "
-Debug: {:?}
-Dir: {}
-DoNotWarnForRedirectTo: {:?}
-Types: {:?}
-Offline: {}
-MatchExt: {}
-RootDir: {}
-Gitignore: {}
-Gituntracked: {}
-IgnoreLinks: {}
-IgnorePath: {:?}
-Throttle: {} ms
-CSVFile: {:?}
-Files: {:?}
-HttpHeaders: {:?}",
-            self.optional.debug.unwrap_or(false),
-            self.directory.to_str().unwrap_or_default(),
-            self.optional.do_not_warn_for_redirect_to,
-            markup_types_str,
-            self.optional.offline.unwrap_or_default(),
-            self.optional.match_file_extension.unwrap_or_default(),
-            root_dir_str,
-            self.optional.gitignore.unwrap_or_default(),
-            self.optional.gituntracked.unwrap_or_default(),
-            ignore_str.join(","),
-            ignore_path_str,
-            self.optional.throttle.unwrap_or(0),
-            csv_file_str,
-            files_str,
-            http_headers_str
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-struct FinalResult {
-    target: Target,
-    result_code: LinkCheckResult,
-}
-
-#[derive(Hash, PartialEq, Eq, Clone, Debug)]
-struct Target {
-    target: String,
-    link_type: LinkType,
-}
-
-fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
-    let mut files: Vec<MarkupFile> = Vec::new();
-    file_traversal::find(config, &mut files);
-    let mut links = vec![];
-    for file in files {
-        links.append(&mut link_extractors::link_extractor::find_links(&file));
-    }
-    links
-}
-
-fn git_repo_root(scan_root: &Path) -> Option<PathBuf> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(scan_root)
-        .args(["rev-parse", "--show-toplevel"])
-        .output()
-        .ok()?;
-
-    if !output.status.success() {
-        debug!(
-            "git rev-parse failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        return None;
-    }
-
-    let root = String::from_utf8(output.stdout).ok()?;
-    let root = root.trim();
-    if root.is_empty() {
-        None
-    } else {
-        Some(PathBuf::from(root))
-    }
-}
-
-fn scan_root_dir(config: &Config) -> &Path {
-    let p = config.directory.as_path();
-    if p.is_file() {
-        p.parent().unwrap_or_else(|| Path::new("."))
-    } else {
-        p
-    }
-}
-
-fn find_git_ignored_files(config: &Config) -> Option<Vec<PathBuf>> {
-    let scan_root = scan_root_dir(config);
-    let repo_root = git_repo_root(scan_root)?;
-
-    // Limit ls-files to the scanned subtree so nested .gitignore files are respected
-    // and we don't accidentally base results on the caller's current working directory.
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(&repo_root)
-        .args([
-            "ls-files",
-            "--ignored",
-            "--others",
-            "--exclude-standard",
-            "--",
-            ".",
-        ])
-        .current_dir(scan_root)
-        .output()
-        .ok()?;
-
-    if output.status.success() {
-        let ignored_files = String::from_utf8(output.stdout)
-            .ok()?
-            .lines()
-            .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
-            .filter_map(|line| {
-                let rel = line.trim();
-                let full = repo_root.join(rel);
-                fs::canonicalize(full).ok()
-            })
-            .collect::<Vec<_>>();
-        Some(ignored_files)
-    } else {
-        eprintln!(
-            "git ls-files command failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        None
-    }
-}
-
-fn find_git_untracked_files(config: &Config) -> Option<Vec<PathBuf>> {
-    let scan_root = scan_root_dir(config);
-    let repo_root = git_repo_root(scan_root)?;
-
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(&repo_root)
-        .args(["ls-files", "--others", "--exclude-standard", "--", "."])
-        .current_dir(scan_root)
-        .output()
-        .ok()?;
-
-    if output.status.success() {
-        let untracked_files = String::from_utf8(output.stdout)
-            .ok()?
-            .lines()
-            .filter(|line| line.ends_with(".md") || line.ends_with(".html"))
-            .filter_map(|line| {
-                let rel = line.trim();
-                let full = repo_root.join(rel);
-                fs::canonicalize(full).ok()
-            })
-            .collect::<Vec<_>>();
-        Some(untracked_files)
-    } else {
-        eprintln!(
-            "git ls-files command failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        None
-    }
-}
-
-fn print_helper(
-    link: &MarkupLink,
-    status_code: &colored::ColoredString,
-    msg: &str,
-    error_channel: bool,
-) {
-    let mut link_str = format!("[{:^4}] {}", status_code, link.source_str());
-    if !msg.is_empty() {
-        link_str += &format!(" - {msg}");
-    }
-    if error_channel {
-        eprintln!("{link_str}");
-    } else {
-        println!("{link_str}");
-    }
-}
-
-fn print_result(result: &FinalResult, map: &HashMap<Target, Vec<MarkupLink>>) {
-    for link in &map[&result.target] {
-        match &result.result_code {
-            LinkCheckResult::Ok => {
-                print_helper(link, &"OK".green(), "", false);
-            }
-            LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
-                print_helper(link, &"Warn".yellow(), msg, false);
-            }
-            LinkCheckResult::Ignored(msg) => {
-                print_helper(link, &"Skip".green(), msg, false);
-            }
-            LinkCheckResult::Failed(msg) => {
-                print_helper(link, &"Err".red(), msg, true);
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::BrokenLinks => write!(f, "Found broken links"),
+            Error::CsvFile { path, source } => {
+                write!(f, "Failed to write CSV file {}: {source}", path.display())
             }
         }
     }
 }
 
-pub async fn run(config: &Config) -> Result<(), ()> {
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Error::BrokenLinks => None,
+            Error::CsvFile { source, .. } => Some(source),
+        }
+    }
+}
+
+fn find_all_links(config: &Config) -> Vec<Result<MarkupLink, BrokenExtractedLink>> {
+    let mut files = Vec::new();
+    file_traversal::find(config, &mut files);
+    files
+        .iter()
+        .flat_map(link_extractors::link_extractor::find_links)
+        .collect()
+}
+
+/// Reasons to not check a link
+struct SkipRules {
+    gitignored: Option<HashSet<PathBuf>>,
+    untracked: Option<HashSet<PathBuf>>,
+    ignore_links: Vec<WildMatch>,
+}
+
+impl SkipRules {
+    fn new(config: &Config) -> Self {
+        let optional = &config.optional;
+        let gitignored = optional
+            .gitignore
+            .unwrap_or_default()
+            .then(|| git::ignored_files(config))
+            .flatten();
+        debug!("Found gitignored files: {gitignored:?}");
+        let untracked = optional
+            .gituntracked
+            .unwrap_or_default()
+            .then(|| git::untracked_files(config))
+            .flatten();
+        debug!("Found gituntracked files: {untracked:?}");
+
+        SkipRules {
+            gitignored,
+            untracked,
+            ignore_links: wildcards(optional.ignore_links.as_deref()),
+        }
+    }
+
+    /// Why the link in the canonical `source` file is not checked, if it is not
+    fn reason(&self, source: &Path, link: &MarkupLink) -> Option<&'static str> {
+        if self.gitignored.as_ref().is_some_and(|f| f.contains(source)) {
+            Some("Ignore link because it is ignored by git.")
+        } else if self.untracked.as_ref().is_some_and(|f| f.contains(source)) {
+            Some("Ignore link because it is untracked by git.")
+        } else if self.ignore_links.iter().any(|m| m.matches(&link.target)) {
+            Some("Ignore link because of ignore-links option.")
+        } else {
+            None
+        }
+    }
+}
+
+pub async fn run(config: &Config) -> Result<(), Error> {
     let links = find_all_links(config);
+    let printer = Printer::new(&config.optional);
+    let skip_rules = SkipRules::new(config);
+
+    let mut summary = Summary::default();
+    let mut issues: Vec<Issue> = vec![];
+
+    // All links which point to the same target are checked together
     let mut link_target_groups: HashMap<Target, Vec<MarkupLink>> = HashMap::new();
-
-    let mut skipped = 0;
-
-    let ignore_links: Vec<WildMatch> = match &config.optional.ignore_links {
-        Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
-        None => vec![],
-    };
-
-    let gitignored_files: Option<HashSet<PathBuf>> = if config.optional.gitignore.is_some() {
-        let files = find_git_ignored_files(config).map(|f| f.into_iter().collect());
-        debug!("Found gitignored files: {files:?}");
-        files
-    } else {
-        None
-    };
-
-    let is_gitignore_enabled = gitignored_files.is_some();
-
-    let gituntracked_files: Option<HashSet<PathBuf>> = if config.optional.gituntracked.is_some() {
-        let files = find_git_untracked_files(config).map(|f| f.into_iter().collect());
-        debug!("Found gituntracked files: {files:?}");
-        files
-    } else {
-        None
-    };
-
-    let is_gituntracked_enabled = gituntracked_files.is_some();
-
-    let mut broken_references: Vec<BrokenExtractedLink> = vec![];
+    let mut broken_references: Vec<&BrokenExtractedLink> = vec![];
     // Links of one file are consecutive, so remembering the last source avoids
     // canonicalizing the same path for every single link.
     let mut last_source: Option<(&str, Option<PathBuf>)> = None;
     for link in &links {
-        match link {
-            Ok(link) => {
-                if last_source.as_ref().map(|(s, _)| *s) != Some(link.source.as_str()) {
-                    let canonical = match fs::canonicalize(&link.source) {
-                        Ok(path) => Some(path),
-                        Err(e) => {
-                            warn!(
-                                "Failed to canonicalize link source: {}. Error: {:?}",
-                                link.source, e
-                            );
-                            None
-                        }
-                    };
-                    last_source = Some((link.source.as_str(), canonical));
-                }
-                let canonical_link_source = match &last_source {
-                    Some((_, Some(path))) => path,
-                    _ => continue,
-                };
-
-                if is_gitignore_enabled {
-                    if let Some(ref gif) = gitignored_files {
-                        if gif.contains(canonical_link_source) {
-                            print_helper(
-                                link,
-                                &"Skip".green(),
-                                "Ignore link because it is ignored by git.",
-                                false,
-                            );
-                            skipped += 1;
-                            continue;
-                        }
-                    }
-                }
-
-                if is_gituntracked_enabled {
-                    if let Some(ref gif) = gituntracked_files {
-                        if gif.contains(canonical_link_source) {
-                            print_helper(
-                                link,
-                                &"Skip".green(),
-                                "Ignore link because it is untracked by git.",
-                                false,
-                            );
-                            skipped += 1;
-                            continue;
-                        }
-                    }
-                }
-
-                if ignore_links.iter().any(|m| m.matches(&link.target)) {
-                    print_helper(
-                        link,
-                        &"Skip".green(),
-                        "Ignore link because of ignore-links option.",
-                        false,
-                    );
-                    skipped += 1;
-                    continue;
-                }
-
-                let link_type = get_link_type(&link.target);
-                let target =
-                    resolve_target_link(link, &link_type, config, Some(canonical_link_source))
-                        .await;
-                let t = Target { target, link_type };
-                link_target_groups.entry(t).or_default().push(link.clone());
-            }
+        let link = match link {
+            Ok(link) => link,
             Err(broken_reference) => {
-                broken_references.push(broken_reference.clone());
+                broken_references.push(broken_reference);
+                continue;
             }
+        };
+
+        if last_source
+            .as_ref()
+            .is_none_or(|(source, _)| *source != link.source)
+        {
+            let canonical = fs::canonicalize(&link.source)
+                .inspect_err(|e| {
+                    warn!(
+                        "Failed to canonicalize link source: {}. Error: {e:?}",
+                        link.source
+                    );
+                })
+                .ok();
+            last_source = Some((&link.source, canonical));
         }
+        let Some((_, Some(canonical_link_source))) = &last_source else {
+            continue;
+        };
+
+        if let Some(reason) = skip_rules.reason(canonical_link_source, link) {
+            printer.skipped(link, reason);
+            summary.skipped += 1;
+            continue;
+        }
+
+        let link_type = get_link_type(&link.target);
+        let target = resolve_target_link(link, &link_type, config, Some(canonical_link_source));
+        link_target_groups
+            .entry(Target { target, link_type })
+            .or_default()
+            .push(link.clone());
     }
 
-    let do_not_warn_for_redirect_to: Arc<Vec<WildMatch>> =
-        Arc::new(match &config.optional.do_not_warn_for_redirect_to {
-            Some(s) => s.iter().map(|m| WildMatch::new(m)).collect(),
-            None => vec![],
-        });
-
-    // Parse HTTP headers from config
-    let http_headers: Arc<Vec<(String, String)>> = Arc::new(match &config.optional.http_headers {
-        Some(headers) => headers
-            .iter()
-            .filter_map(|h| {
-                let parts: Vec<&str> = h.splitn(2, ':').collect();
-                if parts.len() == 2 {
-                    Some((parts[0].trim().to_string(), parts[1].trim().to_string()))
-                } else {
-                    warn!("Invalid HTTP header format (expected 'Name: Value'): {}", h);
-                    None
-                }
-            })
-            .collect(),
-        None => vec![],
-    });
-    info!("Custom HTTP headers: {:?}", http_headers);
-
-    let throttle = config.optional.throttle.unwrap_or_default() > 0;
-    info!("Throttle HTTP requests to same host: {throttle:?}");
-    let waits = Arc::new(Mutex::new(HashMap::new()));
-    // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
-    let mut buffered_stream = stream::iter(link_target_groups.keys())
-        .map(|target| {
-            let waits = waits.clone();
-            let do_not_warn_for_redirect_to = Arc::clone(&do_not_warn_for_redirect_to);
-            let http_headers = Arc::clone(&http_headers);
-            async move {
-                if throttle && target.link_type == LinkType::Http {
-                    let parsed = match Url::parse(&target.target) {
-                        Ok(parsed) => parsed,
-                        Err(error) => {
-                            return FinalResult {
-                                target: target.clone(),
-                                result_code: LinkCheckResult::Failed(format!(
-                                    "Could not parse URL type. Err: {error:?}"
-                                )),
-                            }
-                        }
-                    };
-                    let host = match parsed.host_str() {
-                        Some(host) => host.to_string(),
-                        None => {
-                            return FinalResult {
-                                target: target.clone(),
-                                result_code: LinkCheckResult::Failed(
-                                    "Failed to determine host".to_string(),
-                                ),
-                            }
-                        }
-                    };
-                    let mut waits = waits.lock().await;
-
-                    let mut wait_until: Option<Instant> = None;
-                    let next_wait = match waits.get(&host) {
-                        Some(old) => {
-                            wait_until = Some(*old);
-                            *old + Duration::from_millis(
-                                config.optional.throttle.unwrap_or_default().into(),
-                            )
-                        }
-                        None => {
-                            Instant::now()
-                                + Duration::from_millis(
-                                    config.optional.throttle.unwrap_or_default().into(),
-                                )
-                        }
-                    };
-                    waits.insert(host, next_wait);
-                    drop(waits);
-
-                    if let Some(deadline) = wait_until {
-                        sleep_until(deadline).await;
-                    }
-                }
-
-                let result_code = link_validator::check(
-                    &target.target,
-                    &target.link_type,
-                    config,
-                    &do_not_warn_for_redirect_to,
-                    &http_headers,
-                )
-                .await;
-
-                FinalResult {
-                    target: target.clone(),
-                    result_code,
-                }
-            }
-        })
-        .buffer_unordered(PARALLEL_REQUESTS);
-
-    let mut oks = 0;
-    let mut warnings = 0;
-    let mut errors = vec![];
-    let mut warning_results = vec![];
-
-    let is_github_runner_env = env::var("GITHUB_ENV").is_ok();
-    if is_github_runner_env {
+    if printer.github_annotations() {
         info!("Running in github environment. Print errors and warnings as workflow commands");
     }
+    let checker = Checker::new(config);
+    // See also http://patshaughnessy.net/2020/1/20/downloading-100000-files-using-async-rust
+    let mut checked_targets = stream::iter(link_target_groups.keys())
+        .map(|target| checker.check(target))
+        .buffer_unordered(PARALLEL_REQUESTS);
 
-    let mut process_result = |result: FinalResult| match &result.result_code {
-        LinkCheckResult::Ok => {
-            oks += link_target_groups[&result.target].len();
-        }
-        LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
-            warnings += link_target_groups[&result.target].len();
-            warning_results.push(result.clone());
-            if is_github_runner_env {
-                for link in &link_target_groups[&result.target] {
-                    println!(
-                        "::warning file={},line={},col={},title=link checker warning::{}. {}",
-                        link.source, link.line, link.column, result.target.target, msg
-                    );
+    while let Some(checked) = checked_targets.next().await {
+        for link in &link_target_groups[checked.target] {
+            printer.result(link, &checked.result);
+            printer.annotation(link, &checked.target.target, &checked.result);
+            match &checked.result {
+                LinkCheckResult::Ok => summary.ok += 1,
+                LinkCheckResult::Ignored(_) => summary.skipped += 1,
+                LinkCheckResult::NotImplemented(msg) | LinkCheckResult::Warning(msg) => {
+                    summary.warnings += 1;
+                    issues.push(Issue::from_link(Severity::Warning, link, msg));
+                }
+                LinkCheckResult::Failed(msg) => {
+                    summary.errors += 1;
+                    issues.push(Issue::from_link(Severity::Error, link, msg));
                 }
             }
         }
-        LinkCheckResult::Ignored(_) => {
-            skipped += link_target_groups[&result.target].len();
-        }
-        LinkCheckResult::Failed(msg) => {
-            errors.push(result.clone());
-            if is_github_runner_env {
-                for link in &link_target_groups[&result.target] {
-                    println!(
-                        "::error file={},line={},col={},title=broken link::{}. {}",
-                        link.source, link.line, link.column, result.target.target, msg
-                    );
-                }
-            }
-        }
-    };
-
-    while let Some(result) = buffered_stream.next().await {
-        print_result(&result, &link_target_groups);
-        process_result(result);
-    }
-    for broken_ref in &broken_references {
-        warnings += 1;
-        println!(
-            "[{:^4}] {}:{}:{} => {} - {}",
-            "Warn".yellow(),
-            broken_ref.source,
-            broken_ref.line,
-            broken_ref.column,
-            broken_ref.reference,
-            broken_ref.error
-        );
     }
 
-    println!();
-    let error_sum: usize = errors
-        .iter()
-        .map(|e| link_target_groups[&e.target].len())
-        .sum();
-    let sum = skipped + error_sum + warnings + oks;
-    println!("Result ({sum} links):");
-    println!();
-    println!("OK       {oks}");
-    println!("Skipped  {skipped}");
-    println!("Warnings {warnings}");
-    println!("Errors   {error_sum}");
-    println!();
+    for broken_reference in broken_references {
+        printer.broken_reference(broken_reference);
+        summary.warnings += 1;
+        issues.push(Issue::from_broken_reference(broken_reference));
+    }
 
-    // Prepare CSV file if needed
-    let mut csv_file = if let Some(csv_path) = &config.optional.csv_file {
-        info!("Write CSV file: {}", csv_path.display());
-        let mut file = fs::File::create(csv_path).unwrap();
-        writeln!(file, "source,line,column,target,severity").unwrap();
-        Some(file)
-    } else {
-        None
-    };
+    let report = Report::new(summary, issues);
+    printer.report(&report);
 
-    // Helper function to write warnings to CSV
-    let write_warnings_to_csv = |csv_file: &mut Option<fs::File>| {
-        if let Some(ref mut file) = csv_file {
-            // Write link-based warnings
-            for res in &warning_results {
-                for link in &link_target_groups[&res.target] {
-                    writeln!(
-                        file,
-                        "{},{},{},{},WARN",
-                        link.source, link.line, link.column, link.target
-                    )
-                    .unwrap();
-                }
-            }
-            // Write broken reference warnings
-            for broken_ref in &broken_references {
-                writeln!(
-                    file,
-                    "{},{},{},{},WARN",
-                    broken_ref.source, broken_ref.line, broken_ref.column, broken_ref.reference
-                )
-                .unwrap();
-            }
-        }
-    };
+    if let Some(path) = &config.optional.csv_file {
+        info!("Write CSV file: {}", path.display());
+        report.write_csv(path).map_err(|source| Error::CsvFile {
+            path: path.clone(),
+            source,
+        })?;
+    }
 
-    if errors.is_empty() {
-        write_warnings_to_csv(&mut csv_file);
+    if report.summary.errors == 0 {
         Ok(())
     } else {
-        println!();
-        println!("The following links could not be resolved:");
-        println!();
-        for res in &errors {
-            for link in &link_target_groups[&res.target] {
-                println!("{}", link.source_str());
-
-                if let Some(ref mut file) = csv_file {
-                    writeln!(
-                        file,
-                        "{},{},{},{},ERR",
-                        link.source, link.line, link.column, link.target
-                    )
-                    .unwrap();
-                }
-            }
-        }
-
-        write_warnings_to_csv(&mut csv_file);
-        Err(())
+        Err(Error::BrokenLinks)
     }
 }

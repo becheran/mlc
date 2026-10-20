@@ -3,6 +3,7 @@ use super::ignore_comments::IgnoreRegions;
 use super::link_extractor::BrokenExtractedLink;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
+use log::info;
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
 
 pub struct MarkdownLinkExtractor();
@@ -91,7 +92,7 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     result.borrow_mut().append(&mut parsed_html);
                 }
                 _ => (),
-            };
+            }
         }
         result.into_inner()
     }

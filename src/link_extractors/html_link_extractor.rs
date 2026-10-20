@@ -1,7 +1,7 @@
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
-use crate::link_validator::link_type::get_link_type;
 use crate::link_validator::link_type::LinkType;
+use crate::link_validator::link_type::get_link_type;
 
 use super::ignore_comments::IgnoreRegions;
 use super::link_extractor::BrokenExtractedLink;
@@ -65,14 +65,12 @@ impl LinkExtractor for HtmlLinkExtractor {
                             state = ParserState::EqualSign;
                         }
                     }
-                    ParserState::EqualSign => {
-                        match line_chars.get(column) {
-                            Some(x) if x.is_whitespace() => {}
-                            Some(x) if x == &'=' => state = ParserState::Link,
-                            Some(_) => state = ParserState::Anchor,
-                            None => {}
-                        };
-                    }
+                    ParserState::EqualSign => match line_chars.get(column) {
+                        Some(x) if x.is_whitespace() => {}
+                        Some(x) if x == &'=' => state = ParserState::Link,
+                        Some(_) => state = ParserState::Anchor,
+                        None => {}
+                    },
                     ParserState::Link => {
                         match line_chars.get(column) {
                             Some(x) if !x.is_whitespace() && x != &'"' => {
@@ -93,7 +91,7 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     (line_chars[start_col..column]).iter().collect::<String>();
                                 if get_link_type(&link) == LinkType::FileSystem {
                                     link = url_escape::decode(link.as_str()).to_string();
-                                };
+                                }
 
                                 // Check if this line should be ignored
                                 let line_num = link_line + 1; // Convert to 1-indexed
@@ -101,14 +99,14 @@ impl LinkExtractor for HtmlLinkExtractor {
                                     result.push(Ok(MarkupLink {
                                         column: link_column + 1,
                                         line: line_num,
-                                        target: link.to_string(),
-                                        source: "".to_string(),
+                                        target: link,
+                                        source: String::new(),
                                     }));
                                 }
                                 state = ParserState::Text;
                             }
                             Some(_) | None => {}
-                        };
+                        }
                     }
                 }
                 column += 1;

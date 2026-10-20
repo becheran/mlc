@@ -1,8 +1,4 @@
-#[cfg(test)]
-#[macro_use]
-extern crate criterion;
-
-use criterion::Criterion;
+use criterion::{Criterion, criterion_group, criterion_main};
 use mlc::markup::MarkupType;
 use mlc::{Config, OptionalConfig};
 use std::fs;

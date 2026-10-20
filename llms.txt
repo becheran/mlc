@@ -1,0 +1,28 @@
+# mlc - Markup Link Checker
+
+> mlc is a fast command line tool which finds broken links in markdown and html files. It checks relative file paths and web URLs, exits with a non-zero code when a link is broken and can print the result as JSON. Use it after writing or editing documentation to catch wrong relative paths and invented URLs.
+
+Typical usage for agents:
+
+- Check edited files without network access: `mlc --offline --quiet --files "README.md,docs/guide.md"`
+- Also check web links: `mlc --quiet --throttle 100 docs/`
+- JSON result: `mlc --format json docs/`
+- Exit code 0 means no broken links, 1 means at least one broken link. Errors are printed to stderr as `[Err ] <file> (<line>, <column>) => <link> - <reason>`.
+- Anchors like `file.md#heading` are not validated.
+
+## Docs
+
+- [README](https://github.com/becheran/mlc/blob/master/README.md): installation, all command line arguments, config file, ignore comments
+- [AI agents and automation](https://github.com/becheran/mlc/blob/master/README.md#ai-agents-and-automation): recommended commands, output contract and JSON schema
+- [AGENTS.md](https://github.com/becheran/mlc/blob/master/AGENTS.md): short instructions for coding agents
+- [Examples](https://github.com/becheran/mlc/tree/master/examples): rule snippet for AGENTS.md, Claude Code hook and skill, pre-commit hook
+
+## Install
+
+- [Releases](https://github.com/becheran/mlc/releases): prebuilt binaries for Linux (x86_64, aarch64), macOS (aarch64) and Windows (x86_64)
+- [crates.io](https://crates.io/crates/mlc): `cargo install mlc`
+- [Docker Hub](https://hub.docker.com/r/becheran/mlc): `docker run becheran/mlc mlc`
+
+## Optional
+
+- [Changelog](https://github.com/becheran/mlc/blob/master/CHANGELOG.md)

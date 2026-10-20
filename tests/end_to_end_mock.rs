@@ -2,9 +2,9 @@
 mod helper;
 
 use helper::benches_dir;
-use mlc::markup::MarkupType;
 use mlc::Config;
 use mlc::OptionalConfig;
+use mlc::markup::MarkupType;
 use mockito::ServerGuard;
 use std::fs;
 use std::path::PathBuf;
@@ -105,6 +105,8 @@ async fn end_to_end_with_mock_servers() {
             csv_file: None,
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
 
@@ -160,6 +162,8 @@ async fn end_to_end_with_mock_server_failure() {
             csv_file: None,
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
 
@@ -229,6 +233,8 @@ async fn end_to_end_with_mock_server_redirect() {
             csv_file: None,
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
 

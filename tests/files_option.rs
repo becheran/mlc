@@ -1,7 +1,7 @@
-use mlc::file_traversal;
-use mlc::markup::{MarkupFile, MarkupType};
 use mlc::Config;
 use mlc::OptionalConfig;
+use mlc::file_traversal;
+use mlc::markup::{MarkupFile, MarkupType};
 use std::path::{Path, PathBuf};
 
 #[test]
