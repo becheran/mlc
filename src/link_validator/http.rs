@@ -1,15 +1,22 @@
 use crate::link_validator::LinkCheckResult;
-
-use reqwest::header::ACCEPT;
-use reqwest::header::USER_AGENT;
-use reqwest::Client;
-use reqwest::Method;
-use reqwest::Request;
-use reqwest::StatusCode;
+use log::{debug, warn};
+use reqwest::header::{ACCEPT, ACCEPT_ENCODING, HeaderName, HeaderValue, USER_AGENT};
+use reqwest::{Client, Method, Request, StatusCode, Url};
+use std::sync::LazyLock;
 use wildmatch::WildMatch;
+
+// The body of a response is never read, so it is never decoded. Servers should still see the
+// same request as before, because some of them treat requests without it as bots.
+const BROWSER_ACCEPT_ENCODING: &str = "gzip, deflate, br";
 
 const BROWSER_ACCEPT_HEADER: &str =
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+static CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    Client::builder()
+        .build()
+        .expect("Bug! failed to build client")
+});
 
 pub async fn check_http(
     target: &str,
@@ -17,7 +24,10 @@ pub async fn check_http(
     http_headers: &[(String, String)],
 ) -> LinkCheckResult {
     debug!("Check http link target {target:?}");
-    let url = reqwest::Url::parse(target).expect("URL of unknown type");
+    let url = match Url::parse(target) {
+        Ok(url) => url,
+        Err(error) => return LinkCheckResult::Failed(format!("Invalid URL. {error}")),
+    };
 
     match http_request(&url, do_not_warn_for_redirect_to, http_headers).await {
         Ok(response) => response,
@@ -25,15 +35,16 @@ pub async fn check_http(
     }
 }
 
-fn new_request(method: Method, url: &reqwest::Url, http_headers: &[(String, String)]) -> Request {
+fn new_request(method: Method, url: &Url, http_headers: &[(String, String)]) -> Request {
     let mut req = Request::new(method, url.clone());
     let headers = req.headers_mut();
     headers.insert(ACCEPT, BROWSER_ACCEPT_HEADER.parse().unwrap());
+    headers.insert(ACCEPT_ENCODING, BROWSER_ACCEPT_ENCODING.parse().unwrap());
 
     // Set default user agent if no custom User-Agent is provided
     let has_custom_user_agent = http_headers
         .iter()
-        .any(|(k, _)| k.to_lowercase() == "user-agent");
+        .any(|(name, _)| name.eq_ignore_ascii_case("user-agent"));
     if !has_custom_user_agent {
         headers.insert(USER_AGENT, "mlc (github.com/becheran/mlc)".parse().unwrap());
     }
@@ -41,12 +52,12 @@ fn new_request(method: Method, url: &reqwest::Url, http_headers: &[(String, Stri
     // Apply custom headers
     for (key, value) in http_headers {
         if let (Ok(header_name), Ok(header_value)) = (
-            reqwest::header::HeaderName::from_bytes(key.as_bytes()),
-            reqwest::header::HeaderValue::from_str(value),
+            HeaderName::from_bytes(key.as_bytes()),
+            HeaderValue::from_str(value),
         ) {
             headers.insert(header_name, header_value);
         } else {
-            warn!("Invalid HTTP header: {}: {}", key, value);
+            warn!("Invalid HTTP header: {key}: {value}");
         }
     }
 
@@ -54,19 +65,10 @@ fn new_request(method: Method, url: &reqwest::Url, http_headers: &[(String, Stri
 }
 
 async fn http_request(
-    url: &reqwest::Url,
+    url: &Url,
     do_not_warn_for_redirect_to: &[WildMatch],
     http_headers: &[(String, String)],
 ) -> reqwest::Result<LinkCheckResult> {
-    lazy_static! {
-        static ref CLIENT: Client = reqwest::Client::builder()
-            .brotli(true)
-            .gzip(true)
-            .deflate(true)
-            .build()
-            .expect("Bug! failed to build client");
-    }
-
     fn status_to_string(status: StatusCode) -> String {
         format!(
             "{} - {}",
@@ -78,7 +80,7 @@ async fn http_request(
     let response = CLIENT
         .execute(new_request(Method::HEAD, url, http_headers))
         .await?;
-    let check_redirect = |response_url: &reqwest::Url| -> reqwest::Result<LinkCheckResult> {
+    let check_redirect = |response_url: &Url| {
         // Compare URLs ignoring fragments since fragments are not sent to the server
         // and the response URL will never have them
         let urls_match = url.scheme() == response_url.scheme()
@@ -92,28 +94,26 @@ async fn http_request(
                 .iter()
                 .any(|x| x.matches(response_url.as_ref()))
         {
-            Ok(LinkCheckResult::Ok)
+            LinkCheckResult::Ok
         } else {
-            Ok(LinkCheckResult::Warning(
-                "Request was redirected to ".to_string() + response_url.as_ref(),
-            ))
+            LinkCheckResult::Warning(format!("Request was redirected to {response_url}"))
         }
     };
 
     let status = response.status();
     if status.is_success() || status.is_redirection() {
-        check_redirect(response.url())
-    } else {
-        debug!("Got the status code {status:?}. Retry with get-request.");
-        let get_request = new_request(Method::GET, url, http_headers);
+        return Ok(check_redirect(response.url()));
+    }
 
-        let response = CLIENT.execute(get_request).await?;
-        let status = response.status();
-        if status.is_success() || status.is_redirection() {
-            check_redirect(response.url())
-        } else {
-            Ok(LinkCheckResult::Failed(status_to_string(status)))
-        }
+    debug!("Got the status code {status:?}. Retry with get-request.");
+    let get_request = new_request(Method::GET, url, http_headers);
+
+    let response = CLIENT.execute(get_request).await?;
+    let status = response.status();
+    if status.is_success() || status.is_redirection() {
+        Ok(check_redirect(response.url()))
+    } else {
+        Ok(LinkCheckResult::Failed(status_to_string(status)))
     }
 }
 

@@ -3,6 +3,7 @@ use super::ignore_comments::IgnoreRegions;
 use super::link_extractor::BrokenExtractedLink;
 use crate::link_extractors::link_extractor::LinkExtractor;
 use crate::link_extractors::link_extractor::MarkupLink;
+use log::info;
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
 
 pub struct MarkdownLinkExtractor();
@@ -91,41 +92,37 @@ impl LinkExtractor for MarkdownLinkExtractor {
                     result.borrow_mut().append(&mut parsed_html);
                 }
                 _ => (),
-            };
+            }
         }
         result.into_inner()
     }
 }
 
 struct LineColumnConverter {
-    line_lengths: Vec<usize>,
+    /// Cumulative byte offset of the end of every line (including its newline)
+    line_ends: Vec<usize>,
 }
 
 impl LineColumnConverter {
     fn new(text: &str) -> Self {
-        let mut line_lengths: Vec<usize> = Vec::new();
-        let mut current_line_len = 0;
-        for c in text.chars() {
-            current_line_len += c.len_utf8();
-            if c == '\n' {
-                line_lengths.push(current_line_len);
-                current_line_len = 0;
-            }
-        }
-        Self { line_lengths }
+        let line_ends = text
+            .bytes()
+            .enumerate()
+            .filter(|(_, b)| *b == b'\n')
+            .map(|(i, _)| i + 1)
+            .collect();
+        Self { line_ends }
     }
 
     fn line_column_from_idx(&self, idx: usize) -> (usize, usize) {
-        let mut line = 1;
-        let mut column = idx + 1;
-        for line_length in &self.line_lengths {
-            if *line_length >= column {
-                return (line, column);
-            }
-            column -= line_length;
-            line += 1;
-        }
-        (line, column)
+        let column = idx + 1;
+        let line_idx = self.line_ends.partition_point(|&end| end < column);
+        let line_start = if line_idx == 0 {
+            0
+        } else {
+            self.line_ends[line_idx - 1]
+        };
+        (line_idx + 1, column - line_start)
     }
 }
 

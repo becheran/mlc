@@ -1,8 +1,8 @@
+use mlc::Config;
+use mlc::OptionalConfig;
 #[cfg(test)]
 use mlc::file_traversal;
 use mlc::markup::{MarkupFile, MarkupType};
-use mlc::Config;
-use mlc::OptionalConfig;
 use std::path::Path;
 
 #[test]

@@ -1,36 +1,60 @@
-use crate::markup::MarkupType;
 use crate::Config;
 use crate::OptionalConfig;
-use clap::Arg;
-use clap::ArgAction;
+use crate::markup::MarkupType;
+use clap::{Arg, ArgAction, ArgMatches, arg, command, value_parser};
 use std::fs;
-use std::path::Path;
-use std::path::MAIN_SEPARATOR;
+use std::path::{MAIN_SEPARATOR, MAIN_SEPARATOR_STR, PathBuf};
 
 const CONFIG_FILE_PATH: &str = "./.mlc.toml";
 
+/// Exit code if the arguments or the config file are invalid
+const EXIT_CODE_INVALID_INPUT: i32 = 2;
+
 fn normalize_path_separators(path: &str) -> String {
-    path.replace(['/', '\\'], std::path::MAIN_SEPARATOR_STR)
+    path.replace(['/', '\\'], MAIN_SEPARATOR_STR)
 }
 
-#[must_use]
-pub fn parse_args() -> Config {
-    let mut opt: OptionalConfig = match fs::read_to_string(CONFIG_FILE_PATH) {
-        Ok(content) => match toml::from_str(&content) {
-            Ok(o) => o,
-            Err(err) => panic!("Invalid TOML file {:?}", err),
-        },
+fn exit_with_error(message: &str) -> ! {
+    eprintln!("{message}");
+    std::process::exit(EXIT_CODE_INVALID_INPUT)
+}
+
+/// Like [`fs::canonicalize`], but only warns if the path does not exist
+fn canonicalize_or_warn(description: &str, path: PathBuf) -> PathBuf {
+    fs::canonicalize(&path).unwrap_or_else(|e| {
+        eprintln!("⚠ Warn: {description} {path:?} not found. {e:?}.");
+        path
+    })
+}
+
+fn read_config_file() -> OptionalConfig {
+    match fs::read_to_string(CONFIG_FILE_PATH) {
+        Ok(content) => toml::from_str(&content).unwrap_or_else(|e| {
+            exit_with_error(&format!("Invalid TOML file {CONFIG_FILE_PATH}\n{e}"))
+        }),
         Err(_) => OptionalConfig::default(),
-    };
-
-    if let Some(root_dir) = &opt.root_dir {
-        if !root_dir.is_dir() {
-            eprintln!("Root path {root_dir:?} must be an existing directory (from .mlc.toml).");
-            std::process::exit(1);
-        }
     }
+}
 
-    let matches = command!()
+fn list(matches: &ArgMatches, id: &str) -> Option<Vec<String>> {
+    matches.get_many::<String>(id).map(|v| v.cloned().collect())
+}
+
+fn command_line() -> clap::Command {
+    // Comma separated lists can be given as `--arg a,b` or as `--arg a --arg b`
+    let list_arg =
+        |id: &'static str, short: Option<char>, value_name: &'static str, help: &'static str| {
+            Arg::new(id)
+                .long(id)
+                .short(short)
+                .value_name(value_name)
+                .help(help)
+                .value_delimiter(',')
+                .action(ArgAction::Append)
+                .required(false)
+        };
+
+    command!()
         .arg(
             Arg::new("directory")
                 .help("Check all links in given directory and subdirectory")
@@ -39,19 +63,28 @@ pub fn parse_args() -> Config {
         )
         .arg(arg!(-d --debug "Print debug information to console").required(false))
         .arg(
+            arg!(-q --quiet "Only print warnings, errors and the summary. Skips the banner and all links which are ok or skipped")
+                .required(false),
+        )
+        .arg(
+            Arg::new("format")
+                .long("format")
+                .value_name("FORMAT")
+                .value_parser(["text", "json"])
+                .help("Output format on stdout. With 'json' a single JSON document with the summary and all issues is printed and nothing else")
+                .required(false),
+        )
+        .arg(
             arg!(-o --offline "Do not check web links")
                 .alias("no-web-links")
                 .required(false),
         )
-        .arg(
-            Arg::new("do-not-warn-for-redirect-to")
-                .long("do-not-warn-for-redirect-to")
-                .value_name("LINKS")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .help("Comma separated list of links which will be ignored")
-                .required(false),
-        )
+        .arg(list_arg(
+            "do-not-warn-for-redirect-to",
+            None,
+            "LINKS",
+            "Comma separated list of links which will be ignored",
+        ))
         .arg(
             Arg::new("match-file-extension")
                 .long("match-file-extension")
@@ -60,35 +93,26 @@ pub fn parse_args() -> Config {
                 .help("Check the exact file extension when searching for a file")
                 .required(false),
         )
+        .arg(list_arg(
+            "ignore-path",
+            Some('p'),
+            "PATHS",
+            "Comma separated list of files and directories which will be ignored",
+        ))
+        .arg(list_arg(
+            "ignore-links",
+            Some('i'),
+            "LINKS",
+            "Comma separated list of links which will be ignored",
+        ))
         .arg(
-            Arg::new("ignore-path")
-                .long("ignore-path")
-                .short('p')
-                .help("Comma separated list of files and directories which will be ignored")
-                .value_name("PATHS")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .required(false),
-        )
-        .arg(
-            Arg::new("ignore-links")
-                .long("ignore-links")
-                .short('i')
-                .value_name("LINKS")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .help("Comma separated list of links which will be ignored")
-                .required(false),
-        )
-        .arg(
-            Arg::new("markup-types")
-                .long("markup-types")
-                .short('t')
-                .value_name("TYPES")
-                .help("Comma separated list of markup types which shall be checked")
-                .action(ArgAction::Append)
-                .value_delimiter(',')
-                .required(false),
+            list_arg(
+                "markup-types",
+                Some('t'),
+                "TYPES",
+                "Comma separated list of markup types which shall be checked",
+            )
+            .value_parser(["md", "html"]),
         )
         .arg(
             Arg::new("throttle")
@@ -96,7 +120,7 @@ pub fn parse_args() -> Config {
                 .short('T')
                 .value_name("DELAY-MS")
                 .help("Wait time in milliseconds between http request to the same host")
-                .action(ArgAction::Append)
+                .value_parser(value_parser!(u32))
                 .required(false),
         )
         .arg(
@@ -132,130 +156,91 @@ pub fn parse_args() -> Config {
                 .action(ArgAction::SetTrue)
                 .required(false),
         )
-        .arg(
-            Arg::new("files")
-                .long("files")
-                .short('f')
-                .help("Comma separated list of files which shall be checked")
-                .value_name("FILES")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .required(false),
-        )
-        .arg(
-            Arg::new("http-headers")
-                .long("http-headers")
-                .short('H')
-                .help("Comma separated list of custom HTTP headers in the format 'Name: Value'. For example 'User-Agent: Mozilla/5.0'")
-                .value_name("HEADERS")
-                .value_delimiter(',')
-                .action(ArgAction::Append)
-                .required(false),
-        )
-        .get_matches();
+        .arg(list_arg(
+            "files",
+            Some('f'),
+            "FILES",
+            "Comma separated list of files which shall be checked",
+        ))
+        .arg(list_arg(
+            "http-headers",
+            Some('H'),
+            "HEADERS",
+            "Comma separated list of custom HTTP headers in the format 'Name: Value'. For example 'User-Agent: Mozilla/5.0'",
+        ))
+}
 
-    let default_dir = format!(".{}", MAIN_SEPARATOR);
-    let dir_string = matches
+/// Reads the `.mlc.toml` config file and the command line arguments. The arguments win.
+#[must_use]
+pub fn parse_args() -> Config {
+    let mut opt = read_config_file();
+    let matches = command_line().get_matches();
+
+    let default_dir = format!(".{MAIN_SEPARATOR}");
+    let directory = matches
         .get_one::<String>("directory")
-        .unwrap_or(&default_dir);
-    let directory = normalize_path_separators(dir_string)
-        .parse()
-        .expect("failed to parse path");
+        .map_or(default_dir, |dir| normalize_path_separators(dir))
+        .into();
 
-    if matches.get_flag("debug") {
-        opt.debug = Some(true);
+    let flag = |id: &str| matches.get_flag(id).then_some(true);
+    opt.debug = flag("debug").or(opt.debug);
+    opt.quiet = flag("quiet").or(opt.quiet);
+    opt.offline = flag("offline").or(opt.offline);
+    opt.match_file_extension = flag("match-file-extension").or(opt.match_file_extension);
+    opt.gitignore = flag("gitignore").or(opt.gitignore);
+    opt.gituntracked = flag("gituntracked").or(opt.gituntracked);
+
+    if let Some(format) = matches.get_one::<String>("format") {
+        opt.format = format.parse().ok();
+    }
+    if let Some(throttle) = matches.get_one::<u32>("throttle") {
+        opt.throttle = Some(*throttle);
+    }
+    if let Some(csv_file) = matches.get_one::<String>("csv") {
+        opt.csv_file = Some(normalize_path_separators(csv_file).into());
     }
 
-    if let Some(do_not_warn_for_redirect_to) =
-        matches.get_many::<String>("do-not-warn-for-redirect-to")
-    {
-        opt.do_not_warn_for_redirect_to =
-            Some(do_not_warn_for_redirect_to.map(|x| x.to_string()).collect());
-    }
+    opt.do_not_warn_for_redirect_to =
+        list(&matches, "do-not-warn-for-redirect-to").or(opt.do_not_warn_for_redirect_to);
+    opt.ignore_links = list(&matches, "ignore-links").or(opt.ignore_links);
+    opt.http_headers = list(&matches, "http-headers").or(opt.http_headers);
 
-    if let Some(throttle_str) = matches.get_one::<String>("throttle") {
-        let throttle = throttle_str.parse::<u32>().unwrap();
-        opt.throttle = Some(throttle);
-    }
+    opt.markup_types = list(&matches, "markup-types")
+        .map(|types| types.iter().filter_map(|t| t.parse().ok()).collect())
+        .or(opt.markup_types)
+        .or_else(|| Some(vec![MarkupType::Markdown, MarkupType::Html]));
 
-    if let Some(f) = matches.get_one::<String>("csv") {
-        opt.csv_file = Some(Path::new(&normalize_path_separators(f)).to_path_buf());
-    }
-
-    if let Some(markup_types) = matches.get_many::<String>("markup-types") {
-        opt.markup_types = Some(
-            markup_types
-                .map(|v| v.as_str().parse().expect("invalid markup type"))
+    if let Some(ignore_path) = list(&matches, "ignore-path") {
+        opt.ignore_path = Some(
+            ignore_path
+                .into_iter()
+                .map(|path| canonicalize_or_warn("Ignore path", path.into()))
                 .collect(),
         );
     }
-    if opt.markup_types.is_none() {
-        opt.markup_types = Some(vec![MarkupType::Markdown, MarkupType::Html]);
-    }
-
-    if matches.get_flag("offline") {
-        opt.offline = Some(true);
-    }
-
-    if matches.get_flag("match-file-extension") {
-        opt.match_file_extension = Some(true)
-    }
-
-    if let Some(ignore_links) = matches.get_many::<String>("ignore-links") {
-        opt.ignore_links = Some(ignore_links.map(|x| x.to_string()).collect());
-    }
-
-    if let Some(ignore_path) = matches.get_many::<String>("ignore-path") {
-        let mut paths: Vec<_> = ignore_path.map(|x| Path::new(x).to_path_buf()).collect();
-        for p in paths.iter_mut() {
-            match fs::canonicalize(&p) {
-                Ok(canonical_path) => {
-                    *p = canonical_path;
-                }
-                Err(e) => {
-                    println!("⚠ Warn: Ignore path {p:?} not found. {e:?}.");
-                }
-            };
-        }
-        opt.ignore_path = Some(paths);
-    }
-
-    if matches.get_flag("gitignore") {
-        opt.gitignore = Some(true);
-    }
-
-    if matches.get_flag("gituntracked") {
-        opt.gituntracked = Some(true);
-    }
-
-    if let Some(files) = matches.get_many::<String>("files") {
-        let mut file_paths: Vec<_> = files
-            .map(|x| Path::new(&normalize_path_separators(x)).to_path_buf())
-            .collect();
-        for p in file_paths.iter_mut() {
-            match fs::canonicalize(&p) {
-                Ok(canonical_path) => {
-                    *p = canonical_path;
-                }
-                Err(e) => {
-                    println!("⚠ Warn: File path {p:?} not found. {e:?}.");
-                }
-            };
-        }
-        opt.files = Some(file_paths);
-    }
-
-    if let Some(http_headers) = matches.get_many::<String>("http-headers") {
-        opt.http_headers = Some(http_headers.map(|x| x.to_string()).collect());
+    if let Some(files) = list(&matches, "files") {
+        opt.files = Some(
+            files
+                .iter()
+                .map(|file| {
+                    canonicalize_or_warn("File path", normalize_path_separators(file).into())
+                })
+                .collect(),
+        );
     }
 
     if let Some(root_dir) = matches.get_one::<String>("root-dir") {
-        let root_path = Path::new(&normalize_path_separators(root_dir)).to_path_buf();
+        let root_path = PathBuf::from(normalize_path_separators(root_dir));
         if !root_path.is_dir() {
-            eprintln!("Root path {root_path:?} must be a directory!");
-            std::process::exit(1);
+            exit_with_error(&format!("Root path {root_path:?} must be a directory!"));
         }
-        opt.root_dir = Some(root_path)
+        opt.root_dir = Some(root_path);
+    } else if let Some(root_path) = &opt.root_dir
+        && !root_path.is_dir()
+    {
+        exit_with_error(&format!(
+            "Root path {root_path:?} must be an existing directory (from {CONFIG_FILE_PATH})."
+        ));
     }
 
     Config {

@@ -1,6 +1,6 @@
-use mlc::markup::MarkupType;
 use mlc::Config;
 use mlc::OptionalConfig;
+use mlc::markup::MarkupType;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -106,6 +106,8 @@ async fn gitignore_is_recursive_nested_gitignore_is_respected() {
             throttle: None,
             files: None,
             http_headers: None,
+            quiet: None,
+            format: None,
         },
     };
 

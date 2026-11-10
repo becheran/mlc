@@ -1,0 +1,13 @@
+# Checks the links of all staged markdown and html files with mlc, see https://pre-commit.com
+#
+# mlc takes the files as one comma separated list, but pre-commit passes them as separate
+# arguments. The small shell wrapper joins them. Needs `bash` and `mlc` on the PATH.
+# Remove --offline to check web links as well (slower, needs network).
+repos:
+  - repo: local
+    hooks:
+      - id: mlc
+        name: mlc (markup link checker)
+        language: system
+        types_or: [markdown, html]
+        entry: bash -c 'mlc --offline --quiet --files "$(IFS=,; echo "$*")"' mlc

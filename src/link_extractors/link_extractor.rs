@@ -1,9 +1,25 @@
 use super::html_link_extractor::HtmlLinkExtractor;
 use super::markdown_link_extractor::MarkdownLinkExtractor;
 use crate::markup::{MarkupFile, MarkupType};
+use log::{info, warn};
 use std::env;
 use std::fmt;
 use std::fs;
+use std::sync::LazyLock;
+
+/// VS Code only makes `file:line:column` clickable in its terminal
+static IS_VS_CODE_TERMINAL: LazyLock<bool> =
+    LazyLock::new(|| env::var("TERM_PROGRAM").is_ok_and(|program| program == "vscode"));
+
+/// Human readable position of a link, for example `README.md (3, 1) => ./missing.md`
+#[must_use]
+pub fn format_location(source: &str, line: usize, column: usize, target: &str) -> String {
+    if *IS_VS_CODE_TERMINAL {
+        format!("{source}:{line}:{column} => {target}")
+    } else {
+        format!("{source} ({line}, {column}) => {target}")
+    }
+}
 
 /// Link found in markup files
 #[derive(Eq, PartialEq, Clone)]
@@ -43,16 +59,9 @@ impl fmt::Debug for MarkupLink {
 }
 
 impl MarkupLink {
+    #[must_use]
     pub fn source_str(&self) -> String {
-        lazy_static! {
-            static ref IS_VS_CODE_TERMINAL: bool =
-                env::var("TERM_PROGRAM") == Ok("vscode".to_string());
-        }
-        if *IS_VS_CODE_TERMINAL {
-            format! {"{}:{}:{} => {}", self.source, self.line, self.column, self.target}
-        } else {
-            format! {"{} ({}, {}) => {}", self.source, self.line, self.column, self.target}
-        }
+        format_location(&self.source, self.line, self.column, &self.target)
     }
 }
 
@@ -65,15 +74,12 @@ pub fn find_links(file: &MarkupFile) -> Vec<Result<MarkupLink, BrokenExtractedLi
     match fs::read_to_string(path) {
         Ok(text) => {
             let mut links = link_extractor.find_links(&text);
-            for l in &mut links {
-                match l {
-                    Ok(link) => {
-                        link.source = path.to_string();
-                    }
-                    Err(broken_link) => {
-                        broken_link.source = path.to_string();
-                    }
-                }
+            for link in &mut links {
+                let source = match link {
+                    Ok(link) => &mut link.source,
+                    Err(broken_link) => &mut broken_link.source,
+                };
+                source.clone_from(path);
             }
             links
         }
