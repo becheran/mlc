@@ -12,7 +12,7 @@ repository = "https://github.com/becheran/mlc"
 
 [dependencies]
 clap = { version = "4.6.7", features = ["cargo"] }
-log = "0.4.34"
+log = "0.4.35"
 fern = "0.7.1"
 walkdir = "2.5.0"
 regex = { version = "1.13.1", default-features = false, features = ["std", "perf"] }
@@ -20,10 +20,10 @@ url = "2.5.8"
 colored = "3.1.1"
 # Only the status code of a response is used, so no decoders and no charset support are needed
 reqwest = { version = "0.13.5", default-features = false, features = ["native-tls-vendored", "http2", "system-proxy"] }
-tokio = {version="1.54.0", features = ["rt-multi-thread", "macros", "time"] }
+tokio = {version="1.54.1", features = ["rt-multi-thread", "macros", "time"] }
 futures = "0.3.34"
 wildmatch = "2.7.0"
-pulldown-cmark = "0.13.4"
+pulldown-cmark = "0.13.6"
 toml = "1.1.2"
 serde = { version = "1.0.229", features = ["derive"] }
 url-escape = "0.1.2"
