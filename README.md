@@ -58,9 +58,16 @@ pacman -S markuplinkchecker
 Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://github.com/marketplace/actions/markup-link-checker-mlc).
 
 ``` yaml
-- name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v1
+jobs:
+  links:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - name: Markup Link Checker (mlc)
+        uses: becheran/mlc@v1
 ```
+
+The action downloads the prebuilt *mlc* binary from the [releases](https://github.com/becheran/mlc/releases) and runs on Linux (x86_64 and arm64), Windows and macOS (Apple Silicon and Intel) runners. Docker is not needed.
 
 Use *mlc* command line arguments using the `with` argument:
 

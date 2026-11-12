@@ -5,8 +5,38 @@ inputs:
     description: 'arguments'
     default: './'
 runs:
-  using: 'docker'
-  image: 'GithubAction-Dockerfile'
+  using: 'composite'
+  steps:
+    - name: Install mlc
+      shell: bash
+      env:
+        MLC_VERSION: '1.3.0'
+      run: |
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)   asset=mlc-x86_64-linux ;;
+          Linux-ARM64) asset=mlc-aarch64-linux ;;
+          macOS-X64)   asset=mlc-x86_64-apple-darwin ;;
+          macOS-ARM64) asset=mlc-aarch64-apple-darwin ;;
+          # Windows on ARM runs the x64 binary in emulation
+          Windows-*)   asset=mlc-x86_64-windows.exe ;;
+          *) echo "::error::mlc: unsupported runner ${RUNNER_OS}-${RUNNER_ARCH}"; exit 1 ;;
+        esac
+        name=mlc
+        if [ "${RUNNER_OS}" = "Windows" ]; then name=mlc.exe; fi
+        dir="${RUNNER_TEMP}/mlc-${MLC_VERSION}"
+        mkdir -p "${dir}"
+        curl -fsSL --retry 3 \
+          "https://github.com/becheran/mlc/releases/download/v${MLC_VERSION}/${asset}" \
+          -o "${dir}/${name}"
+        chmod +x "${dir}/${name}"
+        echo "${dir}" >> "${GITHUB_PATH}"
+    - name: Run mlc
+      shell: bash
+      env:
+        # Passed as environment variable and not inlined into the script, so the arguments
+        # are parsed by the shell (quotes work) without opening a script injection.
+        MLC_ARGS: ${{ inputs.args }}
+      run: eval "mlc ${MLC_ARGS}"
 branding:
-  icon: 'link'  
+  icon: 'link'
   color: 'green'
