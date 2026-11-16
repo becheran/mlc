@@ -107,6 +107,9 @@ jobs:
         with:
           targets: aarch64-unknown-linux-musl
       - name: Install cross
+        env:
+          # -Dwarnings is meant for mlc, new rustc lints in the cross sources must not break the install
+          RUSTFLAGS: ""
         run: cargo install cross --git https://github.com/cross-rs/cross
       - name: Cache
         uses: actions/cache@v6
