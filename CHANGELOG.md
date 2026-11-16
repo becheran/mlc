@@ -14,6 +14,14 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+- Release binary for macOS on Intel (`mlc-x86_64-apple-darwin`)
+
+### Changed
+
+- The GitHub Action is a composite action which downloads the release binary instead of a Docker container action. It runs on Linux, Windows and macOS runners, including `ubuntu-slim` which is recommended to save runner costs. The Docker image on Docker Hub is still published
+
 ## [1.3.0] - 2026-10-20
 
 ### Added
