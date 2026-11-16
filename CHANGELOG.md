@@ -14,6 +14,8 @@ Types for Changes:
 
 ## [Unreleased] - ReleaseDate
 
+## [2.0.0] - 2026-11-16
+
 ### Added
 
 - Release binary for macOS on Intel (`mlc-x86_64-apple-darwin`)

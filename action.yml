@@ -10,7 +10,7 @@ runs:
     - name: Install mlc
       shell: bash
       env:
-        MLC_VERSION: '1.3.0'
+        MLC_VERSION: '2.0.0'
       run: |
         case "${RUNNER_OS}-${RUNNER_ARCH}" in
           Linux-X64)   asset=mlc-x86_64-linux ;;
