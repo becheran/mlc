@@ -162,17 +162,37 @@ jobs:
           name: apple-darwin-x64
           path: target/x86_64-apple-darwin/release/${{ env.BINARY_NAME }}
 
-  # Runs the GitHub Action of this repository. It downloads the binary of the version in action.yml
+  # Runs the GitHub Action of this repository. It downloads the release binary of the version in action.yml.
+  # On a tag that release is created by the release job of this run, so the test has to wait for it.
+  # On other runs the version in action.yml can be bumped before its release exists (the release commit
+  # itself), then the test is skipped instead of failing.
   test_action:
+    needs: [release]
+    if: ${{ !cancelled() && (needs.release.result == 'success' || needs.release.result == 'skipped') }}
     strategy:
       fail-fast: false
       matrix:
-        # TODO: add macos-15-intel once a release contains the mlc-x86_64-apple-darwin binary
-        os: [ubuntu-slim, ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest]
+        os: [ubuntu-slim, ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+      - name: Check that the release of action.yml exists
+        id: release_exists
+        shell: bash
+        run: |
+          version=$(sed -n "s/^ *MLC_VERSION: *'\(.*\)'/\1/p" action.yml)
+          url="https://github.com/becheran/mlc/releases/download/v${version}/mlc-x86_64-linux"
+          if curl -fsIL --retry 3 -o /dev/null "${url}"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "::error::Release v${version} of action.yml not found, it must exist after the release job"
+            exit 1
+          else
+            echo "::notice::Release v${version} of action.yml does not exist yet, skip the action test"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: ./
+        if: steps.release_exists.outputs.exists == 'true'
         with:
           args: ./README.md --offline -i "https://example.com/*"
 
