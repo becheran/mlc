@@ -58,9 +58,16 @@ pacman -S markuplinkchecker
 Use *mlc* in GitHub using the *GitHub-Action* from the [Marketplace](https://github.com/marketplace/actions/markup-link-checker-mlc).
 
 ``` yaml
-- name: Markup Link Checker (mlc)
-  uses: becheran/mlc@v1
+jobs:
+  links:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@v7
+      - name: Markup Link Checker (mlc)
+        uses: becheran/mlc@v1
 ```
+
+The action downloads the prebuilt *mlc* binary from the [releases](https://github.com/becheran/mlc/releases) and runs on Linux (x86_64 and arm64), Windows and macOS (Apple Silicon and Intel) runners. Docker is not needed.
 
 Use *mlc* command line arguments using the `with` argument:
 
@@ -83,7 +90,7 @@ The action uses [GitHub workflow commands](https://docs.github.com/en/actions/re
 To integrate *mlc* in your CI pipeline running in a *linux x86_64 environment* you can add the following commands to download and execute it:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v1.3.0/mlc-x86_64-linux -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v2.0.0/mlc-x86_64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
@@ -91,7 +98,7 @@ chmod +x mlc
 For **linux aarch64/arm64** environments, use:
 
 ``` bash
-curl -L https://github.com/becheran/mlc/releases/download/v1.3.0/mlc-aarch64-linux -o mlc
+curl -L https://github.com/becheran/mlc/releases/download/v2.0.0/mlc-aarch64-linux -o mlc
 chmod +x mlc
 ./mlc
 ```
